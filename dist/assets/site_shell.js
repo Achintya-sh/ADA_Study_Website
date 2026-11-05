@@ -1,4 +1,4 @@
-/* ===== ADASiteShell: Multi-Page Atlas, Workbench Split View, Command Hub & ⌘K Search ===== */
+/* ===== ADASiteShell: Multi-Page Atlas, Workbench Split View, Resizable Sidebars, Command Hub & ⌘K Search ===== */
 (function () {
   var STOPS_CATALOG = [
     { id: 'ch0', num: '0', title: 'Prerequisites primer', group: 'found', kind: 'stop', ladTopic: 'arr', keywords: 'python arrays loops recursion indexing dicts sets' },
@@ -51,6 +51,34 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  function setAttrSafe(el, k, v) {
+    if (el && typeof el.setAttribute === 'function') el.setAttribute(k, String(v));
+  }
+
+  function removeAttrSafe(el, k) {
+    if (!el) return;
+    if (typeof el.removeAttribute === 'function') el.removeAttribute(k);
+    else if (typeof el.setAttribute === 'function') el.setAttribute(k, '');
+  }
+
+  function setCssVar(el, prop, val) {
+    if (!el || !el.style) return;
+    if (typeof el.style.setProperty === 'function') el.style.setProperty(prop, val);
+    else el.style[prop] = val;
+  }
+
+  function removeCssVar(el, prop) {
+    if (!el || !el.style) return;
+    if (typeof el.style.removeProperty === 'function') el.style.removeProperty(prop);
+    else delete el.style[prop];
+  }
+
+  function isMobileViewport() {
+    return typeof window !== 'undefined' &&
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(max-width: 900px)').matches;
   }
 
   function detectPageContext() {
@@ -188,6 +216,41 @@
     return items;
   }
 
+  /* ---------- Theme Synchronization (#topThemeBtn <-> #themeBtn <-> <meta name="color-scheme">) ---------- */
+  function getEffectiveTheme() {
+    if (typeof document === 'undefined' || !document.documentElement) return 'light';
+    var explicit = document.documentElement.getAttribute && document.documentElement.getAttribute('data-theme');
+    if (explicit === 'dark' || explicit === 'light') return explicit;
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return 'dark';
+    }
+    return 'light';
+  }
+
+  function syncThemeControls() {
+    if (typeof document === 'undefined') return;
+    var cur = getEffectiveTheme();
+    var meta = document.querySelector && document.querySelector('meta[name="color-scheme"]');
+    if (meta) meta.content = cur;
+    var topBtn = document.getElementById('topThemeBtn');
+    if (topBtn) {
+      topBtn.textContent = cur === 'dark' ? '☀️' : '🌙';
+      var tip = cur === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
+      setAttrSafe(topBtn, 'title', tip);
+      setAttrSafe(topBtn, 'aria-label', tip);
+    }
+  }
+
+  function setThemeExplicit(nextTheme) {
+    if (typeof document === 'undefined' || !document.documentElement) return;
+    var next = nextTheme === 'dark' ? 'dark' : 'light';
+    setAttrSafe(document.documentElement, 'data-theme', next);
+    try {
+      localStorage.setItem('ada-theme2', JSON.stringify(next));
+    } catch (_) {}
+    syncThemeControls();
+  }
+
   /* ---------- Live DOM Docking for Split Workbench (Code, Labs, Quiz) ---------- */
   var activeWbTab = 'code';
   var dockedItems = []; // [{ node, placeholder }]
@@ -208,6 +271,39 @@
       return stage.querySelector('section.topic');
     }
     return document.querySelector('main section.topic');
+  }
+
+  function getStopWorkbenchCounts(activeSec) {
+    if (!activeSec || typeof activeSec.querySelectorAll !== 'function') {
+      return { code: 0, labs: 0, quiz: 0 };
+    }
+    var nCode = activeSec.querySelectorAll('pre.code').length;
+    var nLabs = activeSec.querySelectorAll('.lab').length;
+    var quizzes = activeSec.querySelectorAll('.quiz');
+    var nQuizQuestions = activeSec.querySelectorAll('.quiz .q').length;
+    return {
+      code: nCode,
+      labs: nLabs,
+      quiz: nQuizQuestions || quizzes.length
+    };
+  }
+
+  function updateWorkbenchTabBadges(dock, counts, hasActiveSec) {
+    if (!dock || typeof dock.querySelectorAll !== 'function') return;
+    var baseNames = { code: 'Code', labs: 'Labs', quiz: 'Quiz' };
+    var tabs = dock.querySelectorAll('.wb-tab');
+    Array.prototype.forEach.call(tabs, function (btn) {
+      var key = btn.dataset && btn.dataset.wbTab;
+      if (!key || !baseNames[key]) return;
+      if (!hasActiveSec) {
+        btn.textContent = baseNames[key];
+        if (btn.classList) btn.classList.remove('is-empty');
+        return;
+      }
+      var n = counts[key] || 0;
+      btn.textContent = baseNames[key] + ' (' + n + ')';
+      if (btn.classList) btn.classList.toggle('is-empty', n === 0);
+    });
   }
 
   function inferCodeBlockMeta(pre, index) {
@@ -278,7 +374,7 @@
     });
   }
 
-  function renderWorkbenchTab(tabName) {
+  function renderWorkbenchTab(tabName, allowAutoFallback) {
     activeWbTab = tabName || activeWbTab || 'code';
     if (typeof document === 'undefined') return;
     var dock = document.getElementById('workbenchDock');
@@ -286,8 +382,25 @@
     var body = document.getElementById('workbenchBody');
     if (!body) return;
 
-    // Always restore any previously docked live DOM nodes before re-rendering
+    // Always restore any previously docked live DOM nodes before counting & re-rendering
     restoreDockedNodes();
+
+    var activeSec = getActiveStageSection();
+    var secGroup = (activeSec && activeSec.getAttribute && activeSec.getAttribute('data-group')) || 'found';
+    setAttrSafe(dock, 'data-group', secGroup);
+
+    var counts = getStopWorkbenchCounts(activeSec);
+    if (allowAutoFallback && activeSec && !counts[activeWbTab]) {
+      var order = ['code', 'labs', 'quiz'];
+      for (var oi = 0; oi < order.length; oi++) {
+        if (counts[order[oi]] > 0) {
+          activeWbTab = order[oi];
+          break;
+        }
+      }
+    }
+
+    updateWorkbenchTabBadges(dock, counts, !!activeSec);
 
     var tabs = dock.querySelectorAll('.wb-tab');
     Array.prototype.forEach.call(tabs, function (btn) {
@@ -295,7 +408,6 @@
       else btn.classList.remove('active');
     });
 
-    var activeSec = getActiveStageSection();
     if (!activeSec) {
       var ctx = detectPageContext();
       var pfx = (ctx === 'stop' || ctx === 'exam') ? '../' : '';
@@ -316,7 +428,7 @@
     if (activeWbTab === 'code') {
       var pres = activeSec.querySelectorAll('pre.code');
       if (!pres || !pres.length) {
-        body.innerHTML = '<div class="wb-item"><strong>No code templates on this stop.</strong><p style="margin:6px 0 0;color:var(--fs-muted)">Switch to the Labs or Quiz tab to practise interactively.</p></div>';
+        body.innerHTML = '<div class="wb-item"><strong>No code templates on this stop.</strong><p style="margin:6px 0 0;color:var(--fs-muted)">Switch to the Labs or Quiz tab above to practise interactively.</p></div>';
         return;
       }
       body.innerHTML = '';
@@ -419,12 +531,328 @@
     }
     document.body.classList.toggle('workbench-mode', next);
     var btn = document.getElementById('workbenchBtn');
-    if (btn && btn.classList) btn.classList.toggle('active', next);
+    if (btn) {
+      if (btn.classList) btn.classList.toggle('active', next);
+      setAttrSafe(btn, 'aria-pressed', next ? 'true' : 'false');
+    }
     try {
       if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('ada-wb-open', next ? '1' : '0');
     } catch (_) {}
-    if (next) renderWorkbenchTab(activeWbTab);
+    if (next) renderWorkbenchTab(activeWbTab, true);
+    syncSidebarControlStates();
     return next;
+  }
+
+  /* ---------- Collapsible & Drag-Resizable Left (#rail) and Right (#workbenchDock / #onThisStop) Sidebars ---------- */
+  function isOutlineCurrentlyVisible() {
+    if (typeof document === 'undefined') return false;
+    var ots = document.getElementById('onThisStop');
+    if (!ots) return false;
+    if (typeof window !== 'undefined' && typeof window.getComputedStyle === 'function') {
+      try {
+        return window.getComputedStyle(ots).display !== 'none';
+      } catch (_) {}
+    }
+    var root = document.documentElement;
+    return !(root && root.getAttribute && root.getAttribute('data-ots-collapsed') === '1');
+  }
+
+  function syncSidebarControlStates() {
+    if (typeof document === 'undefined' || !document.documentElement) return;
+    var root = document.documentElement;
+    var leftBtn = document.getElementById('leftRailToggleBtn');
+    var rightBtn = document.getElementById('rightRailToggleBtn');
+    var rail = document.getElementById('rail');
+
+    var leftExpanded;
+    if (isMobileViewport()) {
+      leftExpanded = !!(rail && rail.classList && rail.classList.contains('open'));
+    } else {
+      leftExpanded = root.getAttribute('data-left-collapsed') !== '1';
+    }
+    if (leftBtn) {
+      setAttrSafe(leftBtn, 'aria-expanded', leftExpanded ? 'true' : 'false');
+      if (leftBtn.classList) leftBtn.classList.toggle('active', leftExpanded && !isMobileViewport());
+      setAttrSafe(leftBtn, 'title', (leftExpanded ? 'Collapse' : 'Expand') + ' Study Map sidebar ([)');
+    }
+
+    var isWb = !!(document.body && document.body.classList && document.body.classList.contains('workbench-mode'));
+    var rightExpanded = isWb || isOutlineCurrentlyVisible();
+    if (rightBtn) {
+      setAttrSafe(rightBtn, 'aria-expanded', rightExpanded ? 'true' : 'false');
+      if (rightBtn.classList) rightBtn.classList.toggle('active', rightExpanded);
+      setAttrSafe(rightBtn, 'title', (rightExpanded ? 'Collapse' : 'Expand') + ' Right Sidebar (])');
+    }
+  }
+
+  function toggleLeftSidebar(forceOpen) {
+    if (typeof document === 'undefined' || !document.documentElement) return false;
+    var rail = document.getElementById('rail');
+    var menuBtn = document.getElementById('menuBtn');
+    if (isMobileViewport()) {
+      var curMobileOpen = !!(rail && rail.classList && rail.classList.contains('open'));
+      var nextMobile = typeof forceOpen === 'boolean' ? forceOpen : !curMobileOpen;
+      if (rail && rail.classList) rail.classList.toggle('open', nextMobile);
+      if (menuBtn) setAttrSafe(menuBtn, 'aria-expanded', nextMobile ? 'true' : 'false');
+      syncSidebarControlStates();
+      return nextMobile;
+    }
+
+    var root = document.documentElement;
+    var isCollapsed = root.getAttribute('data-left-collapsed') === '1';
+    var nextOpen = typeof forceOpen === 'boolean' ? forceOpen : isCollapsed;
+    if (nextOpen) {
+      removeAttrSafe(root, 'data-left-collapsed');
+      try { localStorage.setItem('ada-left-collapsed', '0'); } catch (_) {}
+    } else {
+      setAttrSafe(root, 'data-left-collapsed', '1');
+      try { localStorage.setItem('ada-left-collapsed', '1'); } catch (_) {}
+    }
+    syncSidebarControlStates();
+    return nextOpen;
+  }
+
+  function toggleRightSidebar(forceOpen) {
+    if (typeof document === 'undefined' || !document.documentElement || !document.body) return false;
+    var root = document.documentElement;
+    var activeRoute = (document.body.dataset && document.body.dataset.activeRoute) || 'hub';
+    var isHubOrLadder = (activeRoute === 'hub' || activeRoute === 'index' || activeRoute === 'ladder');
+    var isWb = document.body.classList && document.body.classList.contains('workbench-mode');
+
+    if (isHubOrLadder) {
+      return toggleWorkbench(forceOpen);
+    }
+
+    if (isWb) {
+      var wantOpenFromWb = typeof forceOpen === 'boolean' ? forceOpen : false;
+      if (!wantOpenFromWb) {
+        setAttrSafe(root, 'data-ots-collapsed', '1');
+        try { localStorage.setItem('ada-ots-collapsed', '1'); } catch (_) {}
+        toggleWorkbench(false);
+        return false;
+      }
+      return true;
+    }
+
+    var curVisible = isOutlineCurrentlyVisible();
+    var nextOpen = typeof forceOpen === 'boolean' ? forceOpen : !curVisible;
+    setAttrSafe(root, 'data-ots-collapsed', nextOpen ? '0' : '1');
+    try { localStorage.setItem('ada-ots-collapsed', nextOpen ? '0' : '1'); } catch (_) {}
+    syncSidebarControlStates();
+    return nextOpen;
+  }
+
+  var WB_PRESETS = ['36vw', '46vw', '58vw'];
+  function cycleWorkbenchWidth() {
+    if (typeof document === 'undefined' || !document.documentElement) return;
+    var root = document.documentElement;
+    var cur = '';
+    try { cur = localStorage.getItem('ada-wb-w') || ''; } catch (_) {}
+    var idx = WB_PRESETS.indexOf(cur);
+    var next = WB_PRESETS[(idx + 1) % WB_PRESETS.length];
+    setCssVar(root, '--user-wb-w', next);
+    try { localStorage.setItem('ada-wb-w', next); } catch (_) {}
+  }
+
+  function initResizableAndCollapsibleSidebars() {
+    if (typeof document === 'undefined' || !document.documentElement) return;
+    var root = document.documentElement;
+    var shell = document.querySelector && document.querySelector('.shell');
+
+    // Inject clean inline collapse button inside #rail .rail-head
+    var railHead = document.querySelector && document.querySelector('#rail .rail-head');
+    if (railHead && !document.getElementById('railCollapseBtn')) {
+      var rcBtn = document.createElement('button');
+      rcBtn.type = 'button';
+      rcBtn.id = 'railCollapseBtn';
+      rcBtn.className = 'rail-collapse-btn';
+      rcBtn.textContent = '«';
+      setAttrSafe(rcBtn, 'title', 'Collapse Study Map ([)');
+      setAttrSafe(rcBtn, 'aria-label', 'Collapse Study Map sidebar');
+      rcBtn.addEventListener('click', function () {
+        toggleLeftSidebar(false);
+      });
+      railHead.appendChild(rcBtn);
+    }
+
+    var leftBtn = document.getElementById('leftRailToggleBtn');
+    if (leftBtn && leftBtn.addEventListener) {
+      leftBtn.addEventListener('click', function (e) {
+        if (isMobileViewport() && e && typeof e.stopPropagation === 'function') {
+          e.stopPropagation();
+        }
+        toggleLeftSidebar();
+      });
+    }
+
+    var rightBtn = document.getElementById('rightRailToggleBtn');
+    if (rightBtn && rightBtn.addEventListener) {
+      rightBtn.addEventListener('click', function () {
+        toggleRightSidebar();
+      });
+    }
+
+    var otsCollapseBtn = document.getElementById('otsCollapseBtn');
+    if (otsCollapseBtn && otsCollapseBtn.addEventListener) {
+      otsCollapseBtn.addEventListener('click', function () {
+        toggleRightSidebar(false);
+      });
+    }
+
+    var wbCycleBtn = document.getElementById('wbWidthCycleBtn');
+    if (wbCycleBtn && wbCycleBtn.addEventListener) {
+      wbCycleBtn.addEventListener('click', cycleWorkbenchWidth);
+    }
+
+    // Left Sidebar Drag Resizer (#leftRailResizer)
+    var leftResizer = document.getElementById('leftRailResizer');
+    if (leftResizer && leftResizer.addEventListener) {
+      setAttrSafe(leftResizer, 'aria-valuemin', '180');
+      setAttrSafe(leftResizer, 'aria-valuemax', '420');
+
+      leftResizer.addEventListener('pointerdown', function (e) {
+        if (e.button && e.button !== 0) return;
+        e.preventDefault();
+        if (leftResizer.setPointerCapture && e.pointerId != null) {
+          try { leftResizer.setPointerCapture(e.pointerId); } catch (_) {}
+        }
+        leftResizer.classList.add('is-dragging');
+        root.classList.add('is-resizing-panels');
+        var shellLeft = shell && shell.getBoundingClientRect ? shell.getBoundingClientRect().left : 0;
+
+        function onMove(ev) {
+          var maxW = Math.min(420, Math.floor((window.innerWidth || 1280) * 0.34));
+          var w = Math.round(Math.max(180, Math.min(maxW, ev.clientX - shellLeft)));
+          setCssVar(root, '--user-left-rail-w', w + 'px');
+          setAttrSafe(leftResizer, 'aria-valuenow', w);
+          try { localStorage.setItem('ada-left-rail-w', String(w)); } catch (_) {}
+        }
+
+        function onUp() {
+          leftResizer.classList.remove('is-dragging');
+          root.classList.remove('is-resizing-panels');
+          leftResizer.removeEventListener('pointermove', onMove);
+          leftResizer.removeEventListener('pointerup', onUp);
+          leftResizer.removeEventListener('pointercancel', onUp);
+        }
+
+        leftResizer.addEventListener('pointermove', onMove);
+        leftResizer.addEventListener('pointerup', onUp);
+        leftResizer.addEventListener('pointercancel', onUp);
+      });
+
+      leftResizer.addEventListener('dblclick', function () {
+        removeCssVar(root, '--user-left-rail-w');
+        try { localStorage.removeItem('ada-left-rail-w'); } catch (_) {}
+      });
+
+      leftResizer.addEventListener('keydown', function (e) {
+        var railEl = document.getElementById('rail');
+        var curW = (railEl && railEl.getBoundingClientRect && Math.round(railEl.getBoundingClientRect().width)) || 264;
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+          e.preventDefault();
+          var nextW = Math.max(180, Math.min(420, curW + (e.key === 'ArrowRight' ? 16 : -16)));
+          setCssVar(root, '--user-left-rail-w', nextW + 'px');
+          setAttrSafe(leftResizer, 'aria-valuenow', nextW);
+          try { localStorage.setItem('ada-left-rail-w', String(nextW)); } catch (_) {}
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          removeCssVar(root, '--user-left-rail-w');
+          try { localStorage.removeItem('ada-left-rail-w'); } catch (_) {}
+        }
+      });
+    }
+
+    // Right Sidebar Drag Resizer (#rightRailResizer) — resizes #workbenchDock OR #onThisStop
+    var rightResizer = document.getElementById('rightRailResizer');
+    if (rightResizer && rightResizer.addEventListener) {
+      rightResizer.addEventListener('pointerdown', function (e) {
+        if (e.button && e.button !== 0) return;
+        e.preventDefault();
+        if (rightResizer.setPointerCapture && e.pointerId != null) {
+          try { rightResizer.setPointerCapture(e.pointerId); } catch (_) {}
+        }
+        rightResizer.classList.add('is-dragging');
+        root.classList.add('is-resizing-panels');
+        var shellRight = shell && shell.getBoundingClientRect
+          ? shell.getBoundingClientRect().right
+          : (window.innerWidth || 1280);
+        var isWb = document.body && document.body.classList && document.body.classList.contains('workbench-mode');
+
+        function onMove(ev) {
+          var rawW = Math.round(shellRight - ev.clientX);
+          if (isWb) {
+            var maxWb = Math.min(1080, Math.floor((window.innerWidth || 1280) * 0.64));
+            var wWb = Math.max(320, Math.min(maxWb, rawW));
+            setCssVar(root, '--user-wb-w', wWb + 'px');
+            setAttrSafe(rightResizer, 'aria-valuenow', wWb);
+            try { localStorage.setItem('ada-wb-w', wWb + 'px'); } catch (_) {}
+          } else {
+            var maxOts = Math.min(380, Math.floor((window.innerWidth || 1280) * 0.30));
+            var wOts = Math.max(200, Math.min(maxOts, rawW));
+            setCssVar(root, '--user-ots-w', wOts + 'px');
+            setAttrSafe(rightResizer, 'aria-valuenow', wOts);
+            try { localStorage.setItem('ada-ots-w', String(wOts)); } catch (_) {}
+          }
+        }
+
+        function onUp() {
+          rightResizer.classList.remove('is-dragging');
+          root.classList.remove('is-resizing-panels');
+          rightResizer.removeEventListener('pointermove', onMove);
+          rightResizer.removeEventListener('pointerup', onUp);
+          rightResizer.removeEventListener('pointercancel', onUp);
+        }
+
+        rightResizer.addEventListener('pointermove', onMove);
+        rightResizer.addEventListener('pointerup', onUp);
+        rightResizer.addEventListener('pointercancel', onUp);
+      });
+
+      rightResizer.addEventListener('dblclick', function () {
+        var isWb = document.body && document.body.classList && document.body.classList.contains('workbench-mode');
+        if (isWb) {
+          removeCssVar(root, '--user-wb-w');
+          try { localStorage.removeItem('ada-wb-w'); } catch (_) {}
+        } else {
+          removeCssVar(root, '--user-ots-w');
+          try { localStorage.removeItem('ada-ots-w'); } catch (_) {}
+        }
+      });
+
+      rightResizer.addEventListener('keydown', function (e) {
+        var isWb = document.body && document.body.classList && document.body.classList.contains('workbench-mode');
+        var pane = document.getElementById(isWb ? 'workbenchDock' : 'onThisStop');
+        var curW = (pane && pane.getBoundingClientRect && Math.round(pane.getBoundingClientRect().width)) || (isWb ? 520 : 252);
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+          e.preventDefault();
+          var delta = e.key === 'ArrowLeft' ? 20 : -20; // Moving divider left widens right pane
+          if (isWb) {
+            var nextWb = Math.max(320, Math.min(1040, curW + delta));
+            setCssVar(root, '--user-wb-w', nextWb + 'px');
+            try { localStorage.setItem('ada-wb-w', nextWb + 'px'); } catch (_) {}
+          } else {
+            var nextOts = Math.max(200, Math.min(380, curW + delta));
+            setCssVar(root, '--user-ots-w', nextOts + 'px');
+            try { localStorage.setItem('ada-ots-w', String(nextOts)); } catch (_) {}
+          }
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (isWb) {
+            removeCssVar(root, '--user-wb-w');
+            try { localStorage.removeItem('ada-wb-w'); } catch (_) {}
+          } else {
+            removeCssVar(root, '--user-ots-w');
+            try { localStorage.removeItem('ada-ots-w'); } catch (_) {}
+          }
+        }
+      });
+    }
+
+    if (typeof window !== 'undefined' && window.addEventListener) {
+      window.addEventListener('resize', syncSidebarControlStates, { passive: true });
+    }
+    syncSidebarControlStates();
   }
 
   function attachDialogLightDismiss(dialog) {
@@ -606,16 +1034,17 @@
       try { localStorage.setItem('ada-last-stop', activeRoute); } catch (_) {}
     }
 
-    // 1. Prepend "🗺️ Command Hub" link at top of #navLines & auto-scroll #rail to active link
+    // 1. Prepend clean "🗺️ Command Hub" card at top of #navLines & auto-scroll #rail to active link
     var navLines = document.getElementById('navLines');
     if (navLines && navLines.querySelector && !navLines.querySelector('[data-id="hub"]')) {
-      var hubWrap = document.createElement('div');
-      hubWrap.className = 'line-group';
-      hubWrap.style.marginBottom = '10px';
+      var hubLink = document.createElement('a');
       var isHubActive = (activeRoute === 'hub' || activeRoute === 'index');
-      hubWrap.innerHTML = '<ul class="stations" style="padding:0"><li style="list-style:none"><a href="' + resolveInternalHref('#hub', ctx) + '" data-id="hub" class="' + (isHubActive ? 'active' : '') + '"><span class="dot" style="border-color:var(--fs-accent)" aria-hidden="true"></span><span class="num">🗺️</span><span>Command Hub (Overview)</span></a></li></ul>';
-      if (navLines.firstChild) navLines.insertBefore(hubWrap, navLines.firstChild);
-      else navLines.appendChild(hubWrap);
+      hubLink.href = resolveInternalHref('#hub', ctx);
+      setAttrSafe(hubLink, 'data-id', 'hub');
+      hubLink.className = 'hub-nav-card' + (isHubActive ? ' active' : '');
+      hubLink.innerHTML = '<span aria-hidden="true">🗺️</span><span>Command Hub (Overview)</span>';
+      if (navLines.firstChild) navLines.insertBefore(hubLink, navLines.firstChild);
+      else navLines.appendChild(hubLink);
     }
 
     var rail = document.getElementById('rail');
@@ -645,8 +1074,6 @@
         var raw = a.getAttribute('href');
         if (!raw || raw === '#') return;
         var targetId = raw.slice(1);
-        var activeSec = getActiveStageSection();
-        // If targetId is an in-page element inside #activeStopStage, let native smooth scroll handle it
         var stage = document.getElementById('activeStopStage');
         var targetEl = document.getElementById(targetId);
         if (targetEl && stage && stage.contains && stage.contains(targetEl)) {
@@ -690,7 +1117,7 @@
       });
     }
 
-    // 5. Support ?q= query parameter and ★ Starred filter on ladder.html
+    // 5. Support ?q= query parameter on ladder.html
     if (activeRoute === 'ladder' && typeof location !== 'undefined') {
       var ladLab = document.querySelector('.lab[data-w="ladder2"]');
       var qInput = ladLab && ladLab.querySelector ? ladLab.querySelector('input[type="search"]') : null;
@@ -713,6 +1140,19 @@
         setTimeout(populateOnThisStop, 10);
       });
     }
+
+    // 7. Floating Back-to-Top button (#backToTopBtn)
+    var backToTopBtn = document.getElementById('backToTopBtn');
+    if (backToTopBtn && typeof window !== 'undefined' && window.addEventListener) {
+      var updateBackToTop = function () {
+        backToTopBtn.hidden = !((window.scrollY || window.pageYOffset || 0) > 480);
+      };
+      window.addEventListener('scroll', updateBackToTop, { passive: true });
+      updateBackToTop();
+      backToTopBtn.addEventListener('click', function () {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    }
   }
 
   function initDomBindings() {
@@ -720,6 +1160,17 @@
     populateOnThisStop();
     refreshHubMetrics();
     enhanceNavigationAndSearch();
+    syncThemeControls();
+    initResizableAndCollapsibleSidebars();
+
+    // Prime Workbench tab counts even when Workbench starts closed
+    var dock = document.getElementById('workbenchDock');
+    var activeSec = getActiveStageSection();
+    if (dock) {
+      var secGroup = (activeSec && activeSec.getAttribute && activeSec.getAttribute('data-group')) || 'found';
+      setAttrSafe(dock, 'data-group', secGroup);
+      updateWorkbenchTabBadges(dock, getStopWorkbenchCounts(activeSec), !!activeSec);
+    }
 
     // Restore Workbench split state if kept open in sessionStorage
     try {
@@ -745,21 +1196,29 @@
     var topThemeBtn = document.getElementById('topThemeBtn');
     if (topThemeBtn) {
       topThemeBtn.addEventListener('click', function () {
-        var railThemeBtn = document.getElementById('themeBtn');
-        if (railThemeBtn) {
-          railThemeBtn.click();
-        }
-        var cur = document.documentElement.getAttribute('data-theme');
-        var meta = document.querySelector && document.querySelector('meta[name="color-scheme"]');
-        if (meta && (cur === 'dark' || cur === 'light')) meta.content = cur;
+        var next = getEffectiveTheme() === 'dark' ? 'light' : 'dark';
+        setThemeExplicit(next);
       });
     }
 
-    var dock = document.getElementById('workbenchDock');
+    var railThemeBtn = document.getElementById('themeBtn');
+    if (railThemeBtn && railThemeBtn.addEventListener) {
+      railThemeBtn.addEventListener('click', function () {
+        setTimeout(syncThemeControls, 0);
+      });
+    }
+
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      var mqDark = window.matchMedia('(prefers-color-scheme: dark)');
+      if (mqDark && mqDark.addEventListener) {
+        mqDark.addEventListener('change', syncThemeControls);
+      }
+    }
+
     if (dock && dock.querySelectorAll) {
       Array.prototype.forEach.call(dock.querySelectorAll('.wb-tab'), function (tabBtn) {
         tabBtn.addEventListener('click', function () {
-          renderWorkbenchTab(tabBtn.dataset.wbTab);
+          renderWorkbenchTab(tabBtn.dataset.wbTab, false);
         });
       });
     }
@@ -835,7 +1294,7 @@
       });
     }
 
-    // Listen for live progress changes
+    // Listen for live progress changes & global keyboard shortcuts
     if (typeof window !== 'undefined' && window.addEventListener) {
       window.addEventListener('ada-ladder-change', refreshHubMetrics);
       window.addEventListener('ada-store-imported', refreshHubMetrics);
@@ -843,6 +1302,36 @@
         if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
           e.preventDefault();
           if (cmdBtn) cmdBtn.click();
+          return;
+        }
+        var t = e.target;
+        var tag = t && t.tagName ? t.tagName.toUpperCase() : '';
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (t && t.isContentEditable)) return;
+        if ((cmdDlg && cmdDlg.open) || (expDlg && expDlg.open)) return;
+
+        if (e.altKey && !e.metaKey && !e.ctrlKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+          var pagerLinks = document.querySelectorAll && document.querySelectorAll('.stop-pager a');
+          if (pagerLinks && pagerLinks.length) {
+            var targetLink = e.key === 'ArrowLeft' ? pagerLinks[0] : pagerLinks[pagerLinks.length - 1];
+            if (targetLink && targetLink.href) {
+              e.preventDefault();
+              location.href = targetLink.href;
+            }
+          }
+          return;
+        }
+
+        if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+          if (e.key === '[') {
+            e.preventDefault();
+            toggleLeftSidebar();
+          } else if (e.key === ']') {
+            e.preventDefault();
+            toggleRightSidebar();
+          } else if (e.key === '\\') {
+            e.preventDefault();
+            toggleWorkbench();
+          }
         }
       });
 
@@ -879,6 +1368,10 @@
     buildStopTocData: buildStopTocData,
     renderWorkbenchTab: renderWorkbenchTab,
     toggleWorkbench: toggleWorkbench,
+    toggleLeftSidebar: toggleLeftSidebar,
+    toggleRightSidebar: toggleRightSidebar,
+    cycleWorkbenchWidth: cycleWorkbenchWidth,
+    setThemeExplicit: setThemeExplicit,
     refreshHubMetrics: refreshHubMetrics
   };
 })();

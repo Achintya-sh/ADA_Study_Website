@@ -170,7 +170,8 @@ def rewrite_links_for_context(fragment_html, page_kind):
 def build_top_bar_html(page_kind, active_num, active_title):
     prefix = '../' if page_kind in ('stop', 'exam') else ''
     return f'''<div id="siteTopBar" role="banner">
-  <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+  <div style="display:flex;align-items:center;gap:8px;min-width:0;">
+    <button type="button" id="leftRailToggleBtn" class="stb-btn stb-icon-btn" aria-controls="rail" aria-expanded="true" title="Toggle Study Map sidebar ([)" aria-label="Toggle Study Map sidebar">◧</button>
     <a class="stb-brand" href="{prefix}hub.html">
       <span class="stb-mark">ADA</span>
       <span class="stb-brand-text">GOD OF ADA</span>
@@ -184,9 +185,10 @@ def build_top_bar_html(page_kind, active_num, active_title):
   <div class="stb-actions">
     <a class="stb-btn" href="{prefix}hub.html" title="Command Hub">🗺️ <span class="stb-lbl">Hub</span></a>
     <a class="stb-btn" href="{prefix}ladder.html" title="380-Problem Ladder">🪜 <span class="stb-lbl">Ladder (380)</span></a>
-    <button type="button" id="workbenchBtn" class="stb-btn" title="Toggle 50/50 Split Workbench">⧉ <span class="stb-lbl-md">Workbench Split</span></button>
+    <button type="button" id="workbenchBtn" class="stb-btn" aria-pressed="false" title="Toggle Split Workbench (\\)">⧉ <span class="stb-lbl-md">Workbench Split</span></button>
+    <button type="button" id="rightRailToggleBtn" class="stb-btn stb-icon-btn" aria-expanded="true" title="Toggle Right Sidebar (])" aria-label="Toggle Right Sidebar">◨</button>
     <button type="button" id="exportImportBtn" class="stb-btn" title="Export or Import Progress JSON">⇅ <span class="stb-lbl-md">Backup / Sync</span></button>
-    <button type="button" id="topThemeBtn" class="stb-btn" title="Switch light or dark theme" aria-label="Switch light or dark theme">◐</button>
+    <button type="button" id="topThemeBtn" class="stb-btn stb-icon-btn" title="Switch light or dark theme" aria-label="Switch light or dark theme">◐</button>
   </div>
 </div>'''
 
@@ -200,6 +202,13 @@ def build_dialogs_html():
   <div class="ada-dlg-body">
     <input type="search" id="cmdSearchInput" placeholder="Type e.g. Dijkstra, Kahn, Tree DP, Chakravyuh, LC 743…" style="width:100%;padding:9px 12px;border-radius:6px;border:1px solid var(--fs-border);background:var(--fs-raised);color:var(--fs-text);font-size:14px;" />
     <div id="cmdSearchResults" class="cmd-results"></div>
+  </div>
+  <div class="ada-dlg-foot">
+    <span><kbd>⌘K</kbd> Search</span>
+    <span><kbd>[</kbd> Study Map</span>
+    <span><kbd>]</kbd> Right Pane</span>
+    <span><kbd>\\</kbd> Workbench</span>
+    <span><kbd>Alt</kbd>+<kbd>←</kbd>/<kbd>→</kbd> Prev/Next Stop</span>
   </div>
 </dialog>
 
@@ -217,16 +226,19 @@ def build_dialogs_html():
     <textarea id="importJsonTextarea" rows="7" placeholder=\'{"app":"ada-notebook","schema":1,"data":{...}}\' style="width:100%;font-family:\'IBM Plex Mono\',monospace;font-size:12px;padding:10px;border-radius:6px;border:1px solid var(--fs-border);background:var(--fs-raised);color:var(--fs-text);"></textarea>
     <div id="importFeedbackMsg" style="margin-top:8px;font-size:13px;font-weight:500;"></div>
   </div>
-</dialog>'''
+</dialog>
+
+<button type="button" id="backToTopBtn" class="stb-btn back-to-top-btn" hidden aria-label="Scroll back to top" title="Scroll back to top">↑ Top</button>'''
 
 
 def build_right_rails_html(page_kind):
     prefix = '../' if page_kind in ('stop', 'exam') else ''
-    return f'''<aside id="onThisStop" aria-label="On this stop">
+    return f'''<div id="rightRailResizer" class="ada-resizer" role="separator" aria-orientation="vertical" aria-label="Resize right sidebar" tabindex="0" title="Drag to resize right pane · Double-click to reset"></div>
+<aside id="onThisStop" aria-label="On this stop">
   <div class="ots-card">
     <div class="ots-title">
       <span>On This Stop</span>
-      <span>Outline</span>
+      <button type="button" id="otsCollapseBtn" class="ots-collapse-btn" title="Collapse Outline (])" aria-label="Collapse Outline sidebar">»</button>
     </div>
     <button type="button" id="otsDoneBtn" class="stb-btn" style="width:100%;justify-content:center;margin-bottom:10px;font-weight:600;">○ Mark Stop Understood</button>
     <ul id="onThisStopList" class="ots-list"></ul>
@@ -246,14 +258,15 @@ def build_right_rails_html(page_kind):
   </div>
 </aside>
 
-<aside id="workbenchDock" aria-label="Interactive Workbench Split Pane">
+<aside id="workbenchDock" data-group="found" aria-label="Interactive Workbench Split Pane">
   <div class="wb-header">
-    <strong style="font-size:13px;">Interactive Workbench</strong>
+    <strong style="font-size:13px;white-space:nowrap;">Interactive Workbench</strong>
     <div class="wb-tabs">
       <button type="button" class="wb-tab active" data-wb-tab="code">Code</button>
       <button type="button" class="wb-tab" data-wb-tab="labs">Labs</button>
       <button type="button" class="wb-tab" data-wb-tab="quiz">Quiz</button>
-      <button type="button" id="workbenchCloseBtn" class="wb-close-btn" title="Close Split Workbench" aria-label="Close Split Workbench">✕</button>
+      <button type="button" id="wbWidthCycleBtn" class="wb-close-btn" title="Cycle Workbench width (Compact / 50-50 / Wide)" aria-label="Cycle Workbench width">⇔</button>
+      <button type="button" id="workbenchCloseBtn" class="wb-close-btn" title="Close Split Workbench (\\)" aria-label="Close Split Workbench">✕</button>
     </div>
   </div>
   <div id="workbenchBody" class="wb-body"></div>
@@ -407,14 +420,14 @@ def render_route_page(base_html, sections_map, active_ids, page_kind, page_title
     """Assemble a standalone multi-page HTML document for a specific route."""
     prefix = '../' if page_kind in ('stop', 'exam') else ''
 
-    # 1. Inject <meta name="color-scheme" content="light dark">, pre-paint ada-theme2 bootstrap, and site.css
+    # 1. Inject <meta name="color-scheme" content="light dark">, pre-paint ada-theme2 + sidebar state bootstrap, and site.css
     head_inject = f'''<meta name="color-scheme" content="light dark">
-<script>try{{var t=JSON.parse(localStorage.getItem("ada-theme2"));if(!t)t=localStorage.getItem("color-scheme");if(t==="dark"||t==="light"){{document.documentElement.setAttribute("data-theme",t);document.querySelector('meta[name="color-scheme"]').content=t;}}}}catch(_){{}}</script>
+<script>try{{var r=document.documentElement,t=JSON.parse(localStorage.getItem("ada-theme2"));if(!t)t=localStorage.getItem("color-scheme");if(t==="dark"||t==="light"){{r.setAttribute("data-theme",t);document.querySelector('meta[name="color-scheme"]').content=t;}}var lc=localStorage.getItem("ada-left-collapsed");if(lc==="1")r.setAttribute("data-left-collapsed","1");var oc=localStorage.getItem("ada-ots-collapsed");if(oc==="1"||oc==="0")r.setAttribute("data-ots-collapsed",oc);var lw=parseInt(localStorage.getItem("ada-left-rail-w")||"",10);if(lw>=180&&lw<=420)r.style.setProperty("--user-left-rail-w",lw+"px");var ow=parseInt(localStorage.getItem("ada-ots-w")||"",10);if(ow>=200&&ow<=380)r.style.setProperty("--user-ots-w",ow+"px");var ww=localStorage.getItem("ada-wb-w");if(ww&&/^(\\d{{3,4}}px|\\d{{2}}vw)$/.test(ww))r.style.setProperty("--user-wb-w",ww);}}catch(_){{}}</script>
 <link rel="manifest" href="{prefix}manifest.json">
 <link rel="stylesheet" href="{prefix}assets/site.css">'''
 
     h = re.sub(r'<title>.*?</title>',
-               f'<title>{page_title} — GOD OF ADA</title>\n' + head_inject, base_html, count=1)
+               lambda _: f'<title>{page_title} — GOD OF ADA</title>\n' + head_inject, base_html, count=1)
     # Remove the redundant inline <style>...</style> block because dist/assets/site.css already contains base_css + redesign_css in the right cascade order
     h = re.sub(r'<style>[\s\S]*?</style>\s*', '', h, count=1)
 
@@ -468,10 +481,13 @@ def render_route_page(base_html, sections_map, active_ids, page_kind, page_title
 
     h = h[:main_start] + new_main_inner + h[h.index('</main>'):]
 
-    # 4. Inject Top Bar right after <body ...> and Right Rails right after </main>
+    # 4. Inject Top Bar right after <body ...>, Left Resizer before <main>, and Right Rails right after </main>
     body_tag_end = h.index('>', h.index('<body')) + 1
     top_bar = build_top_bar_html(page_kind, badge_num, page_title)
     h = h[:body_tag_end] + '\n' + top_bar + '\n' + h[body_tag_end:]
+
+    left_resizer = '<div id="leftRailResizer" class="ada-resizer" role="separator" aria-orientation="vertical" aria-label="Resize Study Map sidebar" aria-controls="rail" tabindex="0" title="Drag to resize Study Map · Double-click to reset"></div>'
+    h = h.replace('<main class="main" id="main">', left_resizer + '\n<main class="main" id="main">', 1)
 
     main_close = h.index('</main>') + len('</main>')
     right_rails = build_right_rails_html(page_kind)
@@ -522,7 +538,7 @@ def write_pwa_files():
     exam_routes = [f"'./exam/{eid}.html'" for eid, _, _, _ in EXAM_ORDER]
     extra_assets = ',\n  '.join(stop_routes + exam_routes)
 
-    sw_code = f"""const CACHE_NAME = 'ada-atlas-v5-2';
+    sw_code = f"""const CACHE_NAME = 'ada-atlas-v5-3';
 const CORE_ASSETS = [
   './',
   './index.html',

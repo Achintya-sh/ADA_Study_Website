@@ -115,18 +115,73 @@ def main():
     check(hub_html.count('<div') == hub_html.count('</div>'),
           '[SCR-6] hub.html has balanced <div> tags')
 
-    # Verify zero duplicate HTML element IDs in ch0.html, ch12.html, hub.html, ladder.html, mock.html
-    for rel_page in ['stops/ch0.html', 'stops/ch12.html', 'hub.html', 'ladder.html', 'exam/mock.html']:
+    # 4c. Verify Theme Readability, WCAG AA Contrast (>= 4.5:1), and Resizable/Collapsible Sidebars
+    check('--lc: var(--l-found)' in site_css and '--f-sans:' in site_css,
+          '[THM-3] :root defines --lc and --f-sans so docked labs/buttons never get transparent backgrounds')
+    check('html[data-theme="light"]' in site_css and 'html[data-theme="dark"]' in site_css,
+          '[THM-4] site.css defines explicit html[data-theme="light"] and html[data-theme="dark"] overrides')
+    check('.wb-body svg text' in site_css and ':is(.topic, .wb-body) svg text.sub' in site_css,
+          '[THM-5] site.css styles SVG text inside docked .wb-body and preserves .sub muted fills')
+    check('.box > .lbl[data-ico="➕"]::before' in site_css,
+          '[THM-6] site.css replaces dark color-emoji U+2795 with accessible high-contrast warning glyph')
+    check('overscroll-behavior: contain' in site_css and 'scrollbar-width: thin' in site_css,
+          '[QOL-1] site.css prevents sidebar/modal scroll chaining and styles thin scrollbars')
+
+    for ctrl_id in ['leftRailToggleBtn', 'rightRailToggleBtn', 'leftRailResizer', 'rightRailResizer', 'otsCollapseBtn', 'wbWidthCycleBtn', 'backToTopBtn']:
+        check(f'id="{ctrl_id}"' in ch12_html, f'[QOL-2] ch12.html includes #{ctrl_id}')
+
+    # Programmatic WCAG AA (>= 4.5:1) check on Light and Dark mode tokens in site_redesign.css
+    def _srgb(c):
+        c = c / 255.0
+        return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+    def _lum(h):
+        h = h.lstrip('#')
+        return 0.2126 * _srgb(int(h[0:2], 16)) + 0.7152 * _srgb(int(h[2:4], 16)) + 0.0722 * _srgb(int(h[4:6], 16))
+    def _contrast(a, b):
+        la, lb = _lum(a), _lum(b)
+        return (max(la, lb) + 0.05) / (min(la, lb) + 0.05)
+
+    wcag_pairs = [
+        ('Light .lab-h found', '#254edb', '#ffffff'),
+        ('Light .lab-h trees', '#1e7336', '#ffffff'),
+        ('Light .lab-h graph', '#b83b0a', '#ffffff'),
+        ('Light .tip > .lbl', '#146932', '#e5f5eb'),
+        ('Light .warnbox > .lbl', '#7c4d00', '#fff3d6'),
+        ('Light .trap > .lbl', '#a82520', '#fbe9e8'),
+        ('Dark .lab-h found', '#82a2ff', '#091118'),
+        ('Dark .lab-h trees', '#54cb77', '#091118'),
+        ('Dark .lab-h graph', '#fc9258', '#091118'),
+        ('Dark .tip > .lbl', '#66da94', '#15301f'),
+        ('Dark .warnbox > .lbl', '#f7c95c', '#3a2d0e'),
+        ('Dark .trap > .lbl', '#ff8880', '#3a1a19'),
+        ('Dark code comment', '#94a3b8', '#0b0e15'),
+    ]
+    for label, fg_hex, bg_hex in wcag_pairs:
+        ratio = _contrast(fg_hex, bg_hex)
+        check(ratio >= 4.5, f'[WCAG-AA] {label} contrast {ratio:.2f}:1 >= 4.5:1')
+
+    # Verify zero duplicate HTML element IDs and balanced <div> tags across ALL 39 multi-page routes
+    all_rel_pages = (
+        ['hub.html', 'index.html', 'ladder.html'] +
+        [f'stops/{s}.html' for s in stop_ids] +
+        [f'exam/{e}.html' for e in exam_ids]
+    )
+    dup_pages = []
+    unbalanced_pages = []
+    for rel_page in all_rel_pages:
         raw = open(os.path.join(DIST, rel_page), encoding='utf-8').read()
+        if raw.count('<div') != raw.count('</div>'):
+            unbalanced_pages.append(rel_page)
         raw_clean = re.sub(r'<(?:script|style)\b[^>]*>[\s\S]*?</(?:script|style)>', '', raw)
         ids = re.findall(r'\s+id="([^"]+)"', raw_clean)
         seen = set()
-        dups = set()
         for i in ids:
             if i in seen:
-                dups.add(i)
+                dup_pages.append(f'{rel_page}:{i}')
+                break
             seen.add(i)
-        check(len(dups) == 0, f'zero duplicate HTML IDs in dist/{rel_page} (dups: {sorted(list(dups))[:5]})')
+    check(len(dup_pages) == 0, f'zero duplicate HTML IDs across all {len(all_rel_pages)} routes (dups: {dup_pages[:5]})')
+    check(len(unbalanced_pages) == 0, f'balanced <div> tags across all {len(all_rel_pages)} routes (bad: {unbalanced_pages[:5]})')
 
     sw_js = open(os.path.join(DIST, 'sw.js'), encoding='utf-8').read()
     check('./stops/ch12.html' in sw_js and './exam/mock.html' in sw_js,
@@ -165,6 +220,7 @@ global.QUIZ = quizzesJson;
 // Minimal DOM harness for site_shell.js unit checks
 const elements = {};
 function makeEl(tag, id) {
+  const attrs = {};
   const el = {
     tagName: (tag || 'DIV').toUpperCase(),
     id: id || '',
@@ -174,7 +230,10 @@ function makeEl(tag, id) {
     value: '',
     open: false,
     dataset: {},
-    style: {},
+    style: {
+      setProperty(k, v) { this[k] = v; },
+      removeProperty(k) { delete this[k]; }
+    },
     children: [],
     classList: {
       _set: new Set(),
@@ -190,8 +249,9 @@ function makeEl(tag, id) {
       },
       contains(c) { return this._set.has(c); }
     },
-    getAttribute(a) { return this[a] || null; },
-    setAttribute(a, v) { this[a] = v; },
+    getAttribute(a) { return Object.prototype.hasOwnProperty.call(attrs, a) ? attrs[a] : null; },
+    setAttribute(a, v) { attrs[a] = String(v); },
+    removeAttribute(a) { delete attrs[a]; },
     appendChild(c) { this.children.push(c); return c; },
     addEventListener(ev, fn) { this['_on_' + ev] = fn; },
     querySelectorAll() { return []; },
@@ -204,12 +264,39 @@ function makeEl(tag, id) {
   return el;
 }
 
+const metaColorScheme = makeEl('meta', 'metaColorScheme');
+metaColorScheme.content = 'light dark';
+const topThemeBtn = makeEl('button', 'topThemeBtn');
+const wbDock = makeEl('aside', 'workbenchDock');
+const wbBody = makeEl('div', 'workbenchBody');
+const wbTabCode = makeEl('button'); wbTabCode.dataset.wbTab = 'code';
+const wbTabLabs = makeEl('button'); wbTabLabs.dataset.wbTab = 'labs';
+const wbTabQuiz = makeEl('button'); wbTabQuiz.dataset.wbTab = 'quiz';
+wbDock.querySelectorAll = (sel) => sel === '.wb-tab' ? [wbTabCode, wbTabLabs, wbTabQuiz] : [];
+makeEl('aside', 'onThisStop');
+makeEl('button', 'leftRailToggleBtn');
+makeEl('button', 'rightRailToggleBtn');
+makeEl('button', 'workbenchBtn');
+
+const mockStage = makeEl('div', 'activeStopStage');
+const mockSec = makeEl('section', 'ch12');
+mockSec.setAttribute('data-group', 'graph');
+mockSec.querySelectorAll = (sel) => {
+  if (sel === 'pre.code') return [];
+  if (sel === '.lab') return [makeEl('div')];
+  if (sel === '.quiz') return [makeEl('div')];
+  if (sel === '.quiz .q') return [makeEl('div'), makeEl('div'), makeEl('div')];
+  return [];
+};
+mockStage.querySelector = (sel) => sel === 'section.topic' ? mockSec : null;
+
 global.document = {
   body: makeEl('body', 'body'),
   documentElement: makeEl('html', 'html'),
   head: makeEl('head', 'head'),
   getElementById(id) { return elements[id] || null; },
   querySelector(sel) {
+    if (sel === 'meta[name="color-scheme"]') return metaColorScheme;
     if (sel.startsWith('#')) return elements[sel.slice(1)] || null;
     return null;
   },
@@ -217,6 +304,8 @@ global.document = {
   createElement(tag) { return makeEl(tag); },
   addEventListener() {}
 };
+document.body.dataset.pageKind = 'stop';
+document.body.dataset.activeRoute = 'ch12';
 
 eval(storeCode);
 eval(shellCode);
@@ -224,6 +313,8 @@ eval(shellCode);
 assert(typeof window.ADASiteShell === 'object', 'window.ADASiteShell is exported');
 assert(typeof window.ADASiteShell.searchCorpus === 'function', 'ADASiteShell.searchCorpus is defined');
 assert(typeof window.ADASiteShell.toggleWorkbench === 'function', 'ADASiteShell.toggleWorkbench is defined');
+assert(typeof window.ADASiteShell.toggleLeftSidebar === 'function', 'ADASiteShell.toggleLeftSidebar is defined');
+assert(typeof window.ADASiteShell.toggleRightSidebar === 'function', 'ADASiteShell.toggleRightSidebar is defined');
 assert(typeof window.ADASiteShell.buildStopTocData === 'function', 'ADASiteShell.buildStopTocData is defined');
 
 // Test searchCorpus('Dijkstra') across stops and 380 Ladder problems
@@ -232,11 +323,39 @@ assert(Array.isArray(hits) && hits.length >= 3, 'searchCorpus("Dijkstra") return
 assert(hits.some(h => h.kind === 'stop' && h.id === 'ch12'), 'searchCorpus("Dijkstra") includes Stop 12');
 assert(hits.some(h => h.kind === 'ladder'), 'searchCorpus("Dijkstra") includes Ladder problems');
 
-// Test toggleWorkbench state machine
+// Test toggleWorkbench state machine + data-group propagation + empty Code tab auto-fallback + tab counts
 window.ADASiteShell.toggleWorkbench(true);
 assert(document.body.classList.contains('workbench-mode'), 'toggleWorkbench(true) adds .workbench-mode class to body');
+assert(wbDock.getAttribute('data-group') === 'graph', 'Workbench inherits active section data-group="graph" for --lc header styling');
+assert(wbTabLabs.classList.contains('active'), 'Workbench auto-selects Labs tab when Code tab has 0 templates on the stop');
+assert(wbTabCode.textContent === 'Code (0)' && wbTabLabs.textContent === 'Labs (1)' && wbTabQuiz.textContent === 'Quiz (3)',
+  'Workbench stamps item counts onto Code/Labs/Quiz tabs');
 window.ADASiteShell.toggleWorkbench(false);
 assert(!document.body.classList.contains('workbench-mode'), 'toggleWorkbench(false) removes .workbench-mode class from body');
+
+// Test collapsible Left & Right sidebars + width preset cycling + theme sync
+assert(window.ADASiteShell.toggleLeftSidebar(false) === false, 'toggleLeftSidebar(false) collapses left sidebar');
+assert(document.documentElement.getAttribute('data-left-collapsed') === '1' && localStorage.getItem('ada-left-collapsed') === '1',
+  'left sidebar collapse persists data-left-collapsed="1"');
+assert(window.ADASiteShell.toggleLeftSidebar(true) === true && document.documentElement.getAttribute('data-left-collapsed') === null,
+  'toggleLeftSidebar(true) expands left sidebar');
+
+assert(window.ADASiteShell.toggleRightSidebar(false) === false, 'toggleRightSidebar(false) collapses right outline');
+assert(document.documentElement.getAttribute('data-ots-collapsed') === '1' && localStorage.getItem('ada-ots-collapsed') === '1',
+  'right sidebar collapse persists data-ots-collapsed="1"');
+assert(window.ADASiteShell.toggleRightSidebar(true) === true && document.documentElement.getAttribute('data-ots-collapsed') === '0',
+  'toggleRightSidebar(true) expands right outline');
+
+window.ADASiteShell.cycleWorkbenchWidth();
+assert(document.documentElement.style['--user-wb-w'] === '36vw' && localStorage.getItem('ada-wb-w') === '36vw',
+  'cycleWorkbenchWidth() sets and persists --user-wb-w preset');
+
+window.ADASiteShell.setThemeExplicit('dark');
+assert(document.documentElement.getAttribute('data-theme') === 'dark' && metaColorScheme.content === 'dark' && topThemeBtn.textContent === '☀️',
+  'setThemeExplicit("dark") syncs html[data-theme], <meta name="color-scheme">, and #topThemeBtn');
+window.ADASiteShell.setThemeExplicit('light');
+assert(document.documentElement.getAttribute('data-theme') === 'light' && metaColorScheme.content === 'light' && topThemeBtn.textContent === '🌙',
+  'setThemeExplicit("light") syncs html[data-theme], <meta name="color-scheme">, and #topThemeBtn');
 
 // Test resolveInternalHref for cross-page navigation (Review Focus #3)
 assert(window.ADASiteShell.resolveInternalHref('#ch12', 'stop') === 'ch12.html', 'resolveInternalHref maps #ch12 -> ch12.html from /stops/*');

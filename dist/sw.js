@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ada-atlas-v5-2';
+const CACHE_NAME = 'ada-atlas-v5-3';
 const CORE_ASSETS = [
   './',
   './index.html',

@@ -427,24 +427,60 @@ th{white-space:nowrap}
 
 :root {
   color-scheme: light dark;
+  --f-sans: "IBM Plex Sans", "Atkinson Hyperlegible", system-ui, -apple-system, sans-serif;
   --fs-ground: #f9fbfc;
   --fs-surface: #ffffff;
   --fs-raised: #f4f6f8;
-  --fs-active: #ebedee;
-  --fs-border: #e8eaec;
-  --fs-rule: #f0f1f2;
+  --fs-active: #e8ecf0;
+  --fs-border: #dce0e5;
+  --fs-rule: #eceef1;
   --fs-text: #131416;
-  --fs-muted: #5d5f60;
-  --fs-accent: #1b6c80;
-  --fs-positive: #1e7b4f;
-  --fs-negative: #c4242a;
-  --fs-warning: #92400e;
+  --fs-muted: #525866;
+  --fs-accent: #155e70;
+  --fs-positive: #146932;
+  --fs-negative: #a82520;
+  --fs-warning: #7c4d00;
   --fs-radius-sheet: 16px;
   --fs-radius-card: 8px;
   --fs-radius-ctrl: 6px;
   --fs-topbar-h: 48px;
   --fs-sidebar-w: 264px;
-  --fs-toc-w: 248px;
+  --fs-toc-w: 252px;
+
+  /* Transit-line & semantic tokens tuned for WCAG AA (>= 5.7:1) in Light Mode */
+  --l-found: #254edb;
+  --l-trees: #1e7336;
+  --l-bt: #6d28d9;
+  --l-graph: #b83b0a;
+  --l-dp: #0c6983;
+  --l-exam: #ad1845;
+  --l-contest: #925806;
+  --lc: var(--l-found);
+  --on-lc: #ffffff;
+
+  --good: #146932;
+  --good-bg: #e5f5eb;
+  --bad: #a82520;
+  --bad-bg: #fbe9e8;
+  --warn: #7c4d00;
+  --warn-bg: #fff3d6;
+  --idea-bg: #e8eefd;
+  --anal-bg: #f2ebfd;
+  --hl: #ffe58a;
+
+  --accent: #254edb;
+  --accent-soft: #e3eafc;
+  --on-accent: #ffffff;
+  --cur: #b83b0a;
+  --c1: #254edb;
+  --c2: #146932;
+  --c3: #7c4d00;
+  --c4: #6d28d9;
+  --c5: #a82520;
+
+  --code-bg: #161b26;
+  --code-ink: #e8ecf4;
+  --code-c: #94a3b8;
 }
 
 :root:has(> head > meta[name="color-scheme"][content="dark"]) {
@@ -454,37 +490,158 @@ th{white-space:nowrap}
   color-scheme: light;
 }
 
+html[data-theme="light"],
+body[data-theme="light"] {
+  color-scheme: light;
+  --fs-ground: #f9fbfc;
+  --fs-surface: #ffffff;
+  --fs-raised: #f4f6f8;
+  --fs-active: #e8ecf0;
+  --fs-border: #dce0e5;
+  --fs-rule: #eceef1;
+  --fs-text: #131416;
+  --fs-muted: #525866;
+  --fs-accent: #155e70;
+  --fs-positive: #146932;
+  --fs-negative: #a82520;
+  --fs-warning: #7c4d00;
+  --l-found: #254edb;
+  --l-trees: #1e7336;
+  --l-bt: #6d28d9;
+  --l-graph: #b83b0a;
+  --l-dp: #0c6983;
+  --l-exam: #ad1845;
+  --l-contest: #925806;
+  --on-lc: #ffffff;
+  --good: #146932;
+  --good-bg: #e5f5eb;
+  --bad: #a82520;
+  --bad-bg: #fbe9e8;
+  --warn: #7c4d00;
+  --warn-bg: #fff3d6;
+  --idea-bg: #e8eefd;
+  --anal-bg: #f2ebfd;
+  --hl: #ffe58a;
+  --accent: #254edb;
+  --accent-soft: #e3eafc;
+  --on-accent: #ffffff;
+  --cur: #b83b0a;
+  --c1: #254edb;
+  --c2: #146932;
+  --c3: #7c4d00;
+  --c4: #6d28d9;
+  --c5: #a82520;
+  --code-bg: #161b26;
+  --code-ink: #e8ecf4;
+  --code-c: #94a3b8;
+}
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --fs-ground: #0c0e12;
     --fs-surface: #12151b;
     --fs-raised: #181c24;
     --fs-active: #1f2530;
-    --fs-border: #232936;
+    --fs-border: #262d3d;
     --fs-rule: #1c212b;
     --fs-text: #eef1f6;
-    --fs-muted: #8e96a4;
+    --fs-muted: #9ba3b2;
     --fs-accent: #38bdf8;
-    --fs-positive: #34d399;
-    --fs-negative: #f87171;
-    --fs-warning: #fbbf24;
+    --fs-positive: #66da94;
+    --fs-negative: #ff8880;
+    --fs-warning: #f7c95c;
+    --l-found: #82a2ff;
+    --l-trees: #54cb77;
+    --l-bt: #b994ff;
+    --l-graph: #fc9258;
+    --l-dp: #42c8e0;
+    --l-exam: #ff759c;
+    --l-contest: #ecc032;
+    --on-lc: #091118;
+    --good: #66da94;
+    --good-bg: #15301f;
+    --bad: #ff8880;
+    --bad-bg: #3a1a19;
+    --warn: #f7c95c;
+    --warn-bg: #3a2d0e;
+    --idea-bg: #182341;
+    --anal-bg: #25193d;
+    --hl: #5a4a0b;
+    --accent: #82a2ff;
+    --accent-soft: #1e2a4d;
+    --on-accent: #091118;
+    --cur: #ff9a5c;
+    --c1: #82a2ff;
+    --c2: #66da94;
+    --c3: #f7c95c;
+    --c4: #b994ff;
+    --c5: #ff8880;
+    --code-bg: #0b0e15;
+    --code-ink: #eef2f8;
+    --code-c: #94a3b8;
   }
 }
 
 html[data-theme="dark"],
 body[data-theme="dark"] {
+  color-scheme: dark;
   --fs-ground: #0c0e12;
   --fs-surface: #12151b;
   --fs-raised: #181c24;
   --fs-active: #1f2530;
-  --fs-border: #232936;
+  --fs-border: #262d3d;
   --fs-rule: #1c212b;
   --fs-text: #eef1f6;
-  --fs-muted: #8e96a4;
+  --fs-muted: #9ba3b2;
   --fs-accent: #38bdf8;
-  --fs-positive: #34d399;
-  --fs-negative: #f87171;
-  --fs-warning: #fbbf24;
+  --fs-positive: #66da94;
+  --fs-negative: #ff8880;
+  --fs-warning: #f7c95c;
+  --l-found: #82a2ff;
+  --l-trees: #54cb77;
+  --l-bt: #b994ff;
+  --l-graph: #fc9258;
+  --l-dp: #42c8e0;
+  --l-exam: #ff759c;
+  --l-contest: #ecc032;
+  --on-lc: #091118;
+  --good: #66da94;
+  --good-bg: #15301f;
+  --bad: #ff8880;
+  --bad-bg: #3a1a19;
+  --warn: #f7c95c;
+  --warn-bg: #3a2d0e;
+  --idea-bg: #182341;
+  --anal-bg: #25193d;
+  --hl: #5a4a0b;
+  --accent: #82a2ff;
+  --accent-soft: #1e2a4d;
+  --on-accent: #091118;
+  --cur: #ff9a5c;
+  --c1: #82a2ff;
+  --c2: #66da94;
+  --c3: #f7c95c;
+  --c4: #b994ff;
+  --c5: #ff8880;
+  --code-bg: #0b0e15;
+  --code-ink: #eef2f8;
+  --code-c: #94a3b8;
+}
+
+/* Unify notebook base variables onto the Framed-Sheet surface hierarchy */
+body.atlas-shell {
+  --bg: var(--fs-ground);
+  --surface: var(--fs-surface);
+  --surface-2: var(--fs-raised);
+  --surface2: var(--fs-raised);
+  --ink: var(--fs-text);
+  --fg: var(--fs-text);
+  --muted: var(--fs-muted);
+  --line: var(--fs-border);
+  --good-soft: var(--good-bg);
+  --bad-soft: var(--bad-bg);
+  --warn-soft: var(--warn-bg);
 }
 
 /* Offset in-page anchor jumps so they never hide under the sticky 48px #siteTopBar */
@@ -501,6 +658,119 @@ body {
 code, pre, .badge, .num, .qscore, .stat, .tb b, .wb-code-pre {
   font-family: "IBM Plex Mono", var(--f-mono, monospace);
   font-variant-numeric: tabular-nums;
+}
+
+/* Lock cursor & selection smoothly while dragging any sidebar resizer */
+html.is-resizing-panels,
+html.is-resizing-panels body {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+/* ---------- Theme & Readability Fixes for Callouts, Code, Inputs & Docked SVG Labs ---------- */
+/* Replace dark color-emoji U+2795 (➕) with crisp monochrome warning glyph in .warnbox */
+.box > .lbl[data-ico="➕"]::before {
+  content: "＋";
+  content: "＋" / "";
+  color: var(--warn);
+  font-family: var(--f-mono);
+  font-weight: 800;
+  font-size: 17px;
+  line-height: 1;
+}
+
+/* Keep inline code crisp inside tinted callout boxes (.idea, .warnbox, .trap, .tip, .analogy, .cap) */
+:is(.idea, .warnbox, .trap, .tip, .analogy, .cap) :not(pre) > code {
+  background: color-mix(in srgb, currentColor 9%, transparent);
+  border-color: color-mix(in srgb, currentColor 20%, transparent);
+}
+
+/* Prevent absolute .copy button from overlapping long first lines of code */
+body.atlas-shell pre:has(> .copy) {
+  padding-right: 68px;
+}
+
+/* Style search & date inputs (Ladder filter, End-sem date) to match text inputs in both themes */
+body.atlas-shell input[type="search"]:not(#cmdSearchInput):not(#searchIn),
+body.atlas-shell input[type="date"] {
+  font: inherit;
+  font-size: 14.5px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--ink);
+  min-width: 0;
+}
+
+/* Mirror .topic-scoped rules inside #workbenchDock (.wb-body) and preserve SVG presentation fills */
+.wb-body svg text {
+  font-family: var(--f-mono);
+  fill: var(--ink);
+}
+.gn.black text {
+  fill: var(--on-accent);
+}
+:is(.topic, .wb-body) svg text.sub {
+  fill: var(--muted);
+}
+:is(.topic, .wb-body) svg text[fill="var(--muted)"] { fill: var(--muted); }
+:is(.topic, .wb-body) svg text[fill="var(--fg)"] { fill: var(--fg); }
+:is(.topic, .wb-body) svg text[fill="var(--cur)"] { fill: var(--cur); }
+:is(.topic, .wb-body) svg text[fill="var(--good)"] { fill: var(--good); }
+:is(.topic, .wb-body) svg text[fill="var(--bad)"] { fill: var(--bad); }
+:is(.topic, .wb-body) svg text[fill="var(--c1)"] { fill: var(--c1); }
+:is(.topic, .wb-body) svg text[fill="var(--c2)"] { fill: var(--c2); }
+:is(.topic, .wb-body) svg text[fill="var(--c3)"] { fill: var(--c3); }
+:is(.topic, .wb-body) svg text[fill="var(--c4)"] { fill: var(--c4); }
+:is(.topic, .wb-body) svg text[fill="var(--c5)"] { fill: var(--c5); }
+
+.wb-body .tw {
+  overflow-x: auto;
+  margin: 12px 0;
+}
+.wb-body .stack .chip {
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: 99px;
+  padding: 2px 10px;
+  font-family: var(--f-mono);
+  font-size: 13px;
+}
+.wb-body details > .code,
+.wb-body details > pre {
+  margin: 8px 0 12px;
+}
+.wb-body .wb-item > .lab,
+.wb-body .wb-item > .quiz {
+  margin: 0;
+}
+
+/* ---------- Contained Nested Scrollbars (No Scroll Chaining) ---------- */
+body.atlas-shell .rail,
+#onThisStop,
+.wb-body,
+.ada-dlg-body {
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--fs-muted) 42%, transparent) transparent;
+}
+
+@supports not (scrollbar-color: auto) {
+  body.atlas-shell .rail::-webkit-scrollbar,
+  #onThisStop::-webkit-scrollbar,
+  .wb-body::-webkit-scrollbar,
+  .ada-dlg-body::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+  }
+  body.atlas-shell .rail::-webkit-scrollbar-thumb,
+  #onThisStop::-webkit-scrollbar-thumb,
+  .wb-body::-webkit-scrollbar-thumb,
+  .ada-dlg-body::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--fs-muted) 42%, transparent);
+    border-radius: 99px;
+  }
 }
 
 /* ---------- Reading Progress Bar Below Top Utility Bar ---------- */
@@ -520,9 +790,9 @@ body.atlas-shell #readBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 14px;
-  gap: 10px;
-  max-width: 100vw;
+  padding: 0 12px;
+  gap: 8px;
+  max-width: 100%;
   box-sizing: border-box;
 }
 
@@ -567,7 +837,7 @@ html[data-theme="dark"] .stb-mark {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 260px;
+  max-width: 240px;
 }
 
 .stb-search-btn {
@@ -575,8 +845,8 @@ html[data-theme="dark"] .stb-mark {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  flex: 0 1 380px;
-  min-width: 120px;
+  flex: 0 1 360px;
+  min-width: 110px;
   height: 32px;
   padding: 0 10px;
   background: var(--fs-surface);
@@ -634,61 +904,233 @@ html[data-theme="dark"] .stb-mark {
   white-space: nowrap;
 }
 
+.stb-icon-btn {
+  padding: 0 8px;
+  justify-content: center;
+  min-width: 32px;
+  font-size: 14px;
+}
+
 .stb-btn:hover {
   background: var(--fs-raised);
   border-color: var(--fs-accent);
 }
 
-.stb-btn.active {
+.stb-btn.active,
+.stb-btn[aria-pressed="true"] {
   border-color: var(--fs-accent);
   background: var(--fs-active);
   color: var(--fs-text);
 }
 
-/* ---------- 3-Column Atlas Shell (.shell & .app) + Inset Sheet ---------- */
+/* ---------- Drag-Resize Handles (.ada-resizer) ---------- */
+.ada-resizer {
+  position: sticky;
+  top: var(--fs-topbar-h);
+  height: calc(100vh - var(--fs-topbar-h));
+  height: calc(100dvh - var(--fs-topbar-h));
+  width: 6px;
+  cursor: col-resize;
+  touch-action: pan-y;
+  user-select: none;
+  z-index: 55;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ada-resizer::before {
+  content: "";
+  position: absolute;
+  inset: 0 -4px;
+}
+
+.ada-resizer::after {
+  content: "";
+  width: 2px;
+  height: 44px;
+  border-radius: 99px;
+  background: var(--fs-border);
+  transition: height 0.15s ease, background-color 0.15s ease;
+}
+
+.ada-resizer:hover::after,
+.ada-resizer:focus-visible::after,
+.ada-resizer.is-dragging::after {
+  height: 100%;
+  background: var(--fs-accent);
+}
+
+/* ---------- Resizable & Collapsible Atlas Shell (.shell & .app) ---------- */
 body.atlas-shell .shell,
 body.atlas-shell .app {
   display: grid;
-  grid-template-columns: var(--fs-sidebar-w) minmax(0, 1fr) var(--fs-toc-w);
-  gap: 0;
-  max-width: 1680px;
+  max-width: 1760px;
   margin: 0 auto;
   align-items: start;
 }
 
-/* Give Hub and Ladder full 2-column width when Workbench is closed */
-body.atlas-shell[data-active-route="hub"]:not(.workbench-mode) .shell,
-body.atlas-shell[data-active-route="index"]:not(.workbench-mode) .shell,
-body.atlas-shell[data-active-route="ladder"]:not(.workbench-mode) .shell {
-  grid-template-columns: var(--fs-sidebar-w) minmax(0, 1fr);
+@media (min-width: 901px) {
+  body.atlas-shell .shell,
+  body.atlas-shell .app {
+    --eff-left-w: clamp(180px, var(--user-left-rail-w, var(--fs-sidebar-w)), 34vw);
+    --eff-left-resizer-w: 6px;
+    --eff-right-resizer-w: 6px;
+    --eff-right-w: clamp(200px, var(--user-ots-w, var(--fs-toc-w)), 30vw);
+    grid-template-columns:
+      var(--eff-left-w)
+      var(--eff-left-resizer-w)
+      minmax(0, 1fr)
+      var(--eff-right-resizer-w)
+      var(--eff-right-w);
+    gap: 0;
+  }
+
+  body.atlas-shell #rail { grid-column: 1; }
+  body.atlas-shell #leftRailResizer { grid-column: 2; }
+  body.atlas-shell main { grid-column: 3; }
+  body.atlas-shell #rightRailResizer { grid-column: 4; }
+  body.atlas-shell #onThisStop,
+  body.atlas-shell #workbenchDock { grid-column: 5; }
+
+  /* Workbench Split View Mode (resizable right pane) */
+  body.workbench-mode .shell,
+  body.workbench-mode .app {
+    --eff-left-w: clamp(180px, var(--user-left-rail-w, 220px), 28vw);
+    --eff-right-resizer-w: 6px;
+    --eff-right-w: clamp(320px, var(--user-wb-w, 44vw), 64vw);
+  }
+
+  /* Give Hub and Ladder full width when Workbench is closed */
+  body.atlas-shell[data-active-route="hub"]:not(.workbench-mode) .shell,
+  body.atlas-shell[data-active-route="index"]:not(.workbench-mode) .shell,
+  body.atlas-shell[data-active-route="ladder"]:not(.workbench-mode) .shell {
+    --eff-right-resizer-w: 0px;
+    --eff-right-w: 0px;
+  }
+
+  body.atlas-shell[data-active-route="hub"]:not(.workbench-mode) #onThisStop,
+  body.atlas-shell[data-active-route="hub"]:not(.workbench-mode) #rightRailResizer,
+  body.atlas-shell[data-active-route="index"]:not(.workbench-mode) #onThisStop,
+  body.atlas-shell[data-active-route="index"]:not(.workbench-mode) #rightRailResizer,
+  body.atlas-shell[data-active-route="ladder"]:not(.workbench-mode) #onThisStop,
+  body.atlas-shell[data-active-route="ladder"]:not(.workbench-mode) #rightRailResizer {
+    display: none;
+  }
+
+  /* User-collapsed Right Sidebar (#onThisStop) when Workbench is not open */
+  html[data-ots-collapsed="1"] body.atlas-shell:not(.workbench-mode) .shell,
+  html[data-ots-collapsed="1"] body.atlas-shell:not(.workbench-mode) .app {
+    --eff-right-resizer-w: 0px;
+    --eff-right-w: 0px;
+  }
+
+  html[data-ots-collapsed="1"] body.atlas-shell:not(.workbench-mode) #onThisStop,
+  html[data-ots-collapsed="1"] body.atlas-shell:not(.workbench-mode) #rightRailResizer {
+    display: none;
+  }
+
+  /* User-collapsed Left Sidebar (#rail) in any mode */
+  html[data-left-collapsed="1"] body.atlas-shell .shell,
+  html[data-left-collapsed="1"] body.atlas-shell .app {
+    --eff-left-w: 0px;
+    --eff-left-resizer-w: 0px;
+  }
+
+  html[data-left-collapsed="1"] body.atlas-shell #rail,
+  html[data-left-collapsed="1"] body.atlas-shell #leftRailResizer {
+    display: none;
+  }
 }
 
-body.atlas-shell[data-active-route="hub"]:not(.workbench-mode) #onThisStop,
-body.atlas-shell[data-active-route="index"]:not(.workbench-mode) #onThisStop,
-body.atlas-shell[data-active-route="ladder"]:not(.workbench-mode) #onThisStop {
-  display: none;
+/* Adaptive content column width so tables, diagrams & code use freed space when sidebars collapse */
+body.atlas-shell .col {
+  max-width: min(900px, 100%);
 }
 
+html[data-left-collapsed="1"] body.atlas-shell .col,
+html[data-ots-collapsed="1"] body.atlas-shell:not(.workbench-mode) .col,
 body.atlas-shell[data-active-route="hub"] .col,
 body.atlas-shell[data-active-route="index"] .col,
 body.atlas-shell[data-active-route="ladder"] .col {
-  max-width: 1080px;
+  max-width: min(1080px, 100%);
 }
 
-/* Keep left sidebar (.rail) below #siteTopBar so it never overlaps */
+body.atlas-shell .topic p,
+body.atlas-shell .topic li {
+  max-width: 74ch;
+}
+
+/* Keep left sidebar (.rail) below #siteTopBar and clean up .rail-head */
 body.atlas-shell .rail {
   top: var(--fs-topbar-h);
   height: calc(100vh - var(--fs-topbar-h));
   height: calc(100dvh - var(--fs-topbar-h));
-  padding-top: 16px;
+  padding: 14px 14px 36px;
+}
+
+body.atlas-shell #themeBtn {
+  display: none;
+}
+
+.rail-collapse-btn,
+.ots-collapse-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: var(--fs-radius-ctrl);
+  border: 1px solid var(--fs-border);
+  background: var(--fs-raised);
+  color: var(--fs-muted);
+  font-family: var(--f-mono);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.rail-collapse-btn:hover,
+.ots-collapse-btn:hover {
+  color: var(--fs-text);
+  border-color: var(--fs-accent);
+  background: var(--fs-active);
+}
+
+.hub-nav-card {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 10px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--fs-border);
+  background: var(--fs-raised);
+  color: var(--fs-text);
+  font-size: 13.5px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.hub-nav-card:hover {
+  border-color: var(--fs-accent);
+}
+
+.hub-nav-card.active {
+  border-color: var(--fs-accent);
+  background: var(--fs-active);
+  font-weight: 700;
 }
 
 body.atlas-shell main {
   background: var(--fs-surface);
   border: 1px solid var(--fs-border);
   border-radius: var(--fs-radius-sheet);
-  margin: 8px;
-  padding: 24px 32px 48px;
+  margin: 8px 6px;
+  padding: 24px 30px 48px;
   min-width: 0;
 }
 
@@ -712,11 +1154,13 @@ body.atlas-shell.quick .stop-pager {
 /* ---------- Right Rail: On This Stop Outline (#onThisStop) ---------- */
 #onThisStop {
   position: sticky;
-  top: calc(var(--fs-topbar-h) + 10px);
-  max-height: calc(100vh - var(--fs-topbar-h) - 20px);
+  top: calc(var(--fs-topbar-h) + 8px);
+  max-height: calc(100vh - var(--fs-topbar-h) - 16px);
+  max-height: calc(100dvh - var(--fs-topbar-h) - 16px);
   overflow-y: auto;
-  padding: 8px 12px 24px 4px;
+  padding: 0 10px 24px 4px;
   font-size: 12.5px;
+  min-width: 0;
 }
 
 .ots-card {
@@ -737,6 +1181,7 @@ body.atlas-shell.quick .stop-pager {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 6px;
 }
 
 .ots-list {
@@ -769,12 +1214,7 @@ body.atlas-shell.quick .stop-pager {
   font-weight: 600;
 }
 
-/* ---------- Workbench Split View Mode (Option B) ---------- */
-body.workbench-mode .shell,
-body.workbench-mode .app {
-  grid-template-columns: 210px minmax(0, 1fr) minmax(390px, 45vw);
-}
-
+/* ---------- Workbench Split View Pane ---------- */
 body.workbench-mode #onThisStop {
   display: none !important;
 }
@@ -788,7 +1228,7 @@ body.workbench-mode #onThisStop {
   background: var(--fs-surface);
   border: 1px solid var(--fs-border);
   border-radius: var(--fs-radius-sheet);
-  margin: 8px 8px 8px 0;
+  margin: 8px 8px 8px 2px;
   overflow: hidden;
   flex-direction: column;
   min-width: 0;
@@ -803,20 +1243,22 @@ body.workbench-mode #workbenchDock {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 10px 14px;
+  padding: 9px 12px;
   border-bottom: 1px solid var(--fs-border);
   background: var(--fs-raised);
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .wb-tabs {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+  flex-wrap: wrap;
 }
 
 .wb-tab {
-  padding: 5px 10px;
+  padding: 4px 9px;
   font-size: 12px;
   font-weight: 500;
   border-radius: var(--fs-radius-ctrl);
@@ -824,6 +1266,16 @@ body.workbench-mode #workbenchDock {
   background: var(--fs-surface);
   color: var(--fs-muted);
   cursor: pointer;
+  white-space: nowrap;
+}
+
+.wb-tab:hover {
+  color: var(--fs-text);
+  border-color: var(--fs-accent);
+}
+
+.wb-tab.is-empty:not(.active) {
+  opacity: 0.62;
 }
 
 .wb-tab.active {
@@ -1043,10 +1495,10 @@ html[data-theme="dark"] .wb-tab.active {
   background: color-mix(in srgb, var(--fs-positive) 12%, var(--fs-surface));
 }
 
-/* ---------- Native <dialog closedby="any"> Modals ---------- */
+/* ---------- Native <dialog closedby="any"> Modals & Floating Back-to-Top ---------- */
 dialog.ada-dialog {
   width: min(640px, 92vw);
-  max-height: 82vh;
+  max-height: 84vh;
   border: 1px solid var(--fs-border);
   border-radius: 12px;
   background: var(--fs-surface);
@@ -1070,7 +1522,27 @@ dialog.ada-dialog::backdrop {
 .ada-dlg-body {
   padding: 16px 18px;
   overflow-y: auto;
-  max-height: 68vh;
+  max-height: 62vh;
+}
+
+.ada-dlg-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding: 10px 18px;
+  border-top: 1px solid var(--fs-border);
+  background: var(--fs-raised);
+  font-size: 11.5px;
+  color: var(--fs-muted);
+}
+
+.ada-dlg-foot kbd {
+  font-size: 11px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--fs-border);
+  background: var(--fs-surface);
+  color: var(--fs-text);
 }
 
 .cmd-results {
@@ -1098,18 +1570,30 @@ dialog.ada-dialog::backdrop {
   border-color: var(--fs-accent);
 }
 
+.back-to-top-btn {
+  position: fixed;
+  right: 18px;
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  z-index: 45;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+  font-weight: 600;
+}
+
+body.workbench-mode .back-to-top-btn {
+  left: 18px;
+  right: auto;
+}
+
 /* ---------- Responsive Breakpoints ---------- */
-@media (max-width: 1180px) {
-  body.atlas-shell:not(.workbench-mode) .shell,
-  body.atlas-shell:not(.workbench-mode) .app {
-    grid-template-columns: var(--fs-sidebar-w) minmax(0, 1fr);
+@media (min-width: 901px) and (max-width: 1180px) {
+  html:not([data-ots-collapsed="0"]) body.atlas-shell:not(.workbench-mode) .shell,
+  html:not([data-ots-collapsed="0"]) body.atlas-shell:not(.workbench-mode) .app {
+    --eff-right-resizer-w: 0px;
+    --eff-right-w: 0px;
   }
-  body.atlas-shell:not(.workbench-mode) #onThisStop {
+  html:not([data-ots-collapsed="0"]) body.atlas-shell:not(.workbench-mode) #onThisStop,
+  html:not([data-ots-collapsed="0"]) body.atlas-shell:not(.workbench-mode) #rightRailResizer {
     display: none;
-  }
-  body.workbench-mode .shell,
-  body.workbench-mode .app {
-    grid-template-columns: 196px minmax(0, 1fr) minmax(330px, 44vw);
   }
 }
 
@@ -1119,6 +1603,12 @@ dialog.ada-dialog::backdrop {
   body.workbench-mode .shell,
   body.workbench-mode .app {
     grid-template-columns: 1fr;
+  }
+  .ada-resizer,
+  #onThisStop,
+  #rightRailToggleBtn,
+  .rail-collapse-btn {
+    display: none !important;
   }
   body.atlas-shell .rail {
     top: var(--fs-topbar-h);
@@ -1141,6 +1631,12 @@ dialog.ada-dialog::backdrop {
     z-index: 58;
     box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
   }
+  .back-to-top-btn,
+  body.workbench-mode .back-to-top-btn {
+    left: 14px;
+    right: auto;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
   .hub-kpi-strip {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1161,13 +1657,13 @@ dialog.ada-dialog::backdrop {
 @media (max-width: 540px) {
   #siteTopBar {
     padding: 0 8px;
-    gap: 6px;
+    gap: 5px;
   }
   .stb-brand-text,
   .stb-lbl {
     display: none;
   }
   .stb-btn {
-    padding: 0 8px;
+    padding: 0 7px;
   }
 }
