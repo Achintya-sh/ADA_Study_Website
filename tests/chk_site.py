@@ -85,6 +85,49 @@ def main():
     check('href="ch12.html"' in ch8_html or 'href="../ladder.html"' in ch8_html,
           'cross-stop links in dist/stops/ch8.html point to multi-page routes')
 
+    # 4b. Verify all 26 audit fixes across CSS, HTML structure, IDs, Pager, and SW
+    site_css = open(os.path.join(DIST, 'assets', 'site.css'), encoding='utf-8').read()
+    check('body.atlas-shell .shell' in site_css and 'body.workbench-mode .shell' in site_css,
+          '[WB-1] site.css targets both .shell and .app for 3-col and Workbench grid')
+    check('scroll-padding-top' in site_css,
+          '[SCR-1] site.css sets html scroll-padding-top for sticky topbar')
+    check('@media (prefers-color-scheme: dark)' in site_css and '--fs-ground: #0c0e12' in site_css,
+          '[THM-1] site.css defines prefers-color-scheme: dark tokens for --fs-*')
+    check('body.atlas-shell.quick[data-page-kind="exam"] #activeStopStage > section.topic' in site_css,
+          '[QCK-1] site.css keeps exam pages visible when Quick Review is active')
+
+    ch0_html = open(os.path.join(DIST, 'stops', 'ch0.html'), encoding='utf-8').read()
+    check('href="b0.html"' in ch0_html,
+          '[NAV-2] ch0.html Next pager links to Bridge 0.5 (b0.html) instead of skipping bridges')
+    check('data-order="0"' in ch0_html and '(+a.dataset.order || 0) - (+b.dataset.order || 0)' in ch0_html,
+          '[NAV-1] sections have data-order and #navLines sorts by data-order')
+    check(ch0_html.count('<div') == ch0_html.count('</div>'),
+          '[SCR-6] ch0.html has balanced <div> tags (%d open, %d close)' % (ch0_html.count('<div'), ch0_html.count('</div>')))
+
+    hub_html = open(os.path.join(DIST, 'hub.html'), encoding='utf-8').read()
+    index_html = open(os.path.join(DIST, 'index.html'), encoding='utf-8').read()
+    check('id="commandHubView"' in index_html and 'id="commandHubView"' in hub_html,
+          '[NAV-3] both dist/index.html and dist/hub.html serve the Command Hub landing page')
+    check(hub_html.count('<div') == hub_html.count('</div>'),
+          '[SCR-6] hub.html has balanced <div> tags')
+
+    # Verify zero duplicate HTML element IDs in ch0.html, ch12.html, hub.html, ladder.html, mock.html
+    for rel_page in ['stops/ch0.html', 'stops/ch12.html', 'hub.html', 'ladder.html', 'exam/mock.html']:
+        raw = open(os.path.join(DIST, rel_page), encoding='utf-8').read()
+        raw_clean = re.sub(r'<(?:script|style)\b[^>]*>[\s\S]*?</(?:script|style)>', '', raw)
+        ids = re.findall(r'\s+id="([^"]+)"', raw_clean)
+        seen = set()
+        dups = set()
+        for i in ids:
+            if i in seen:
+                dups.add(i)
+            seen.add(i)
+        check(len(dups) == 0, f'zero duplicate HTML IDs in dist/{rel_page} (dups: {sorted(list(dups))[:5]})')
+
+    sw_js = open(os.path.join(DIST, 'sw.js'), encoding='utf-8').read()
+    check('./stops/ch12.html' in sw_js and './exam/mock.html' in sw_js,
+          '[SYNC-1] dist/sw.js pre-caches stop and exam routes')
+
     # 5. Execute interactive JS tests on site_shell.js + store.js in Node
     node_script = r"""
 const fs = require('fs');

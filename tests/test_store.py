@@ -102,6 +102,35 @@ assert(deckAfter['q:s4:2'].n === 2 && deckAfter['q:s4:2'].at === 3000, 'local ne
 assert(deckAfter['q:s1:0'].n === 4 && deckAfter['q:s1:0'].at === 9000, 'incoming newer mistake wins');
 assert(deckAfter['b:0:1'].n === 1, 'new incoming mistake added');
 
+// 4. Verify [SYNC-1]: ada-ladder-star and ada-mock3 / ada-mock-lc merge even when local already initialized empty state
+localStorage.setItem('ada-ladder-star', JSON.stringify({'98': 1}));
+localStorage.setItem('ada-mock3', JSON.stringify({m1: {res: {'0': 0, '1': 1}}}));
+localStorage.setItem('ada-mock-lc', JSON.stringify({lc1: {res: {'a': 0}}}));
+
+const incoming2 = {
+  app: 'ada-notebook',
+  schema: 1,
+  exportedAt: '2026-11-05T12:00:00.000Z',
+  data: {
+    'ada-ladder-star': {'cf:659E': 1},
+    'ada-mock3': {m1: {res: {'0': 2, '1': 0, '2': 1}}, m2: {res: {'0': 3}}},
+    'ada-mock-lc': {lc1: {res: {'a': 2}}}
+  }
+};
+const v2 = window.ADAStore.validateImport(JSON.stringify(incoming2));
+assert(v2.ok, 'validates incoming2 payload');
+window.ADAStore.mergeImport(v2.payload);
+
+const starAfter = JSON.parse(localStorage.getItem('ada-ladder-star'));
+assert(starAfter['98'] === 1 && starAfter['cf:659E'] === 1, 'ada-ladder-star merged');
+
+const mockAfter = JSON.parse(localStorage.getItem('ada-mock3'));
+assert(mockAfter.m1.res['0'] === 2 && mockAfter.m1.res['1'] === 1 && mockAfter.m1.res['2'] === 1, 'ada-mock3 per-subtask max score merged');
+assert(mockAfter.m2 && mockAfter.m2.res['0'] === 3, 'ada-mock3 new mock entry merged');
+
+const lcAfter = JSON.parse(localStorage.getItem('ada-mock-lc'));
+assert(lcAfter.lc1.res['a'] === 2, 'ada-mock-lc max score merged');
+
 console.log('ALL STORE TESTS PASSED');
 """
     res = subprocess.run(['node', '-e', node_test, STORE_JS], capture_output=True, text=True)
@@ -113,3 +142,4 @@ console.log('ALL STORE TESTS PASSED');
 
 if __name__ == '__main__':
     main()
+

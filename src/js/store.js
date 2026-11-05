@@ -3,6 +3,7 @@
   var KEYS = [
     'ada-done',
     'ada-ladder-v2',
+    'ada-ladder-star',
     'ada-deck',
     'ada-mock',
     'ada-mock3',
@@ -47,6 +48,8 @@
     var done = safeParse(readRawKey('ada-done'), []);
     data['ada-done'] = Array.isArray(done) ? done : [];
     data['ada-ladder-v2'] = safeParse(readRawKey('ada-ladder-v2'), {}) || {};
+    var stars = safeParse(readRawKey('ada-ladder-star'), null);
+    if (stars && typeof stars === 'object') data['ada-ladder-star'] = stars;
     data['ada-deck'] = safeParse(readRawKey('ada-deck'), {}) || {};
 
     var mock3 = safeParse(readRawKey('ada-mock3'), null);
@@ -199,18 +202,64 @@
     }
     writeKey('ada-deck', curDeck);
 
-    // 4. Optional single-value / mock keys
-    if (d['ada-mock3'] && !readRawKey('ada-mock3')) {
-      writeKey('ada-mock3', d['ada-mock3']);
+    // 4. Merge ada-ladder-star (bookmark map key -> 1/timestamp)
+    if (d['ada-ladder-star'] && typeof d['ada-ladder-star'] === 'object') {
+      var curStar = safeParse(readRawKey('ada-ladder-star'), {});
+      if (!curStar || typeof curStar !== 'object') curStar = {};
+      Object.keys(d['ada-ladder-star']).forEach(function (k) {
+        if (d['ada-ladder-star'][k]) curStar[k] = d['ada-ladder-star'][k];
+      });
+      writeKey('ada-ladder-star', curStar);
     }
-    if (d['ada-mock-lc'] && !readRawKey('ada-mock-lc')) {
-      writeKey('ada-mock-lc', d['ada-mock-lc']);
-    }
+
+    // 5. Merge mock states (ada-mock3 and ada-mock-lc: keep max subtask score per problem in .res)
+    ['ada-mock3', 'ada-mock-lc'].forEach(function (mKey) {
+      var inMock = d[mKey];
+      if (!inMock || typeof inMock !== 'object') return;
+      var curMock = safeParse(readRawKey(mKey), null);
+      if (!curMock || typeof curMock !== 'object') {
+        writeKey(mKey, inMock);
+        return;
+      }
+      if (inMock.res && typeof inMock.res === 'object') {
+        curMock.res = (curMock.res && typeof curMock.res === 'object') ? curMock.res : {};
+        Object.keys(inMock.res).forEach(function (mockName) {
+          if (!inMock.res[mockName] || typeof inMock.res[mockName] !== 'object') return;
+          curMock.res[mockName] = curMock.res[mockName] || {};
+          Object.keys(inMock.res[mockName]).forEach(function (probId) {
+            var vIn = Number(inMock.res[mockName][probId]) || 0;
+            var vCur = Number(curMock.res[mockName][probId]) || 0;
+            if (vIn > vCur) curMock.res[mockName][probId] = vIn;
+          });
+        });
+      }
+      Object.keys(inMock).forEach(function (k) {
+        if (k === 'res') return;
+        var mEntry = inMock[k];
+        if (mEntry && typeof mEntry === 'object' && mEntry.res && typeof mEntry.res === 'object') {
+          curMock[k] = (curMock[k] && typeof curMock[k] === 'object') ? curMock[k] : {};
+          curMock[k].res = (curMock[k].res && typeof curMock[k].res === 'object') ? curMock[k].res : {};
+          Object.keys(mEntry.res).forEach(function (probId) {
+            var vIn = Number(mEntry.res[probId]) || 0;
+            var vCur = Number(curMock[k].res[probId]) || 0;
+            if (vIn > vCur) curMock[k].res[probId] = vIn;
+          });
+        }
+      });
+      writeKey(mKey, curMock);
+    });
+
     if (typeof d['ada-endsem-date'] === 'string' && d['ada-endsem-date']) {
       writeKey('ada-endsem-date', d['ada-endsem-date']);
     }
 
     writeKey('ada-last-export', new Date().toISOString());
+    if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function' && typeof Event === 'function') {
+      try {
+        window.dispatchEvent(new Event('ada-ladder-change'));
+        window.dispatchEvent(new Event('ada-store-imported'));
+      } catch (_) {}
+    }
     return computeSummary(d);
   }
 
@@ -255,3 +304,4 @@
     lastExportStatus: lastExportStatus
   };
 })();
+

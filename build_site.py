@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
 Builds the full-fledged multi-page ADA Exam Notebook v5 site into dist/:
-- Runs build.py first to assemble the canonical notebook HTML
+- Runs build.py first to assemble the canonical notebook HTML (saved at dist/v4-classic.html)
 - Extracts every stop into src/stops/<id>.html
 - Extracts structured JSON datasets into dist/data/{ladder,quizzes,drills}.json
 - Writes modular assets into dist/assets/{site.css,store.js,site_shell.js}
 - Generates multi-page routes:
-    dist/hub.html
+    dist/hub.html & dist/index.html (Command Hub)
     dist/ladder.html
     dist/stops/<id>.html  (ch0..ch17, b0..b10)
     dist/exam/<id>.html   (mock, drills, bugs, order, mistakes, practice, cards, cheat)
@@ -63,10 +63,20 @@ EXAM_ORDER = [
 ALL_SECTIONS = STOP_ORDER + [('ladder', 'L', 'The Ladder', 'ladder')] + EXAM_ORDER
 STOP_IDS = {s[0] for s in STOP_ORDER}
 EXAM_IDS = {s[0] for s in EXAM_ORDER}
+ORDER_INDEX = {s[0]: idx for idx, s in enumerate(ALL_SECTIONS)}
+
+REQUIRED_OFFSTAGE_IDS = {
+    'top', 'mapDots', 'mapT',
+    'blankList', 'blankScore', 'blankReset',
+    'bugList', 'bugScore', 'bugReset',
+    'parList', 'parScore', 'parReset',
+    'mockStart', 'mockBox', 'mockResult', 'mockScore', 'mockLive',
+    'deckSummary', 'deckGo', 'deckBox', 'deckClear'
+}
 
 
 def extract_sections(html):
-    """Extract every <section class="topic"...>...</section> block by id."""
+    """Extract every <section class="topic"...>...</section> block by id and stamp data-order."""
     sections = {}
     pattern = re.compile(
         r'(<section class="topic(?:\s+half)?" id="([^"]+)"[^>]*>.*?\n</section>)',
@@ -74,22 +84,35 @@ def extract_sections(html):
     )
     for m in pattern.finditer(html):
         full_sec, sid = m.group(1), m.group(2)
+        ord_idx = ORDER_INDEX.get(sid, 99)
+        full_sec = re.sub(
+            r'^<section class="topic(\s+half)?" id="([^"]+)"',
+            lambda sm: f'<section class="topic{sm.group(1) or ""}" id="{sm.group(2)}" data-order="{ord_idx}"',
+            full_sec,
+            count=1
+        )
         sections[sid] = full_sec
     return sections
+
+
+def make_offstage_stub(sec_html, sid):
+    """Keep required DOM hooks for base scripts while neutralizing offstage labs/code/duplicate IDs."""
+    # Neutralize offstage labs and code blocks so page load only mounts the active stop's widgets
+    s = sec_html.replace('class="lab"', 'class="lab-offstage"').replace('data-w="', 'data-offstage-w="')
+    s = s.replace('class="code"', 'class="code-offstage"').replace('class="quiz"', 'class="quiz-offstage"')
+    # Strip inner duplicate IDs except the section's own id and required script target IDs
+    def clean_id(m):
+        val = m.group(1)
+        if val == sid or val in REQUIRED_OFFSTAGE_IDS:
+            return m.group(0)
+        return ''
+    return re.sub(r'\s+id="([^"]+)"', clean_id, s)
 
 
 def extract_json_datasets(html):
     """Evaluate the notebook's data script blocks in Node to dump clean JSON files."""
     os.makedirs(P('dist', 'data'), exist_ok=True)
-    # Find script blocks that define QUIZ, BUGS, BLANKS, PARSONS, LADDER, etc.
     scripts = re.findall(r'<script>\n?(.*?)</script>', html, re.S)
-    # Scripts 0..5 are:
-    # 0: core helpers + QUIZ + chapter widgets
-    # 1: TOPIC_NAMES, EXTRA_QS, BLANKS, BUGS, PARSONS, old LADDER/MOCKS
-    # 2: e_widgets.js
-    # 3: ladder.js
-    # 4: c_extra.js
-    # 5: lc_mocks.js
     data_js = '\n;\n'.join(scripts[:6])
     extractor = r"""
 const fs = require('fs');
@@ -119,7 +142,6 @@ fs.writeFileSync(path.join(outDir, 'drills.json'), JSON.stringify({
   parsons: PARSONS
 }, null, 2));
 """
-    # Expose LAD inside ladder.js IIFE so we capture all 380 rows
     patched_extractor = extractor.replace('const LAD = [], seen = new Set();', 'const LAD = [], seen = new Set(); window.LADDER2 = LAD;')
     res = subprocess.run(['node', '-e', patched_extractor, P('dist', 'data')], capture_output=True, text=True)
     if res.returncode != 0:
@@ -148,10 +170,10 @@ def rewrite_links_for_context(fragment_html, page_kind):
 def build_top_bar_html(page_kind, active_num, active_title):
     prefix = '../' if page_kind in ('stop', 'exam') else ''
     return f'''<div id="siteTopBar" role="banner">
-  <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+  <div style="display:flex;align-items:center;gap:10px;min-width:0;">
     <a class="stb-brand" href="{prefix}hub.html">
       <span class="stb-mark">ADA</span>
-      <span>GOD OF ADA</span>
+      <span class="stb-brand-text">GOD OF ADA</span>
     </a>
     <span class="stb-breadcrumb">/ [{active_num}] {active_title}</span>
   </div>
@@ -160,10 +182,11 @@ def build_top_bar_html(page_kind, active_num, active_title):
     <span class="stb-kbd">⌘K</span>
   </button>
   <div class="stb-actions">
-    <a class="stb-btn" href="{prefix}hub.html">🗺️ Hub</a>
-    <a class="stb-btn" href="{prefix}ladder.html">🪜 Ladder (380)</a>
-    <button type="button" id="workbenchBtn" class="stb-btn" title="Toggle 50/50 Split Workbench">⧉ Workbench Split</button>
-    <button type="button" id="exportImportBtn" class="stb-btn" title="Export or Import Progress JSON">⇅ Backup / Sync</button>
+    <a class="stb-btn" href="{prefix}hub.html" title="Command Hub">🗺️ <span class="stb-lbl">Hub</span></a>
+    <a class="stb-btn" href="{prefix}ladder.html" title="380-Problem Ladder">🪜 <span class="stb-lbl">Ladder (380)</span></a>
+    <button type="button" id="workbenchBtn" class="stb-btn" title="Toggle 50/50 Split Workbench">⧉ <span class="stb-lbl-md">Workbench Split</span></button>
+    <button type="button" id="exportImportBtn" class="stb-btn" title="Export or Import Progress JSON">⇅ <span class="stb-lbl-md">Backup / Sync</span></button>
+    <button type="button" id="topThemeBtn" class="stb-btn" title="Switch light or dark theme" aria-label="Switch light or dark theme">◐</button>
   </div>
 </div>'''
 
@@ -205,14 +228,17 @@ def build_right_rails_html(page_kind):
       <span>On This Stop</span>
       <span>Outline</span>
     </div>
+    <button type="button" id="otsDoneBtn" class="stb-btn" style="width:100%;justify-content:center;margin-bottom:10px;font-weight:600;">○ Mark Stop Understood</button>
     <ul id="onThisStopList" class="ots-list"></ul>
   </div>
   <div class="ots-card">
     <div class="ots-title">
-      <span>Study Shortcuts</span>
+      <span>Practice on Ladder</span>
+      <span>Top Picks</span>
     </div>
-    <div style="display:flex;flex-direction:column;gap:6px;">
-      <a class="stb-btn" href="{prefix}ladder.html">🪜 Open The Ladder (380)</a>
+    <div id="otsLadderList" style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px;"></div>
+    <div style="display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--fs-border);padding-top:8px;">
+      <a class="stb-btn" href="{prefix}ladder.html">🪜 Open Full Ladder (380)</a>
       <a class="stb-btn" href="{prefix}exam/mock.html">⚡ Take 20-Q Mock Exam</a>
       <a class="stb-btn" href="{prefix}exam/mistakes.html">🎯 Review Mistakes Deck</a>
       <a class="stb-btn" href="{prefix}exam/cheat.html">📋 Final Template Sheet</a>
@@ -227,6 +253,7 @@ def build_right_rails_html(page_kind):
       <button type="button" class="wb-tab active" data-wb-tab="code">Code</button>
       <button type="button" class="wb-tab" data-wb-tab="labs">Labs</button>
       <button type="button" class="wb-tab" data-wb-tab="quiz">Quiz</button>
+      <button type="button" id="workbenchCloseBtn" class="wb-close-btn" title="Close Split Workbench" aria-label="Close Split Workbench">✕</button>
     </div>
   </div>
   <div id="workbenchBody" class="wb-body"></div>
@@ -234,22 +261,13 @@ def build_right_rails_html(page_kind):
 
 
 def build_stop_pager_html(active_id, page_kind):
+    """Sequential Prev/Next navigation that preserves all 11 bridge half-stops (b0..b10) and ch0..ch17."""
     order = STOP_ORDER if page_kind == 'stop' else (EXAM_ORDER if page_kind == 'exam' else ALL_SECTIONS)
     idx = next((i for i, item in enumerate(order) if item[0] == active_id), -1)
     if idx == -1:
         return ''
     prev_item = order[idx - 1] if idx > 0 else None
     next_item = order[idx + 1] if idx + 1 < len(order) else None
-
-    # Also ensure direct numeric chapter neighbors (e.g. ch11 <-> ch12 <-> ch13) are linked cleanly
-    m_ch = re.match(r'^ch(\d+)$', active_id)
-    if m_ch:
-        n = int(m_ch.group(1))
-        by_id = {item[0]: item for item in STOP_ORDER}
-        if f'ch{n-1}' in by_id:
-            prev_item = by_id[f'ch{n-1}']
-        if f'ch{n+1}' in by_id:
-            next_item = by_id[f'ch{n+1}']
 
     cards = []
     if prev_item:
@@ -291,9 +309,10 @@ def build_command_hub_html():
       <h1 style="font-size:24px;font-weight:600;margin:0;">ADA Study Command Center</h1>
       <p style="margin:4px 0 0;font-size:14px;color:var(--fs-muted);">29 course stops, 147+ brute-force-verified Python templates, 380 rated Ladder problems, and 8 interactive exam tools.</p>
     </div>
-    <div style="display:flex;gap:8px;">
-      <a class="stb-btn" href="stops/ch12.html">Resume Stop 12: Graphs II →</a>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      <a class="stb-btn" id="hubResumeBtn" href="stops/ch12.html">Resume Stop 12: Graphs II →</a>
       <a class="stb-btn" href="ladder.html">Open The Ladder →</a>
+      <a class="stb-btn" href="v4-classic.html" title="Open classic single-file notebook">Single-Page Classic View</a>
     </div>
   </div>
 
@@ -349,13 +368,48 @@ def build_command_hub_html():
 </section>'''
 
 
+def patch_runtime_scripts(html):
+    """Patch base runtime scripts so multi-page routes preserve sidebar order, expose window.LADDER, and link EXTRA_QS."""
+    # 1. Expose window.LADDER2 = LAD; window.LADDER = LAD; inside ladder.js IIFE
+    html = html.replace(
+        'const LAD = [], seen = new Set();',
+        'const LAD = [], seen = new Set(); window.LADDER2 = LAD; window.LADDER = LAD;',
+        1
+    )
+    # 2. Refresh Ladder table & XP bars when ada-ladder-change fires (e.g. after JSON import)
+    html = html.replace(
+        "window.addEventListener('ada-ladder-change', () => { done = ls2Get(KEY, {}); });",
+        "window.addEventListener('ada-ladder-change', () => { done = ls2Get(KEY, {}); paintHead(); paintTable(); });",
+        1
+    )
+    # 3. Sort sections by data-order so #navLines never scrambles when an active section is placed in #activeStopStage
+    html = html.replace(
+        'const sections = $$("section.topic");',
+        'const sections = $$("section.topic").sort((a, b) => (+a.dataset.order || 0) - (+b.dataset.order || 0));',
+        1
+    )
+    # 4. Only run #navLines IntersectionObserver on classic all-in-one view (not multi-page routes)
+    html = html.replace(
+        'sections.forEach(s => io.observe(s));',
+        'if (!document.getElementById("adaOffstagePool")) sections.forEach(s => io.observe(s));',
+        1
+    )
+    # 5. Map EXTRA_QS topics to stop section IDs in #mockResult so every missed Mock Exam topic is clickable
+    html = html.replace(
+        'const extras = shuffle(EXTRA_QS.map((q, qi) => Object.assign({topic: q.t, sec: null, mid: `q:extra:${qi}`}, q))).slice(0, 6);',
+        'const EXTRA_SEC = {"Quick Sort":"ch3","Heaps":"ch5","Binary trees and BSTs":"ch4","DFS and BFS":"ch8","Backtracking":"ch6","Complexity":"ch2","Dynamic programming I":"ch9","Dynamic programming II":"ch10","Graphs II":"ch12","Greedy":"ch11","Monotonic stacks":"ch13","Contest toolkit":"ch14","Bridges":"ch15"};\n  const extras = shuffle(EXTRA_QS.map((q, qi) => Object.assign({topic: q.t, sec: EXTRA_SEC[q.t] || null, mid: `q:extra:${qi}`}, q))).slice(0, 6);',
+        1
+    )
+    return html
+
+
 def render_route_page(base_html, sections_map, active_ids, page_kind, page_title, badge_num, is_hub=False):
     """Assemble a standalone multi-page HTML document for a specific route."""
     prefix = '../' if page_kind in ('stop', 'exam') else ''
 
-    # 1. Inject <meta name="color-scheme" content="light dark">, IBM Plex fonts, and site.css link in <head>
+    # 1. Inject <meta name="color-scheme" content="light dark">, pre-paint ada-theme2 bootstrap, and site.css
     head_inject = f'''<meta name="color-scheme" content="light dark">
-<script>try{{document.querySelector('meta[name="color-scheme"]').content=localStorage.getItem("color-scheme")||"light dark";}}catch(_){{}}</script>
+<script>try{{var t=JSON.parse(localStorage.getItem("ada-theme2"));if(!t)t=localStorage.getItem("color-scheme");if(t==="dark"||t==="light"){{document.documentElement.setAttribute("data-theme",t);document.querySelector('meta[name="color-scheme"]').content=t;}}}}catch(_){{}}</script>
 <link rel="manifest" href="{prefix}manifest.json">
 <link rel="stylesheet" href="{prefix}assets/site.css">'''
 
@@ -363,7 +417,8 @@ def render_route_page(base_html, sections_map, active_ids, page_kind, page_title
                f'<title>{page_title} — GOD OF ADA</title>\n' + head_inject, base_html, count=1)
 
     # 2. Add body class and data-page-kind
-    h = h.replace('<body>', f'<body class="atlas-shell" data-page-kind="{page_kind}" data-active-route="{active_ids[0] if active_ids else "hub"}">', 1)
+    route_id = active_ids[0] if active_ids else 'hub'
+    h = h.replace('<body>', f'<body class="atlas-shell" data-page-kind="{page_kind}" data-active-route="{route_id}">', 1)
 
     # 3. Extract the header + intro boxes and the sections block inside <main class="main" id="main">
     main_tag = '<main class="main" id="main">'
@@ -372,15 +427,22 @@ def render_route_page(base_html, sections_map, active_ids, page_kind, page_title
     last_sec_m = list(re.finditer(r'</section>', h[:h.index('</main>')]))[-1]
     last_sec_end = last_sec_m.end()
 
-    header_block = h[main_start:first_sec]
-    footer_block = h[last_sec_end:h.index('</main>')]
+    raw_header = h[main_start:first_sec]
+    # Strip the opening <div class="col"> and extract #quickBanner so <div class="col"> wraps everything cleanly
+    raw_header = re.sub(r'^\s*<div class="col">\s*', '', raw_header, count=1)
+    qb_match = re.search(r'(<div class="box tip" id="quickBanner"[^>]*>.*?</div>)\s*', raw_header, re.S)
+    quick_banner_html = qb_match.group(1) if qb_match else ''
+    if qb_match:
+        raw_header = raw_header[:qb_match.start()] + raw_header[qb_match.end():]
 
     active_html_parts = []
     offstage_html_parts = []
 
     if is_hub:
         active_html_parts.append(build_command_hub_html())
-        active_html_parts.append(rewrite_links_for_context(header_block, page_kind))
+        active_html_parts.append(rewrite_links_for_context(raw_header, page_kind))
+    else:
+        offstage_html_parts.append(raw_header)
 
     for sid, _, _, _ in ALL_SECTIONS:
         sec_raw = sections_map[sid]
@@ -390,26 +452,17 @@ def render_route_page(base_html, sections_map, active_ids, page_kind, page_title
             if page_kind in ('stop', 'exam'):
                 active_html_parts.append(build_stop_pager_html(sid, page_kind))
         else:
-            offstage_html_parts.append(sec_raw)
+            offstage_html_parts.append(make_offstage_stub(sec_raw, sid))
 
-    if is_hub:
-        # Keep header outside offstage so #mapDots works in hub view
-        new_main_inner = (
-            '\n<div id="activeStopStage">\n' +
-            '\n'.join(active_html_parts) +
-            '\n</div>\n<div id="adaOffstagePool" hidden style="display:none!important" aria-hidden="true">\n' +
-            '\n'.join(offstage_html_parts) +
-            '\n</div>\n' + footer_block
-        )
-    else:
-        new_main_inner = (
-            '\n<div id="activeStopStage">\n' +
-            '\n'.join(active_html_parts) +
-            '\n</div>\n<div id="adaOffstagePool" hidden style="display:none!important" aria-hidden="true">\n' +
-            header_block + '\n' +
-            '\n'.join(offstage_html_parts) +
-            '\n</div>\n' + footer_block
-        )
+    new_main_inner = (
+        '\n<div class="col">\n' +
+        quick_banner_html + '\n' +
+        '<div id="activeStopStage">\n' +
+        '\n'.join(active_html_parts) +
+        '\n</div>\n<div id="adaOffstagePool" hidden style="display:none!important" aria-hidden="true">\n' +
+        '\n'.join(offstage_html_parts) +
+        '\n</div>\n</div>\n'
+    )
 
     h = h[:main_start] + new_main_inner + h[h.index('</main>'):]
 
@@ -422,13 +475,15 @@ def render_route_page(base_html, sections_map, active_ids, page_kind, page_title
     right_rails = build_right_rails_html(page_kind)
     h = h[:main_close] + '\n' + right_rails + '\n' + h[main_close:]
 
-    # 5. Inject dialogs and store.js + site_shell.js + sidebar multi-page link enhancer before </body>
+    # 5. Patch runtime scripts and inject dialogs + store.js + site_shell.js + sidebar multi-page link enhancer
+    h = patch_runtime_scripts(h)
+
     nav_rewrite_js = f'''<script src="{prefix}assets/store.js"></script>
 <script src="{prefix}assets/site_shell.js"></script>
 <script>
 (function(){{
   var ctx = "{page_kind}";
-  var activeId = "{active_ids[0] if active_ids else 'hub'}";
+  var activeId = "{route_id}";
   var navLinks = document.querySelectorAll('#navLines a[href^="#"]');
   Array.prototype.forEach.call(navLinks, function(a){{
     var raw = a.getAttribute('href');
@@ -461,7 +516,11 @@ def write_pwa_files():
     }
     open(P('dist', 'manifest.json'), 'w', encoding='utf-8').write(json.dumps(manifest, indent=2))
 
-    sw_code = """const CACHE_NAME = 'ada-atlas-v5';
+    stop_routes = [f"'./stops/{sid}.html'" for sid, _, _, _ in STOP_ORDER]
+    exam_routes = [f"'./exam/{eid}.html'" for eid, _, _, _ in EXAM_ORDER]
+    extra_assets = ',\n  '.join(stop_routes + exam_routes)
+
+    sw_code = f"""const CACHE_NAME = 'ada-atlas-v5-1';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -473,33 +532,34 @@ const CORE_ASSETS = [
   './assets/site_shell.js',
   './data/ladder.json',
   './data/quizzes.json',
-  './data/drills.json'
+  './data/drills.json',
+  {extra_assets}
 ];
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', (event) => {{
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(CORE_ASSETS)).then(() => self.skipWaiting())
   );
-});
+}});
 
-self.addEventListener('activate', (event) => {
+self.addEventListener('activate', (event) => {{
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))).then(() => self.clients.claim())
   );
-});
+}});
 
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', (event) => {{
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request).then((res) => {
+    caches.match(event.request).then((cached) => {{
+      return cached || fetch(event.request).then((res) => {{
         const clone = res.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone)).catch(() => {});
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone)).catch(() => {{}});
         return res;
-      }).catch(() => cached);
-    })
+      }}).catch(() => cached || caches.match('./hub.html'));
+    }})
   );
-});
+}});
 """
     open(P('dist', 'sw.js'), 'w', encoding='utf-8').write(sw_code)
 
@@ -528,34 +588,16 @@ def main():
     shutil.copyfile(P('src', 'js', 'store.js'), P('dist', 'assets', 'store.js'))
     shutil.copyfile(P('src', 'js', 'site_shell.js'), P('dist', 'assets', 'site_shell.js'))
 
-    # 5. Generate multi-page routes: dist/hub.html, dist/ladder.html, dist/stops/*.html, dist/exam/*.html
-    # Also save byte-identical v4 single file at dist/v4-classic.html and upgrade dist/index.html with the v5 shell
+    # 5. Save byte-identical v4 single file at dist/v4-classic.html
     shutil.copyfile(P('dist', 'index.html'), P('dist', 'v4-classic.html'))
-
-    head_inject_root = '''<meta name="color-scheme" content="light dark">
-<script>try{document.querySelector('meta[name="color-scheme"]').content=localStorage.getItem("color-scheme")||"light dark";}catch(_){}</script>
-<link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="assets/site.css">'''
-    idx_html = re.sub(r'<title>.*?</title>',
-                      '<title>GOD OF ADA — Interactive Algorithms & Exam Prep Atlas</title>\n' + head_inject_root,
-                      base_html, count=1)
-    idx_html = idx_html.replace('<body>', '<body class="atlas-shell" data-page-kind="root" data-active-route="index">', 1)
-    body_end = idx_html.index('>', idx_html.index('<body')) + 1
-    idx_html = idx_html[:body_end] + '\n' + build_top_bar_html('root', 'ALL', '29 Stops + Ladder + Exam Suite') + '\n' + idx_html[body_end:]
-    main_close = idx_html.index('</main>') + len('</main>')
-    idx_html = idx_html[:main_close] + '\n' + build_right_rails_html('root') + '\n' + idx_html[main_close:]
-    idx_html = idx_html.replace(
-        '</body>',
-        build_dialogs_html() + '\n<script src="assets/store.js"></script>\n<script src="assets/site_shell.js"></script>\n</body>',
-        1
-    )
-    open(P('dist', 'index.html'), 'w', encoding='utf-8').write(idx_html)
 
     os.makedirs(P('dist', 'stops'), exist_ok=True)
     os.makedirs(P('dist', 'exam'), exist_ok=True)
 
+    # 6. Render Command Hub to both dist/hub.html and dist/index.html so http://localhost:8080/ opens the Hub directly
     hub_html = render_route_page(base_html, sections_map, [], 'root', 'Command Hub', 'HUB', is_hub=True)
     open(P('dist', 'hub.html'), 'w', encoding='utf-8').write(hub_html)
+    open(P('dist', 'index.html'), 'w', encoding='utf-8').write(hub_html)
 
     ladder_html = render_route_page(base_html, sections_map, ['ladder'], 'root', 'The Ladder (380 Problems & Vault)', 'L')
     open(P('dist', 'ladder.html'), 'w', encoding='utf-8').write(ladder_html)
@@ -568,10 +610,10 @@ def main():
         exam_page = render_route_page(base_html, sections_map, [eid], 'exam', etitle, enum)
         open(P('dist', 'exam', f'{eid}.html'), 'w', encoding='utf-8').write(exam_page)
 
-    # 6. Write PWA manifest.json and sw.js
+    # 7. Write PWA manifest.json and sw.js
     write_pwa_files()
 
-    print(f'built multi-page site: 38 extracted stops in src/stops/, 29 dist/stops/*.html, 8 dist/exam/*.html, dist/hub.html, dist/ladder.html, dist/data/*.json, dist/assets/*')
+    print(f'built multi-page site: 38 extracted stops in src/stops/, 29 dist/stops/*.html, 8 dist/exam/*.html, dist/hub.html, dist/index.html, dist/ladder.html, dist/data/*.json, dist/assets/*')
 
 
 if __name__ == '__main__':
