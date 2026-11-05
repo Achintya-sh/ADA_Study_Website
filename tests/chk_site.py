@@ -103,6 +103,10 @@ def main():
           '[NAV-1] sections have data-order and #navLines sorts by data-order')
     check(ch0_html.count('<div') == ch0_html.count('</div>'),
           '[SCR-6] ch0.html has balanced <div> tags (%d open, %d close)' % (ch0_html.count('<div'), ch0_html.count('</div>')))
+    check(re.search(r'<div class="box tip" id="quickBanner"[^>]*>.*?</div>.*?</p></div>\s*<div id="activeStopStage">', ch0_html, re.S) is not None,
+          '[QCK-2] #quickBanner closes completely BEFORE #activeStopStage opens (Quick Review OFF never hides #activeStopStage)')
+    check('<style>' not in ch0_html,
+          '[THM-2] inline <style> removed from route HTML so dist/assets/site.css cascade is never overridden')
 
     hub_html = open(os.path.join(DIST, 'hub.html'), encoding='utf-8').read()
     index_html = open(os.path.join(DIST, 'index.html'), encoding='utf-8').read()

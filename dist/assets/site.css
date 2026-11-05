@@ -704,6 +704,11 @@ body.atlas-shell.quick[data-page-kind="exam"] #activeStopStage > section.topic {
   display: block !important;
 }
 
+/* Keep the bottom Stop Pager visible inside a Stop even if a section is modified by Quick Review */
+body.atlas-shell.quick .stop-pager {
+  display: grid !important;
+}
+
 /* ---------- Right Rail: On This Stop Outline (#onThisStop) ---------- */
 #onThisStop {
   position: sticky;

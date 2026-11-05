@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ada-atlas-v5-1';
+const CACHE_NAME = 'ada-atlas-v5-2';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -65,12 +65,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request).then((res) => {
-        const clone = res.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone)).catch(() => {});
-        return res;
-      }).catch(() => cached || caches.match('./hub.html'));
-    })
+    fetch(event.request).then((res) => {
+      const clone = res.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone)).catch(() => {});
+      return res;
+    }).catch(() => caches.match(event.request).then((cached) => cached || caches.match('./hub.html')))
   );
 });

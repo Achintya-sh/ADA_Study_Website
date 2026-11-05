@@ -705,6 +705,14 @@
         } catch (_) {}
       }
     }
+
+    // 6. Keep #onThisStop outline synchronized when Quick Review (#quickBtn) is toggled
+    var quickBtn = document.getElementById('quickBtn');
+    if (quickBtn && quickBtn.addEventListener) {
+      quickBtn.addEventListener('click', function () {
+        setTimeout(populateOnThisStop, 10);
+      });
+    }
   }
 
   function initDomBindings() {
@@ -838,10 +846,19 @@
         }
       });
 
-      // Register offline Service Worker over HTTP/HTTPS
+      // Register offline Service Worker over HTTP/HTTPS (skip on localhost so dev edits never get stuck in cache)
       if (typeof navigator !== 'undefined' && navigator.serviceWorker && typeof location !== 'undefined' && /^https?:$/.test(location.protocol)) {
-        var swPrefix = (detectPageContext() === 'stop' || detectPageContext() === 'exam') ? '../' : './';
-        navigator.serviceWorker.register(swPrefix + 'sw.js').catch(function () {});
+        var isLocalDev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        if (isLocalDev && navigator.serviceWorker.getRegistrations) {
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            regs.forEach(function (r) { r.unregister(); });
+          }).catch(function () {});
+        } else {
+          var swPrefix = (detectPageContext() === 'stop' || detectPageContext() === 'exam') ? '../' : './';
+          navigator.serviceWorker.register(swPrefix + 'sw.js').then(function (reg) {
+            if (reg && reg.update) reg.update();
+          }).catch(function () {});
+        }
       }
     }
   }

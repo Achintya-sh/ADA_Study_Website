@@ -415,6 +415,8 @@ def render_route_page(base_html, sections_map, active_ids, page_kind, page_title
 
     h = re.sub(r'<title>.*?</title>',
                f'<title>{page_title} — GOD OF ADA</title>\n' + head_inject, base_html, count=1)
+    # Remove the redundant inline <style>...</style> block because dist/assets/site.css already contains base_css + redesign_css in the right cascade order
+    h = re.sub(r'<style>[\s\S]*?</style>\s*', '', h, count=1)
 
     # 2. Add body class and data-page-kind
     route_id = active_ids[0] if active_ids else 'hub'
@@ -428,9 +430,9 @@ def render_route_page(base_html, sections_map, active_ids, page_kind, page_title
     last_sec_end = last_sec_m.end()
 
     raw_header = h[main_start:first_sec]
-    # Strip the opening <div class="col"> and extract #quickBanner so <div class="col"> wraps everything cleanly
+    # Strip the opening <div class="col"> and extract the entire #quickBanner (which has a nested <div class="lbl">)
     raw_header = re.sub(r'^\s*<div class="col">\s*', '', raw_header, count=1)
-    qb_match = re.search(r'(<div class="box tip" id="quickBanner"[^>]*>.*?</div>)\s*', raw_header, re.S)
+    qb_match = re.search(r'(<div class="box tip" id="quickBanner"[^>]*>.*?</div>.*?</p></div>)\s*', raw_header, re.S)
     quick_banner_html = qb_match.group(1) if qb_match else ''
     if qb_match:
         raw_header = raw_header[:qb_match.start()] + raw_header[qb_match.end():]
@@ -520,7 +522,7 @@ def write_pwa_files():
     exam_routes = [f"'./exam/{eid}.html'" for eid, _, _, _ in EXAM_ORDER]
     extra_assets = ',\n  '.join(stop_routes + exam_routes)
 
-    sw_code = f"""const CACHE_NAME = 'ada-atlas-v5-1';
+    sw_code = f"""const CACHE_NAME = 'ada-atlas-v5-2';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -551,13 +553,11 @@ self.addEventListener('activate', (event) => {{
 self.addEventListener('fetch', (event) => {{
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then((cached) => {{
-      return cached || fetch(event.request).then((res) => {{
-        const clone = res.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone)).catch(() => {{}});
-        return res;
-      }}).catch(() => cached || caches.match('./hub.html'));
-    }})
+    fetch(event.request).then((res) => {{
+      const clone = res.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone)).catch(() => {{}});
+      return res;
+    }}).catch(() => caches.match(event.request).then((cached) => cached || caches.match('./hub.html')))
   );
 }});
 """
