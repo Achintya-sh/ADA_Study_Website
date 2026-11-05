@@ -1,0 +1,45 @@
+<section class="topic half" id="b7" data-group="graph" data-num="7.5" data-title="One loop, two bags">
+<div class="topic-head"><div class="badge">7.5</div><div><div class="meta">Bridge to stop 8</div><h2>One loop, two bags: the traversal template</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>Every graph traversal is the same loop: take a vertex out of a <b>bag</b>, visit it, put its unvisited neighbours in. If the bag is a <b>queue</b> you get breadth-first search; if it is a <b>stack</b> you go deep first. You have already done both, on trees.</p></div>
+
+<h3>You have already traversed graphs</h3>
+<p>In stop 4, <b>preorder</b> went as deep as possible down the left before coming back: that is depth-first. <b>Level order</b> used a queue to visit the tree one level at a time: that is breadth-first. A tree is a graph with no cycles and exactly one path to each node, which is why those traversals never needed a <code>visited</code> list.</p>
+
+<h3>The template</h3>
+<script type="text/plain" class="code">
+from collections import deque
+
+def traverse(start, adj, kind):
+    bag = deque([start])
+    seen = {start}                       # mark when a vertex ENTERS the bag
+    order = []
+    while bag:
+        u = bag.popleft() if kind == "bfs" else bag.pop()   # queue or stack
+        order.append(u)                  # visit u
+        for v in adj[u]:
+            if v not in seen:
+                seen.add(v)
+                bag.append(v)
+    return order
+</script>
+<p>Change one word and the search changes character. With <code>popleft</code> (queue, first in first out) the oldest discovery is handled next, so the search spreads out in rings. With <code>pop</code> (stack, last in first out) the newest discovery is handled next, so the search plunges deep.</p>
+<div class="box analogy"><div class="lbl" data-ico="🧑‍🏫">Teacher's note</div><p>The stack version above goes deep first, but it does not always visit in the same order as recursive DFS, because it marks vertices when they are pushed rather than when they are visited. Both are valid depth-first behaviour. Stop 8 shows the iterative version that does match recursion exactly.</p></div>
+
+<h3>Why visited exists, and what it buys you</h3>
+<p>Graphs have <b>cycles</b> (0 → 1 → 4 → 2 → 0) and <b>several paths</b> to the same vertex. Without a visited set the bag never empties on a cycle, and even without cycles a vertex reachable in many ways is processed many times. With it, every vertex enters the bag <b>once</b>, so every adjacency list is scanned once. The scans add up to the sum of all degrees, which is 2E for an undirected graph. Total: <b>O(V + E)</b>.</p>
+
+<h3>Recursion is a stack you don't see</h3>
+<p>Recursive DFS (stop 8) has no explicit bag. The <b>call stack</b> from bridge 0.5 is the bag: each pending call is a vertex waiting to continue. That is also why very deep recursive DFS can hit Python's recursion limit while the explicit-stack version cannot.</p>
+
+<h3>Why BFS finds shortest paths</h3>
+<p>BFS takes vertices out of the queue in order of distance from the start: first distance 0, then all of distance 1, then all of distance 2. At any moment the queue holds vertices from at most two neighbouring layers. So the first time BFS reaches a vertex, it has reached it with the fewest possible edges, as long as every edge costs the same.</p>
+<div class="lab" data-w="bag" data-title="Lab: swap the bag"></div>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p>In BFS, mark a vertex when you <b>enqueue</b> it, not when you dequeue it, or the same vertex can sit in the queue several times. Use <code>deque.popleft()</code>, not <code>list.pop(0)</code>, which is O(n). BFS gives shortest paths only when all edges have equal cost.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><ul>
+<li>Queue → BFS (rings outward). Stack → deep first. Same loop otherwise.</li>
+<li>Trees need no visited set; graphs do (cycles, multiple paths).</li>
+<li>Each vertex enters the bag once: O(V + E) with adjacency lists.</li>
+<li>Recursion uses the call stack as its bag.</li>
+</ul></div>
+<div class="quiz" data-quiz="b7"></div>
+</section>

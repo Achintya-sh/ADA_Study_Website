@@ -1,0 +1,82 @@
+<section class="topic half" id="b2" data-group="trees" data-num="2.5" data-title="Swaps, pointers and partitions">
+<div class="topic-head"><div class="badge">2.5</div><div><div class="meta">Bridge to stop 3</div><h2>Array surgery: swaps, pointers and partitions</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>Quick Sort is one idea, <b>partition</b>, applied recursively. Partition is a pattern you can learn on easier problems first: one pointer <b>reads</b> every element once while a second pointer marks the end of the <b>kept</b> zone, and items that pass a test are swapped into it. Learn the pattern here and Lomuto partition will look familiar.</p></div>
+
+<h3>The swap, and why "in place" matters</h3>
+<p><code>a[i], a[j] = a[j], a[i]</code> exchanges two slots in O(1). An algorithm is <b>in place</b> when it rearranges the input using only O(1) extra memory (a few variables), instead of building new lists. Merge sort builds new lists (O(n) extra); Quick Sort and heap sort only swap.</p>
+
+<h3>Two pointers from opposite ends</h3>
+<p>Start one pointer at each end and walk them towards each other. Each step does O(1) work and moves at least one pointer, so the whole thing is O(n).</p>
+<script type="text/plain" class="code">
+def reverse(a):
+    i, j = 0, len(a) - 1
+    while i < j:
+        a[i], a[j] = a[j], a[i]
+        i += 1
+        j -= 1
+
+def pair_sum_sorted(a, T):           # a must already be sorted
+    i, j = 0, len(a) - 1
+    while i < j:
+        s = a[i] + a[j]
+        if s == T:
+            return True
+        if s < T:
+            i += 1                    # need a bigger sum: move the small end up
+        else:
+            j -= 1                    # need a smaller sum: move the big end down
+    return False                      # O(n) time, O(1) space
+</script>
+<p>Compare stop 1's set-based pair sum: O(n) time but O(n) space. When the input is already sorted, two pointers get the same time with no extra memory.</p>
+
+<h3>A reader and a writer: partition by a rule</h3>
+<p>Move every even number to the front:</p>
+<script type="text/plain" class="code">
+def evens_first(a):
+    k = -1                           # a[0..k] holds the evens found so far
+    for pos in range(len(a)):        # pos reads every element exactly once
+        if a[pos] % 2 == 0:
+            k += 1                   # grow the kept zone ...
+            a[k], a[pos] = a[pos], a[k]   # ... and swap the even into it
+    return k + 1                     # how many evens
+</script>
+<p>At every moment the array is split into three zones. This is the <b>invariant</b> (bridge 0.5):</p>
+<div class="tbl-wrap"><table>
+<tr><th>a[0..k]</th><th>a[k+1..pos−1]</th><th>a[pos..]</th></tr>
+<tr><td>passed the test (even)</td><td>failed the test (odd)</td><td>not read yet</td></tr>
+</table></div>
+<p>Now replace "is even" with "is ≤ pivot", leave the last element (the pivot) out of the scan, and swap it into slot k + 1 at the end. That is <b>Lomuto partition</b>, line for line:</p>
+<div class="tbl-wrap"><table>
+<tr><th></th><th>evens_first</th><th>Lomuto partition (stop 3)</th></tr>
+<tr><td>Test</td><td><code>a[pos] % 2 == 0</code></td><td><code>arr[pos] &lt;= pivot</code></td></tr>
+<tr><td>Range scanned</td><td>whole array</td><td>lo .. hi − 1 (the pivot sits at hi)</td></tr>
+<tr><td>After the loop</td><td>nothing</td><td>swap the pivot into k + 1, return k + 1</td></tr>
+</table></div>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p>This kind of partition is <b>not stable</b>: evens_first([1, 3, 2]) gives [2, 3, 1], so the odd numbers 1 and 3 swapped order. That is exactly why Quick Sort is not stable.</p></div>
+
+<h3>Three zones: the Dutch national flag</h3>
+<p>Stop 3 shows that an array of equal values is Quick Sort's worst case: every element goes to the "≤" side. The fix is to split into <b>three</b> zones, less / equal / greater, so all the equal values are finished in one pass.</p>
+<script type="text/plain" class="code">
+def three_way(a, pivot):
+    lo, mid, hi = 0, 0, len(a) - 1   # a[0..lo-1] < p, a[lo..mid-1] == p, a[hi+1..] > p
+    while mid <= hi:
+        if a[mid] < pivot:
+            a[lo], a[mid] = a[mid], a[lo]
+            lo += 1
+            mid += 1
+        elif a[mid] > pivot:
+            a[mid], a[hi] = a[hi], a[mid]
+            hi -= 1                  # do NOT move mid: the value swapped in is unread
+        else:
+            mid += 1
+</script>
+<div class="box analogy"><div class="lbl" data-ico="🧑‍🏫">Teacher's note</div><p>The three-way version goes slightly past your syllabus, but it is the clearest way to see <i>why</i> duplicates hurt two-way Quick Sort, and it is a favourite "improve this algorithm" question.</p></div>
+<div class="lab" data-w="part" data-title="Lab: partition, one pointer at a time"></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><ul>
+<li>In place = O(1) extra memory, just swaps.</li>
+<li>Two pointers from both ends: O(n), needs a reason to move one pointer each step (often sortedness).</li>
+<li>Reader–writer partition: k marks the end of the kept zone; grow k, then swap. Lomuto is this with test "≤ pivot".</li>
+<li>These partitions are not stable.</li>
+</ul></div>
+<div class="quiz" data-quiz="b2"></div>
+</section>

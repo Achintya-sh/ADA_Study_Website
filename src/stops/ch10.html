@@ -1,0 +1,629 @@
+<section class="topic" id="ch10" data-group="dp" data-num="10" data-title="Dynamic Programming II (2D)">
+<div class="topic-head"><div class="badge">10</div><div><div class="meta">Dynamic programming line</div><h2>Dynamic Programming II: two-dimensional tables</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>When one index cannot describe a subproblem, the table grows a second dimension. The recipe from chapter 9 is unchanged; the state is now a pair, dp[i][j]. We build it up with grid paths, Longest Common Subsequence and the 0/1 Knapsack.</p></div>
+
+<h3>Start here: why one index is not enough</h3>
+<p>In chapter 9 a subproblem was identified by <b>one</b> number: "the first i steps", "the first i houses". Many problems have <b>two things that shrink at the same time</b>:</p>
+<ul>
+<li>comparing two strings: how much of the first string and how much of the second are still in play;</li>
+<li>walking on a grid: which row and which column you are standing on;</li>
+<li>packing a bag: how many items you have looked at and how much capacity is left.</li>
+</ul>
+<p>The question to ask is the same as always: <b>"What do I need to know to continue from here, and nothing more?"</b> If the honest answer is two numbers, those two numbers are your state, and the table is a rectangle with one row per value of the first and one column per value of the second.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Problem</th><th>State dp[i][j] means</th><th>Table size</th><th>Time</th></tr>
+<tr><td><b>Grid min-cost path</b></td><td>cheapest cost to reach cell (i, j)</td><td>m × n</td><td>O(mn)</td></tr>
+<tr><td><b>Longest Common Subsequence</b></td><td>LCS length of the first i letters of X and the first j letters of Y</td><td>(m+1) × (n+1)</td><td>O(mn)</td></tr>
+<tr><td><b>0/1 Knapsack</b></td><td>best value using the first i items with capacity j</td><td>(n+1) × (W+1)</td><td>O(nW)</td></tr>
+<tr><td><b>Edit distance</b></td><td>fewest edits to turn the first i letters of X into the first j letters of Y</td><td>(m+1) × (n+1)</td><td>O(mn)</td></tr>
+</table></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><p><b>Counting rule for running time:</b> time = (number of cells) × (work per cell). Each cell in these problems does O(1) work (a max, a min, a sum of two neighbours), so the time is just the size of the table. Space is also the size of the table, unless you keep only the rows you still need.</p></div>
+
+<h3>The recipe, now with two indices</h3>
+<ol>
+<li><b>State.</b> Say in one sentence what dp[i][j] means. Be exact about whether i counts <i>items</i> (1-based) or points to a <i>position</i> (0-based).</li>
+<li><b>Last choice.</b> Look at the final decision for that state. Each option leads to a smaller state.</li>
+<li><b>Transition.</b> Combine the smaller states with max, min or +.</li>
+<li><b>Base cases.</b> An entire row and column of the table are usually base cases (empty string, zero items, zero capacity, the edge of the grid).</li>
+<li><b>Order.</b> Fill so that every cell is computed after the cells it reads. Almost always: row by row, left to right.</li>
+<li><b>Answer.</b> Usually the bottom-right cell.</li>
+</ol>
+<pre class="code" style="white-space:pre">Which cells does dp[i][j] usually read?
+
+                col j-1            col j
+   row i-1   dp[i-1][j-1]       dp[i-1][j]
+   row i     dp[i][j-1]         dp[i][j]   &lt;-- computed last
+
+Row-by-row, left-to-right order guarantees all three neighbours are ready.</pre>
+
+<h3>Classic 1: minimum-cost path on a grid</h3>
+<div class="box tip"><div class="lbl" data-ico="✏️">Worked example</div><p><b>Problem.</b> An m × n grid holds a cost in every cell. Start at the top-left, finish at the bottom-right, moving only <b>right</b> or <b>down</b>. Find the smallest total cost of a route. Example: [[1,3,1],[1,5,1],[4,2,1]] → 7 (route 1 → 3 → 1 → 1 → 1).</p></div>
+<ol>
+<li><b>State:</b> dp[i][j] = the cheapest cost of any route from (0,0) to cell (i, j), including the cost of (i, j) itself.</li>
+<li><b>Last choice:</b> you arrived at (i, j) either from the cell above, (i−1, j), or from the cell on the left, (i, j−1). Nothing else is possible, because you only move right or down.</li>
+<li><b>Transition:</b> dp[i][j] = grid[i][j] + min( dp[i−1][j], dp[i][j−1] ).</li>
+<li><b>Base:</b> dp[0][0] = grid[0][0]. The first row can only be reached from the left, the first column only from above.</li>
+<li><b>Order / answer:</b> row by row; answer = dp[m−1][n−1].</li>
+</ol>
+<script type="text/plain" class="code">
+def min_path_sum(grid):
+    m, n = len(grid), len(grid[0])
+    dp = [[0] * n for _ in range(m)]        # dp[i][j] = cheapest cost to reach (i, j)
+    dp[0][0] = grid[0][0]
+    for j in range(1, n):                    # first row: only from the left
+        dp[0][j] = dp[0][j - 1] + grid[0][j]
+    for i in range(1, m):                    # first column: only from above
+        dp[i][0] = dp[i - 1][0] + grid[i][0]
+    for i in range(1, m):
+        for j in range(1, n):
+            dp[i][j] = grid[i][j] + min(dp[i - 1][j], dp[i][j - 1])
+    return dp[m - 1][n - 1]
+
+# Counting routes instead of minimising cost: replace min with +, all costs become 1
+def unique_paths(m, n):
+    dp = [[1] * n for _ in range(m)]        # first row and column: exactly one way
+    for i in range(1, m):
+        for j in range(1, n):
+            dp[i][j] = dp[i - 1][j] + dp[i][j - 1]
+    return dp[m - 1][n - 1]
+</script>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p><b>Two Python traps in grid DP.</b> (1) <code>[[0] * n] * m</code> does <b>not</b> make m separate rows; it makes m references to the <i>same</i> row, so writing one cell changes a whole column. Always write <code>[[0] * n for _ in range(m)]</code>. (2) <code>dp[i-1][j]</code> when i = 0 does not crash: index −1 silently reads the <b>last</b> row. That is why the first row and column are handled separately above.</p></div>
+<div class="lab" data-w="gridpath" data-title="Lab: fill the grid table, then trace the cheapest route"></div>
+<p><b>Greedy fails here too.</b> "Always step to the cheaper neighbour" ignores what lies beyond that neighbour. Try the <i>Greedy trap</i> grid in the lab: greedy pays 13, DP finds 10.</p>
+
+<h3>Classic 2: Longest Common Subsequence (LCS)</h3>
+<div class="box tip"><div class="lbl" data-ico="✏️">Worked example</div><p><b>Problem.</b> A <b>subsequence</b> keeps the original order but may skip letters ("ACE" is a subsequence of "ABCDE"). Given strings X and Y, find the length of the longest string that is a subsequence of both. Example: X = ABCBDAB, Y = BDCABA → 4 (for instance BCBA).</p></div>
+<p><b>Deriving the recurrence from scratch.</b> Let c[i][j] be the LCS length of the first i letters of X and the first j letters of Y. Look only at the <b>last</b> letters, X[i] and Y[j] (1-based):</p>
+<ul>
+<li><b>They are equal.</b> That letter can end the common subsequence, so take it and solve for both strings shortened by one letter: c[i][j] = c[i−1][j−1] + 1. (Matching them is never worse than not matching.)</li>
+<li><b>They differ.</b> They cannot both be the final letter of a common subsequence, so at least one is unused. Drop X's last letter or Y's last letter and keep the better: c[i][j] = max( c[i−1][j], c[i][j−1] ).</li>
+</ul>
+<ol>
+<li><b>State:</b> c[i][j] = LCS length of X[1..i] and Y[1..j].</li>
+<li><b>Base:</b> c[0][j] = c[i][0] = 0 (an empty string has nothing in common with anything).</li>
+<li><b>Order / answer:</b> row by row; answer = c[m][n].</li>
+<li><b>Rebuilding the string:</b> start at (m, n). If the two letters are equal, record the letter and move diagonally. Otherwise move to the larger of the cell above and the cell on the left. Reverse what you recorded.</li>
+</ol>
+<script type="text/plain" class="code">
+def lcs(x, y):
+    m, n = len(x), len(y)
+    c = [[0] * (n + 1) for _ in range(m + 1)]    # extra row/column for the empty prefix
+    for i in range(1, m + 1):
+        for j in range(1, n + 1):
+            if x[i - 1] == y[j - 1]:               # i-th and j-th letters (0-based strings)
+                c[i][j] = c[i - 1][j - 1] + 1
+            else:
+                c[i][j] = max(c[i - 1][j], c[i][j - 1])
+
+    i, j, out = m, n, []                           # walk back to recover one LCS
+    while i > 0 and j > 0:
+        if x[i - 1] == y[j - 1]:
+            out.append(x[i - 1])
+            i -= 1
+            j -= 1
+        elif c[i - 1][j] >= c[i][j - 1]:
+            i -= 1
+        else:
+            j -= 1
+    return c[m][n], "".join(reversed(out))
+</script>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p><b>Off-by-one:</b> the table is (m+1) × (n+1) because it has a row and column for the empty prefix, but the strings are 0-based. So cell (i, j) compares <code>x[i-1]</code> with <code>y[j-1]</code>. <b>Subsequence vs substring:</b> a substring must be contiguous. For the longest common <i>substring</i>, a mismatch resets the cell to 0 and the answer is the largest cell anywhere in the table, not the corner.</p></div>
+<div class="lab" data-w="lcs" data-title="Lab: LCS table and traceback"></div>
+<p>An LCS is not always unique (ABCBDAB and BDCABA have several of length 4). The traceback picks one depending on how ties are broken, but the <b>length</b> is always the same.</p>
+
+<h3>Classic 3: 0/1 Knapsack</h3>
+<div class="box tip"><div class="lbl" data-ico="✏️">Worked example</div><p><b>Problem.</b> You have n items; item k has weight w[k] and value v[k]. A bag holds total weight at most W. Each item is taken <b>whole or not at all</b> (0 or 1 copies). Maximise the total value. Example: weights [1, 3, 4, 5], values [1, 4, 5, 7], W = 7 → 9 (the items of weight 3 and 4).</p></div>
+<ol>
+<li><b>State:</b> dp[i][c] = the best total value using only the first i items with a bag of capacity c. Two things matter for the future: which items are still undecided (i) and how much room is left (c).</li>
+<li><b>Last choice:</b> for item i, either <b>skip</b> it (the best is dp[i−1][c]) or <b>take</b> it, which is only possible if w[i] ≤ c, and then you earn v[i] plus the best for the first i−1 items in the reduced capacity c − w[i].</li>
+<li><b>Transition:</b> dp[i][c] = max( dp[i−1][c], dp[i−1][c − w[i]] + v[i] ), where the second option exists only when w[i] ≤ c.</li>
+<li><b>Base:</b> dp[0][c] = 0 (no items) and dp[i][0] = 0 (no room).</li>
+<li><b>Order / answer:</b> row by row; answer = dp[n][W]. Items taken are rebuilt by walking back: if dp[i][c] equals dp[i−1][c], item i was skipped; otherwise it was taken and c drops by w[i].</li>
+</ol>
+<script type="text/plain" class="code">
+def knapsack(w, v, W):
+    n = len(w)
+    dp = [[0] * (W + 1) for _ in range(n + 1)]    # dp[i][c]: first i items, capacity c
+    for i in range(1, n + 1):
+        for c in range(W + 1):
+            dp[i][c] = dp[i - 1][c]                 # option 1: skip item i
+            if w[i - 1] <= c:                       # option 2: take it, if it fits
+                dp[i][c] = max(dp[i][c], dp[i - 1][c - w[i - 1]] + v[i - 1])
+    return dp[n][W]
+
+def knapsack_1d(w, v, W):                           # same answer, O(W) space
+    dp = [0] * (W + 1)
+    for wi, vi in zip(w, v):
+        for c in range(W, wi - 1, -1):              # DOWNWARD, so item i is used at most once
+            dp[c] = max(dp[c], dp[c - wi] + vi)
+    return dp[W]
+</script>
+<div class="tbl-wrap"><table>
+<tr><th>Version</th><th>Time</th><th>Space</th><th>Can rebuild the chosen items?</th></tr>
+<tr><td>Full 2D table</td><td>O(nW)</td><td>O(nW)</td><td>Yes (walk back through the table)</td></tr>
+<tr><td>Rolling 1D array</td><td>O(nW)</td><td><b>O(W)</b></td><td>Not directly; the earlier rows are gone</td></tr>
+</table></div>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p><b>1.</b> In the 1D version the capacity loop must run <b>downward</b>. Running it upward lets item i be counted again in the same pass, which solves the <i>unbounded</i> knapsack (unlimited copies) instead. <b>2.</b> O(nW) is <b>pseudo-polynomial</b>: W is a <i>number</i>, and the size of the input is only about log W bits. If W doubles in value the work doubles, but the input barely grew. The knapsack problem is NP-hard in general. <b>3.</b> "Take the best value/weight ratio first" (greedy) is wrong for 0/1 knapsack; it is right only for the fractional version where items can be cut. The lab's last frame shows the greedy answer next to the DP answer.</p></div>
+<div class="lab" data-w="knap" data-title="Lab: knapsack table and item reconstruction"></div>
+
+<h3>Saving space: the rolling row</h3>
+<p>Every cell in these tables reads only the <b>previous row</b> (and the current row to its left). So you can keep just two rows, or even one, and cut the space from O(mn) to O(n). For LCS this gives O(min(m, n)) space for the <i>length</i>. The price: you can no longer walk back to recover the actual string or item set, because the old rows were thrown away. If a question asks for the solution itself and not only its value, keep the full table.</p>
+
+<h3>Variations and next problems</h3>
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><ul>
+<li><b>Unique paths with obstacles:</b> same as grid counting, but an obstacle cell has dp = 0.</li>
+<li><b>Edit distance (CLRS):</b> d[i][j] = d[i−1][j−1] if xᵢ = yⱼ; otherwise 1 + min( d[i−1][j] (delete), d[i][j−1] (insert), d[i−1][j−1] (replace) ). Base: d[i][0] = i and d[0][j] = j. O(mn).</li>
+<li><b>Longest palindromic subsequence:</b> LCS of the string with its own reverse.</li>
+<li><b>Subset sum / partition:</b> knapsack with a true/false table: dp[i][c] = dp[i−1][c] or dp[i−1][c − w[i]].</li>
+<li><b>Coin change (fewest coins):</b> dp[c] = 1 + min over coins of dp[c − coin]. One index only, so it is 1D, but it looks like knapsack.</li>
+<li><b>Matrix-chain multiplication (CLRS):</b> a table over ranges (i, j); each cell tries every split point k, so O(n³). It fills by increasing range length, not row by row.</li>
+</ul></div>
+
+<h3>Common mistakes</h3>
+<ul>
+<li>Not defining what dp[i][j] means, in particular whether i is a count (1-based) or an index (0-based).</li>
+<li>A table of size m × n when the empty-prefix row and column need (m+1) × (n+1).</li>
+<li>Forgetting that a fresh row must copy the "skip" option before testing the "take" option.</li>
+<li>Filling in an order that reads a cell before it is computed.</li>
+<li>Building the table with <code>[[0] * n] * m</code> (shared rows).</li>
+<li>Reporting dp[m][n] when the question wants the <i>solution</i> (string, item list, route); you also need the traceback.</li>
+</ul>
+
+<h3 class="pat-head">Patterns for contests: DP</h3>
+<div class="box tip"><div class="lbl" data-ico="🎯">Seen in your contests</div><p><b>Mid-sem Q5 Min Cost Climbing Stairs</b> is Frog Jump with the cost stored on the stone you leave (40/80 after the deadline). <b>Contest 2 Q4 0/1/2 Knapsack</b> is the knapsack below with one extra choice per item. <b>Mid-sem Q7</b> was backtracking, but its “fewest cuts” sibling is a DP on the same palindrome table (stop 6).</p></div>
+<h3>Frog Jump, the way your lecture did it</h3>
+<p>A frog starts on stone 0 and wants to reach the last stone. From stone i it can jump to i + 1 or i + 2, and a jump costs the difference in heights, <code>|h[i] − h[j]|</code>. Find the minimum total cost.</p>
+<p><code>f(i)</code> = the minimum cost to reach stone i from stone 0. The last jump into i came from i − 1 or from i − 2:</p>
+<p style="text-align:center"><code>f(i) = min( f(i−1) + |h[i] − h[i−1]|,  f(i−2) + |h[i] − h[i−2]| ),   f(0) = 0</code></p>
+<script type="text/plain" class="code">
+from functools import cache
+
+def frog_memo(h):                          # top-down: recursion + memory
+    @cache
+    def f(i):
+        if i == 0:
+            return 0
+        best = f(i - 1) + abs(h[i] - h[i - 1])
+        if i > 1:
+            best = min(best, f(i - 2) + abs(h[i] - h[i - 2]))
+        return best
+    return f(len(h) - 1)
+
+def frog_table(h):                         # bottom-up: fill from small i to large
+    n = len(h)
+    dp = [0] * n
+    for i in range(1, n):
+        one = dp[i - 1] + abs(h[i] - h[i - 1])
+        two = dp[i - 2] + abs(h[i] - h[i - 2]) if i > 1 else float("inf")
+        dp[i] = min(one, two)
+    return dp[-1]                          # O(n) time; O(1) space if you keep two variables
+
+def frog_k(h, k):                          # variation: jump up to k stones
+    dp = [0] + [float("inf")] * (len(h) - 1)
+    for i in range(1, len(h)):
+        for j in range(max(0, i - k), i):
+            dp[i] = min(dp[i], dp[j] + abs(h[i] - h[j]))
+    return dp[-1]                          # O(n · k)
+</script>
+<p>The arrays from your lecture board, with answers checked by running the code:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Heights</th><th>Minimum cost</th></tr>
+<tr><td class="n">[10, 15, 0, 20, 5, 25]</td><td class="n">15 (the decision-tree example: f(5) = 15)</td></tr>
+<tr><td class="n">[20, 10, 5, 15, 0]</td><td class="n">20</td></tr>
+<tr><td class="n">[0, 10, 40, 15, 5]</td><td class="n">25</td></tr>
+<tr><td class="n">[25, 0, 15, 5, 10, 20]</td><td class="n">25</td></tr>
+<tr><td class="n">[10, 0, 25, 0, 40]</td><td class="n">30</td></tr>
+<tr><td class="n">[10, 0, 25, 0, 40, 40]</td><td class="n">30</td></tr>
+</table></div>
+<div class="lab" data-w="frog" data-title="Lab: Frog Jump table, with up to k jumps"></div>
+
+<h3>The seven contest patterns</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Pattern</th><th>Signal</th><th>State and transition</th><th>Practice (rating)</th></tr>
+<tr><td>1. Fixed jumps, min/max</td><td>"reach the end", "each step costs"</td><td>dp[i] from dp[i−1], dp[i−2] (Frog Jump)</td><td>746 (1358), 198 House Robber</td></tr>
+<tr><td>2. Take or skip, with a jump</td><td>"if you solve it you must skip the next k"</td><td>dp[i] = max(skip: dp[i+1], take: points + dp[i+k+1]); fill from the back</td><td>2140 (1709)</td></tr>
+<tr><td>3. Counting ways</td><td>"number of ways", "modulo 10⁹ + 7"</td><td>dp[x] = sum of dp over the last choices, mod after each add</td><td>2320 (1608), 1155 (1654), 2466 (1694)</td></tr>
+<tr><td>4. Grid</td><td>"move down or right", "falling path"</td><td>dp[r][c] from the row above</td><td>931 (1573), 2304 (1658)</td></tr>
+<tr><td>5. Best chain ending at a value</td><td>"longest subsequence where …"</td><td>a dictionary keyed by value: best[x] = best[x − d] + 1</td><td>1218 (1597), 1048 (1599)</td></tr>
+<tr><td>6. Two sequences</td><td>two strings or arrays, "common", "match"</td><td>dp[i][j] on prefixes (stop 10, bridge 9.5)</td><td>1143 LCS, 1035 (1806)</td></tr>
+<tr><td>7. Knapsack / subset sum</td><td>"pick some items so the sum is exactly / at most T"</td><td>dp[t] over sums, loop t downward for 0/1</td><td>2915 (1659), 416 Partition Equal Subset Sum</td></tr>
+</table></div>
+
+<details><summary>Solution: 2140 Solving Questions With Brainpower (1709). Try it first.</summary>
+<p>Solving question i forces you to skip the next <code>brainpower</code> questions, so decide from the <b>back</b>: dp[i] is the best you can score from question i to the end.</p>
+<script type="text/plain" class="code">
+def mostPoints(self, questions):
+    n = len(questions)
+    dp = [0] * (n + 1)                     # dp[n] = 0: nothing left
+    for i in range(n - 1, -1, -1):
+        points, skip = questions[i]
+        take = points + dp[min(n, i + skip + 1)]
+        dp[i] = max(dp[i + 1], take)       # skip it, or take it and jump ahead
+    return dp[0]
+</script>
+</details>
+<details><summary>Solution: 2466 Count Ways To Build Good Strings (1694). Try it first.</summary>
+<p>A string of length L ends with a block of <code>zero</code> zeros or a block of <code>one</code> ones. That's Climbing Stairs with step sizes <code>zero</code> and <code>one</code>.</p>
+<script type="text/plain" class="code">
+def countGoodStrings(self, low, high, zero, one):
+    MOD = 10**9 + 7
+    dp = [1] + [0] * high                  # dp[0] = 1: the empty string
+    for length in range(1, high + 1):
+        if length >= zero:
+            dp[length] += dp[length - zero]
+        if length >= one:
+            dp[length] += dp[length - one]
+        dp[length] %= MOD
+    return sum(dp[low:high + 1]) % MOD
+</script>
+</details>
+<details><summary>Solution: 1218 Longest Arithmetic Subsequence of Given Difference (1597). Try it first.</summary>
+<p>For each x, the best chain ending at x extends the best chain ending at x − difference. Values can be as large as 10⁴ in either direction, so key a dictionary by value instead of an array by index.</p>
+<script type="text/plain" class="code">
+def longestSubsequence(self, arr, difference):
+    best = {}
+    for x in arr:
+        best[x] = best.get(x - difference, 0) + 1
+    return max(best.values())              # O(n), not O(n²)
+</script>
+</details>
+<details><summary>Solution: 2915 Length of the Longest Subsequence That Sums to Target (1659). Try it first.</summary>
+<p>0/1 knapsack where the "value" is 1 per item and you maximise the count. −1 marks sums you can't make yet.</p>
+<script type="text/plain" class="code">
+def lengthOfLongestSubsequence(self, nums, target):
+    dp = [-1] * (target + 1)
+    dp[0] = 0
+    for x in nums:
+        for t in range(target, x - 1, -1):  # downward: each number used once
+            if dp[t - x] != -1:
+                dp[t] = max(dp[t], dp[t - x] + 1)
+    return dp[target]
+</script>
+</details>
+
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p><code>@cache</code> on a recursion 10⁵ calls deep hits Python's recursion limit: for big n write the table. Take the modulo after <b>every</b> addition, not just at the end. "Impossible" needs its own value (−1 or ∞); using 0 silently turns impossible states into free ones. Check whether the answer is dp[n], dp[n − 1] or a sum over a range (2466).</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><ul>
+<li>Frog Jump routine: define f(i), choices for the last move, base case, memo, then table.</li>
+<li>Take/skip with a forced skip: fill from the back.</li>
+<li>Counting: add the ways, mod every time. Huge values as states: use a dictionary.</li>
+<li>Big n: bottom-up, not deep recursion.</li>
+</ul></div>
+<h3>Pattern 8: the knapsack family</h3>
+<p>Most DP you’ll meet at 1400–1800 is a one-dimensional table over a capacity or a sum, filled one item at a time. Between variants only three things change: what a cell stores, how cells combine, and <b>the direction of the capacity loop</b>, which decides how many copies of an item you can use.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Words in the statement</th><th>It’s this</th></tr>
+<tr><td>“items with weight and value”, “capacity”, “budget”</td><td>0/1 knapsack, unless told otherwise</td></tr>
+<tr><td>“any number of times”, “unlimited supply”, “coins”</td><td>unbounded knapsack</td></tr>
+<tr><td>“at most c copies”, “two identical copies” (your Q4)</td><td>bounded knapsack</td></tr>
+<tr><td>“can you make exactly T”, “split into two equal halves”</td><td>subset sum: a True/False table</td></tr>
+<tr><td>“number of ways to make T”</td><td>counting: does order matter?</td></tr>
+<tr><td>“fewest items to make T”</td><td>min-count (coin change)</td></tr>
+<tr><td>“split into two groups with the smallest difference”</td><td>subset sum in disguise (LC 1049)</td></tr>
+</table></div>
+<div class="tbl-wrap"><table>
+<tr><th>Variant</th><th>Cell stores</th><th>Combine</th><th>Loops</th><th>Start</th></tr>
+<tr><td>0/1</td><td>best value</td><td>max</td><td>items outside, capacity <b>downward</b></td><td>all 0</td></tr>
+<tr><td>Unbounded</td><td>best value</td><td>max</td><td>items outside, capacity <b>upward</b></td><td>all 0</td></tr>
+<tr><td>Bounded, ≤ 2 copies</td><td>best value</td><td>max over 0, 1, 2 copies</td><td>capacity downward</td><td>all 0</td></tr>
+<tr><td>Subset sum</td><td>reachable?</td><td>or</td><td>capacity downward</td><td>ok[0] = True</td></tr>
+<tr><td>Count combinations</td><td>ways</td><td>+</td><td><b>coins outside</b>, amount upward</td><td>ways[0] = 1</td></tr>
+<tr><td>Count orderings</td><td>ways</td><td>+</td><td><b>amount outside</b>, coins inside</td><td>ways[0] = 1</td></tr>
+<tr><td>Fewest items</td><td>count</td><td>min</td><td>amount upward</td><td>dp[0] = 0, rest ∞</td></tr>
+</table></div>
+<div class="lab" data-w="knapdir" data-title="Lab: the loop direction decides how many copies"></div>
+<script type="text/plain" class="code">
+def knap01(w, v, W):                      # each item at most once: capacity DOWNWARD
+    dp = [0] * (W + 1)
+    for wi, vi in zip(w, v):
+        for c in range(W, wi - 1, -1):
+            dp[c] = max(dp[c], dp[c - wi] + vi)
+    return dp[W]
+
+def unbounded(w, v, W):                   # any number of copies: capacity UPWARD
+    dp = [0] * (W + 1)
+    for wi, vi in zip(w, v):
+        for c in range(wi, W + 1):
+            dp[c] = max(dp[c], dp[c - wi] + vi)
+    return dp[W]
+
+def knap012(w, v, W):                     # Contest 2 Q4: each item 0, 1 or 2 times
+    dp = [0] * (W + 1)
+    for wi, vi in zip(w, v):
+        for c in range(W, wi - 1, -1):    # downward: dp[c - wi], dp[c - 2wi] are still "before this item"
+            dp[c] = max(dp[c], dp[c - wi] + vi)
+            if c >= 2 * wi:
+                dp[c] = max(dp[c], dp[c - 2 * wi] + 2 * vi)
+    return dp[W]
+</script>
+<p>For Contest 2 Q4 there are two correct fixes. <b>Fix 1, no new thinking:</b> list every item twice and run plain 0/1 knapsack. <b>Fix 2:</b> <code>knap012</code> above. Both agree with trying every 0/1/2 combination on random inputs. Why downward works: the cells <code>dp[c − w]</code> and <code>dp[c − 2w]</code> have smaller indices, so they haven’t been touched in this pass and still mean “using only earlier items”.</p>
+<script type="text/plain" class="code">
+def can_make(nums, T):                    # subset sum, each number once
+    ok = [True] + [False] * T
+    for x in nums:
+        for t in range(T, x - 1, -1):
+            ok[t] = ok[t] or ok[t - x]
+    return ok[T]
+
+def combos(coins, amount):                # LC 518: {1,2} and {2,1} count once
+    ways = [1] + [0] * amount
+    for c in coins:                       # coins OUTSIDE
+        for x in range(c, amount + 1):
+            ways[x] += ways[x - c]
+    return ways[amount]
+
+def orderings(nums, target):              # LC 377: 1+2 and 2+1 count twice
+    ways = [1] + [0] * target
+    for x in range(1, target + 1):        # amount OUTSIDE
+        for c in nums:
+            if c <= x:
+                ways[x] += ways[x - c]
+    return ways[target]
+
+def min_coins(coins, amount):             # fewest coins, unlimited supply
+    INF = float('inf')
+    dp = [0] + [INF] * amount
+    for c in coins:
+        for x in range(c, amount + 1):
+            dp[x] = min(dp[x], dp[x - c] + 1)
+    return dp[amount] if dp[amount] < INF else -1
+</script>
+<h4>Week 12: memoization → tabulation → one row</h4>
+<p>The state is (i, c): the best value from items i onward with capacity c. Each step is the same recurrence, written three ways.</p>
+<script type="text/plain" class="code">
+from functools import cache
+
+def k_memo(w, v, W):                      # 1. top-down: write the recurrence, cache it
+    @cache
+    def best(i, c):
+        if i == len(w):
+            return 0
+        skip = best(i + 1, c)
+        take = best(i + 1, c - w[i]) + v[i] if w[i] <= c else 0
+        return max(skip, take)
+    return best(0, W)
+
+def k_table(w, v, W):                     # 2. bottom-up: row i reads only row i + 1
+    n = len(w)
+    dp = [[0] * (W + 1) for _ in range(n + 1)]     # row n is the base case: all 0
+    for i in range(n - 1, -1, -1):
+        for c in range(W + 1):
+            dp[i][c] = dp[i + 1][c]
+            if w[i] <= c:
+                dp[i][c] = max(dp[i][c], dp[i + 1][c - w[i]] + v[i])
+    return dp[0][W]
+
+def k_row(w, v, W):                       # 3. one row: overwrite in place, sweep c downward
+    dp = [0] * (W + 1)
+    for i in range(len(w) - 1, -1, -1):
+        for c in range(W, w[i] - 1, -1):
+            dp[c] = max(dp[c], dp[c - w[i]] + v[i])
+    return dp[W]
+</script>
+<div class="tbl-wrap"><table>
+<tr><th>Version</th><th>Time</th><th>Extra space</th><th>When</th></tr>
+<tr><td>Memoization</td><td>O(nW)</td><td>O(nW) + recursion depth n</td><td>Fastest to write; risky in Python for large n</td></tr>
+<tr><td>Table</td><td>O(nW)</td><td>O(nW)</td><td>When you must rebuild which items were chosen</td></tr>
+<tr><td>One row</td><td>O(nW)</td><td>O(W)</td><td>Contests and big inputs; a written-exam favourite</td></tr>
+</table></div>
+<p>The rule behind step 3 is the rule behind the lab: a cell may be overwritten only after every cell that still needs its old value has read it. Here reads go to smaller c, so the sweep goes downward.</p>
+
+<h3>Pattern 9: longest increasing subsequence, in O(n log n)</h3>
+<p>“Longest increasing subsequence”, “fewest piles”, “nested envelopes”. Keep <code>tails[i]</code>, the smallest possible last value of an increasing run of length i + 1. That list stays sorted, so each new value replaces the first tail that is not smaller, found with <code>bisect</code>.</p>
+<script type="text/plain" class="code">
+from bisect import bisect_left
+
+def lis_length(a):                        # strictly increasing, O(n log n)
+    tails = []                            # tails[i]: smallest possible last value of an increasing run of length i + 1
+    for x in a:
+        i = bisect_left(tails, x)         # use bisect_right for "non-decreasing"
+        if i == len(tails):
+            tails.append(x)
+        else:
+            tails[i] = x
+    return len(tails)
+</script>
+
+<h3>Pattern 10: two strings, one row</h3>
+<p>“Make s into t with insert, delete, replace”: <code>dp[i][j]</code> is the answer for the first i and first j characters, and each cell reads three neighbours. Only the previous row is needed.</p>
+<script type="text/plain" class="code">
+def edit_distance(s, t):                  # LC 72, one row of memory
+    m, n = len(s), len(t)
+    prev = list(range(n + 1))
+    for i in range(1, m + 1):
+        cur = [i] + [0] * n
+        for j in range(1, n + 1):
+            if s[i - 1] == t[j - 1]:
+                cur[j] = prev[j - 1]
+            else:
+                cur[j] = 1 + min(prev[j], cur[j - 1], prev[j - 1])   # delete, insert, replace
+        prev = cur
+    return prev[n]
+</script>
+
+<h3>Pattern 11: states instead of a table</h3>
+<p>When each day (or step) is in one of a few modes, keep one number per mode and update them together. Stock with a cooldown: holding, just sold, free to buy.</p>
+<script type="text/plain" class="code">
+def max_profit_cooldown(prices):          # LC 309: states instead of a table
+    hold, sold, rest = float('-inf'), 0, 0       # at the end of the day: holding / just sold / free to buy
+    for x in prices:
+        hold, sold, rest = max(hold, rest - x), hold + x, max(rest, sold)
+    return max(sold, rest)
+</script>
+
+<h3>Pattern 12: bitmask DP (n ≤ 15)</h3>
+<p>“Assign n people to n jobs”, “visit every city once”: a bit per item that has been used, <code>dp[mask]</code> the best so far. 2ⁿ·n work, so only for n up to about 15–20.</p>
+<script type="text/plain" class="code">
+def min_assignment(cost):                 # n workers to n jobs, n <= 15
+    n = len(cost)
+    INF = float('inf')
+    dp = [INF] * (1 << n)                 # dp[mask]: cheapest way to give the jobs in mask to the first popcount(mask) workers
+    dp[0] = 0
+    for mask in range(1 << n):
+        i = mask.bit_count()              # Python 3.10+; otherwise bin(mask).count("1")
+        if i == n:
+            continue
+        for j in range(n):
+            if not mask >> j & 1:
+                nm = mask | 1 << j
+                dp[nm] = min(dp[nm], dp[mask] + cost[i][j])
+    return dp[-1]
+</script>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p>The wrong loop direction silently turns 0/1 into unbounded. The wrong loop order turns combinations into orderings. For “exactly T”, unreachable sums need −1 or ∞, not 0. With an all-zero start, <code>dp[W]</code> means “capacity at most W”; for “exactly W” start from −∞ everywhere except <code>dp[0] = 0</code>. <code>mask.bit_count()</code> needs Python 3.10; otherwise <code>bin(mask).count("1")</code>.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Knapsack = one row over capacity, filled item by item. Downward: once. Upward: unlimited. Bounded: downward, try each copy count.</p>
+<p>Combinations: coins outside. Orderings: amount outside.</p>
+<p>Memo → table (fill in dependency order) → one row (overwrite only after the last read).</p>
+<p>LIS: bisect into tails. Two strings: dp[i][j] on prefixes. Few modes: one number per mode.</p>
+<p>Practice: the Ladder, tab DP.</p></div>
+<h3>Memo → table → one row: three full conversions</h3>
+<p>Your end-sem question may hand you a memoised solution and ask for the table, or the table and ask for one row. The conversion is mechanical. Four steps:</p>
+<ol>
+<li><b>Recursion.</b> Define <code>f(i, j)</code> in words (“the LCS of <code>a[i:]</code> and <code>b[j:]</code>”) and write it with base cases.</li>
+<li><b>Memo.</b> Cache <code>f</code>. Same cells, same answers; only the repeated work disappears.</li>
+<li><b>Table.</b> Allocate every (i, j). Read the arrows: if a cell needs (i + 1, j), (i, j + 1) and (i + 1, j + 1), those must be filled first, so loop <i>backwards</i>. If it needs (i − 1, j) and (i, j − 1), loop forwards. Base cases become the border row and column.</li>
+<li><b>One row.</b> If row i only reads row i + 1 (or i − 1), keep a single list. The cell diagonal to you gets overwritten before you need it, so <b>save it in a variable first</b>.</li>
+</ol>
+<div class="tbl-wrap"><table>
+<tr><th>The cell reads…</th><th>Loops</th><th>One-row trick</th></tr>
+<tr><td>(i + 1, j), (i, j + 1)</td><td>i, j backwards</td><td>row[j] still holds the old row; row[j + 1] is already new</td></tr>
+<tr><td>also (i + 1, j + 1)</td><td>backwards</td><td>carry <code>diag</code>: the old row[j + 1], saved before it is overwritten</td></tr>
+<tr><td>(i − 1, j), (i, j − 1)</td><td>forwards</td><td>row[j] is the old row (up); row[j − 1] is new (left)</td></tr>
+</table></div>
+<h4>Conversion 1: LCS (LC 1143)</h4>
+<script type="text/plain" class="code">
+from functools import cache
+
+def lcs_memo(a, b):                        # step 1: the recursion, with a cache
+    @cache
+    def f(i, j):                           # LCS of a[i:] and b[j:]
+        if i == len(a) or j == len(b):
+            return 0
+        if a[i] == b[j]:
+            return 1 + f(i + 1, j + 1)
+        return max(f(i + 1, j), f(i, j + 1))
+    return f(0, 0)
+
+def lcs_table(a, b):                       # step 2: the same cells, filled from the base cases outward
+    n, m = len(a), len(b)
+    dp = [[0] * (m + 1) for _ in range(n + 1)]
+    for i in range(n - 1, -1, -1):
+        for j in range(m - 1, -1, -1):
+            dp[i][j] = 1 + dp[i + 1][j + 1] if a[i] == b[j] else max(dp[i + 1][j], dp[i][j + 1])
+    return dp[0][0]
+
+def lcs_row(a, b):                         # step 3: row i only needs row i + 1, so keep one row
+    n, m = len(a), len(b)
+    row = [0] * (m + 1)
+    for i in range(n - 1, -1, -1):
+        diag = 0                           # dp[i + 1][j + 1], saved before it is overwritten
+        for j in range(m - 1, -1, -1):
+            old = row[j]                   # dp[i + 1][j]
+            row[j] = 1 + diag if a[i] == b[j] else max(old, row[j + 1])
+            diag = old
+    return row[0]
+</script>
+<h4>Conversion 2: edit distance (LC 72)</h4>
+<p>The base cases look different in each version: the recursion returns <code>len(b) − j</code> when <code>a</code> runs out, while the table writes that as the whole last row and the last column. In the row version, the last column entry is rewritten at the start of every row.</p>
+<script type="text/plain" class="code">
+from functools import cache
+
+def edit_memo(a, b):
+    @cache
+    def f(i, j):                           # edits to turn a[i:] into b[j:]
+        if i == len(a):
+            return len(b) - j              # insert the rest
+        if j == len(b):
+            return len(a) - i              # delete the rest
+        if a[i] == b[j]:
+            return f(i + 1, j + 1)
+        return 1 + min(f(i + 1, j), f(i, j + 1), f(i + 1, j + 1))     # delete, insert, replace
+    return f(0, 0)
+
+def edit_table(a, b):
+    n, m = len(a), len(b)
+    dp = [[0] * (m + 1) for _ in range(n + 1)]
+    for i in range(n + 1):
+        dp[i][m] = n - i
+    for j in range(m + 1):
+        dp[n][j] = m - j
+    for i in range(n - 1, -1, -1):
+        for j in range(m - 1, -1, -1):
+            if a[i] == b[j]:
+                dp[i][j] = dp[i + 1][j + 1]
+            else:
+                dp[i][j] = 1 + min(dp[i + 1][j], dp[i][j + 1], dp[i + 1][j + 1])
+    return dp[0][0]
+
+def edit_row(a, b):
+    n, m = len(a), len(b)
+    row = [m - j for j in range(m + 1)]    # the base row dp[n][j]
+    for i in range(n - 1, -1, -1):
+        diag = row[m]                      # dp[i + 1][m]
+        row[m] = n - i                     # dp[i][m]
+        for j in range(m - 1, -1, -1):
+            old = row[j]
+            row[j] = diag if a[i] == b[j] else 1 + min(old, row[j + 1], diag)
+            diag = old
+    return row[0]
+</script>
+<h4>Conversion 3: Interleaving String (LC 97), filled forwards</h4>
+<p>Can <code>s3</code> be woven from <code>s1</code> and <code>s2</code>, each keeping its own order? State: <code>dp[i][j]</code> = the first i letters of s1 and the first j of s2 weave into the first i + j of s3. A cell reads the cell above (use s1[i − 1]) or to the left (use s2[j − 1]), so the loops run forwards and the row version needs no diagonal at all. The first column has no left neighbour, which is the special case in the code.</p>
+<script type="text/plain" class="code">
+from functools import cache
+
+def interleave_memo(s1, s2, s3):           # LC 97: can s3 be woven from s1 and s2, keeping each one's order?
+    if len(s1) + len(s2) != len(s3):
+        return False
+    @cache
+    def f(i, j):                           # s1[i:] and s2[j:] must weave into s3[i + j:]
+        if i == len(s1) and j == len(s2):
+            return True
+        k = i + j
+        if i < len(s1) and s1[i] == s3[k] and f(i + 1, j):
+            return True
+        return j < len(s2) and s2[j] == s3[k] and f(i, j + 1)
+    return f(0, 0)
+
+def interleave_table(s1, s2, s3):
+    n, m = len(s1), len(s2)
+    if n + m != len(s3):
+        return False
+    dp = [[False] * (m + 1) for _ in range(n + 1)]     # dp[i][j]: s1[:i] and s2[:j] weave into s3[:i + j]
+    dp[0][0] = True
+    for i in range(n + 1):
+        for j in range(m + 1):
+            if i > 0 and dp[i - 1][j] and s1[i - 1] == s3[i + j - 1]:
+                dp[i][j] = True
+            if j > 0 and dp[i][j - 1] and s2[j - 1] == s3[i + j - 1]:
+                dp[i][j] = True
+    return dp[n][m]
+
+def interleave_row(s1, s2, s3):
+    n, m = len(s1), len(s2)
+    if n + m != len(s3):
+        return False
+    row = [False] * (m + 1)
+    row[0] = True
+    for i in range(n + 1):
+        for j in range(m + 1):
+            if i > 0 and j == 0:
+                row[0] = row[0] and s1[i - 1] == s3[i - 1]
+            elif i > 0 or j > 0:
+                up = i > 0 and row[j] and s1[i - 1] == s3[i + j - 1]       # row[j] still holds dp[i - 1][j]
+                left = j > 0 and row[j - 1] and s2[j - 1] == s3[i + j - 1]
+                row[j] = up or left
+    return row[m]
+</script>
+<p>All nine functions were run against each other and against a plain exponential recursion on thousands of random strings, including the empty ones.</p>
+<h4>Convert-this-code drills</h4>
+<ol>
+<li>Close the page and write <code>lcs_table</code> from <code>lcs_memo</code>. Which way do the loops run, and why? <details><summary>Answer</summary>Backwards in both i and j, because f(i, j) calls f(i + 1, …) and f(…, j + 1): those cells must exist first.</details></li>
+<li>Why does <code>lcs_row</code> need <code>diag</code> but a one-row coin-change table does not? <details><summary>Answer</summary>The LCS cell reads a diagonal neighbour, which the one-row update has already overwritten. The coin table only reads cells of its own row (and the previous values of the same cell), so nothing is lost.</details></li>
+<li>For minimum path sum on a grid (LC 64) a cell reads only the cell above and the cell to the left. Write the one-row version. <details><summary>Answer</summary>Initialise <code>row[0]</code> and the first row by running sums; then for each later row set <code>row[0] += g[i][0]</code> and <code>row[j] = min(row[j], row[j − 1]) + g[i][j]</code>: <code>row[j]</code> is the cell above, <code>row[j − 1]</code> is the cell to the left. No diagonal, so no <code>diag</code> variable.</details></li>
+<li>In <code>interleave_row</code>, what breaks if you drop the <code>j == 0</code> case? <details><summary>Answer</summary><code>row[j − 1]</code> would index −1 and read the last cell, silently mixing in the wrong value instead of raising an error.</details></li>
+</ol>
+<div class="box tip"><div class="lbl" data-ico="🎯">Harder table problems for contests</div><p>Fill direction and the diagonal matter most here: LC 97, LC 115 Distinct Subsequences, LC 174 Dungeon Game (fill from the bottom-right, because the answer depends on what is ahead), LC 221 Maximal Square (reads the diagonal), LC 1035, LC 583, LC 712, LC 647, and from earlier in this stop LC 416, 322, 518, 1049. All are on the Ladder, tab DP.</p></div>
+<div class="quiz" data-quiz="s10"></div>
+<div class="quiz" data-quiz="c3"></div>
+<div class="quiz" data-quiz="e2"></div>
+</section>

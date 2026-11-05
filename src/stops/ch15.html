@@ -1,0 +1,197 @@
+<section class="topic" id="ch15" data-group="dp" data-num="15" data-title="Bridges: tools you know, combined">
+<div class="topic-head"><div class="badge">15</div><div><div class="meta">Dynamic programming and greedy line · tree DP, DAG DP, binary search, union-find, heaps, trie</div><h2>Bridges: tools you know, combined</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>You already know trees, heaps, DP, graphs and union-find. Contest problems rarely use one tool alone. This stop shows six combinations that appear again and again: <b>DP on a tree</b>, <b>DP on a DAG</b>, <b>binary search plus a check</b>, <b>union-find for more than MST</b>, <b>heaps with greedy</b>, and the <b>trie</b>. None is a new idea; each is two familiar ideas snapped together. It goes slightly beyond the written outline, and every function below was tested.</p></div>
+
+<h3>1. DP on a tree</h3>
+<p>A tree’s subproblems are its subtrees, and the order is “children before parent”. Compute a small answer for every node from its children’s answers. The simplest safe way to get that order is a stack that lists nodes parent-first, then reversed: every child then comes before its parent, with no recursion, so a 10⁵-long chain cannot crash Python.</p>
+<ul>
+<li><b>LC 337 House Robber III.</b> Two numbers per node: best if you rob it, best if you skip it.</li>
+<li><b>LC 543 Diameter.</b> A path bends at one node; its length is the left height plus the right height.</li>
+<li><b>LC 124 Maximum Path Sum.</b> Going <i>up</i> a path may use only one branch; a path that <i>bends</i> here may use both. Ignore negative branches.</li>
+</ul>
+<script type="text/plain" class="code">
+class TreeNode:
+    def __init__(self, val=0, left=None, right=None):
+        self.val, self.left, self.right = val, left, right
+
+def build_tree(vals):                      # LeetCode's level-order list with None for missing children
+    if not vals or vals[0] is None:
+        return None
+    root = TreeNode(vals[0])
+    q, i = [root], 1
+    for node in q:
+        if i < len(vals) and vals[i] is not None:
+            node.left = TreeNode(vals[i]); q.append(node.left)
+        i += 1
+        if i < len(vals) and vals[i] is not None:
+            node.right = TreeNode(vals[i]); q.append(node.right)
+        i += 1
+    return root
+
+def children_first(root):                  # iterative: no recursion limit on a 10^5-deep tree
+    order, stack = [], [root] if root else []
+    while stack:
+        node = stack.pop()
+        order.append(node)
+        if node.left: stack.append(node.left)
+        if node.right: stack.append(node.right)
+    return order[::-1]                     # reversed "parent first" means every child comes before its parent
+
+def rob_tree(root):                        # LC 337: two numbers per node, "robbed" and "skipped"
+    rob, skip = {}, {}
+    for v in children_first(root):
+        l, r = v.left, v.right
+        rob[v] = v.val + (skip[l] if l else 0) + (skip[r] if r else 0)
+        skip[v] = (max(rob[l], skip[l]) if l else 0) + (max(rob[r], skip[r]) if r else 0)
+    return max(rob[root], skip[root]) if root else 0
+
+def diameter(root):                        # LC 543: edges on the longest path; the bend sits at some node
+    h, best = {}, 0
+    for v in children_first(root):
+        hl = h[v.left] if v.left else 0
+        hr = h[v.right] if v.right else 0
+        h[v] = 1 + max(hl, hr)             # height in nodes
+        best = max(best, hl + hr)
+    return best
+
+def max_path_sum(root):                    # LC 124: values may be negative; a path may start and end anywhere
+    gain, best = {}, -float('inf')
+    for v in children_first(root):
+        gl = max(0, gain[v.left]) if v.left else 0      # a negative branch is simply not taken
+        gr = max(0, gain[v.right]) if v.right else 0
+        gain[v] = v.val + max(gl, gr)      # going UP, a path can use only one branch
+        best = max(best, v.val + gl + gr)  # a path that bends here uses both
+    return best
+</script>
+<h3>2. DP on a DAG</h3>
+<p>Any DAG (see stop 12) is a “tree with sharing”: fill the table in topological order. Shortest path, longest path, number of paths, and LC 329 and LC 1857 are all this. The recipe never changes: define the value at a vertex from its predecessors, process vertices in topological order, and a cycle means no answer.</p>
+<h3>3. Binary search on the answer, with a graph check</h3>
+<p>If “can we do it with limit x?” is easy to check, and the answer to that question changes from <i>no</i> to <i>yes</i> exactly once as x grows, binary search x. Typical checks are a BFS (LC 1631, 778), a greedy scan (LC 875 Koko, LC 1011 ship packages, LC 410 split array) or a union-find over the edges at most x. The check in LC 1631 appears in stop 12 beside the Dijkstra version; solving a problem two ways and comparing is the best way to catch a mistake. The generic pattern is <code>first_true</code> in stop 14.</p>
+<h3>4. Union-find beyond MST</h3>
+<p>Union-find also answers “which items end up in one group?” <b>LC 721 Accounts Merge:</b> two accounts sharing an email are the same person, so union all emails of an account. <b>LC 399 Evaluate Division:</b> a <i>weighted</i> union-find stores each node’s ratio to its parent, so a query is a ratio of two ratios to the same root. Both use an iterative find, so long chains are safe. LC 2092 (union by time) and CF 722C (run time backwards) are on the Ladder.</p>
+<script type="text/plain" class="code">
+def accounts_merge(accounts):              # LC 721: accounts are [name, email, email, ...]
+    parent, owner = {}, {}
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
+    for acc in accounts:
+        first = acc[1]
+        for e in acc[1:]:
+            parent.setdefault(e, e)
+            owner[e] = acc[0]
+            parent[find(e)] = find(first)  # every email of one account joins the first one's set
+    groups = {}
+    for e in parent:
+        groups.setdefault(find(e), []).append(e)
+    return [[owner[root]] + sorted(es) for root, es in groups.items()]
+
+def calc_equation(equations, values, queries):    # LC 399: weighted union-find, ratio[x] = x / parent[x]
+    parent, ratio = {}, {}
+    def find(x):
+        path = []
+        while parent[x] != x:
+            path.append(x)
+            x = parent[x]
+        root = x
+        for node in reversed(path):        # the node nearest the root first
+            p = parent[node]
+            if p != root:
+                ratio[node] *= ratio[p]    # node/root = (node/p) * (p/root)
+            parent[node] = root
+        return root
+    for (a, b), v in zip(equations, values):
+        for x in (a, b):
+            if x not in parent:
+                parent[x], ratio[x] = x, 1.0
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[ra] = rb
+            ratio[ra] = v * ratio[b] / ratio[a]       # from a = v * b
+    out = []
+    for a, b in queries:
+        if a not in parent or b not in parent or find(a) != find(b):
+            out.append(-1.0)
+        else:
+            out.append(ratio[a] / ratio[b])
+    return out
+</script>
+<h3>5. Heaps with greedy</h3>
+<p>Stop 5 has the one-heap patterns: top-k, k-way merge, meeting rooms and “best available now”. A new one is <b>two heaps meeting at the middle</b>, for a running median (LC 295): a max-heap holds the smaller half, a min-heap the larger half, and their tops are the median.</p>
+<script type="text/plain" class="code">
+import heapq
+
+class MedianFinder:                        # LC 295: two heaps meet at the middle
+    def __init__(self):
+        self.lo = []                       # max-heap (stored negated): the smaller half
+        self.hi = []                       # min-heap: the larger half
+    def add_num(self, x):
+        heapq.heappush(self.lo, -x)
+        heapq.heappush(self.hi, -heapq.heappop(self.lo))       # the largest small one crosses over
+        if len(self.hi) > len(self.lo):                        # keep lo the same size or one bigger
+            heapq.heappush(self.lo, -heapq.heappop(self.hi))
+    def find_median(self):
+        if len(self.lo) > len(self.hi):
+            return float(-self.lo[0])
+        return (-self.lo[0] + self.hi[0]) / 2
+</script>
+<h3>6. The trie</h3>
+<p>A trie is a tree with one child per letter; a word is a path ending in a marker. Insert, search and prefix queries cost O(length of the word), independent of how many words are stored. It pairs with backtracking: <b>LC 212 Word Search II</b> walks the grid and the trie together, so a path that matches no prefix is cut at once, and a branch whose words are all found is deleted.</p>
+<script type="text/plain" class="code">
+class Trie:                                # LC 208: a tree with one child per letter
+    def __init__(self):
+        self.root = {}
+    def insert(self, word):
+        node = self.root
+        for ch in word:
+            node = node.setdefault(ch, {})
+        node['$'] = True                   # a word ends here
+    def _walk(self, s):
+        node = self.root
+        for ch in s:
+            if ch not in node:
+                return None
+            node = node[ch]
+        return node
+    def search(self, word):
+        node = self._walk(word)
+        return node is not None and '$' in node
+    def starts_with(self, prefix):
+        return self._walk(prefix) is not None
+
+def find_words(board, words):              # LC 212: one DFS over the grid, steered by a trie of all the words
+    root = {}
+    for w in words:
+        node = root
+        for ch in w:
+            node = node.setdefault(ch, {})
+        node['$'] = w
+    R, C = len(board), len(board[0])
+    found = []
+    def dfs(r, c, node):
+        ch = board[r][c]
+        nxt = node.get(ch)
+        if nxt is None:
+            return
+        if '$' in nxt:
+            found.append(nxt.pop('$'))     # report each word once
+        board[r][c] = '#'                  # mark used
+        for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < R and 0 <= nc < C and board[nr][nc] != '#':
+                dfs(nr, nc, nxt)
+        board[r][c] = ch                   # undo
+        if not nxt:
+            node.pop(ch)                   # prune a branch that has nothing left to find
+    for r in range(R):
+        for c in range(C):
+            dfs(r, c, root)
+    return found
+</script>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p>Tree DP with recursion fails on deep trees in Python. In the running median, rebalance after every insert. A trie’s <code>starts_with</code> on an empty prefix is always true; LeetCode prefixes are never empty. The check function in a binary search must be monotone, or the search returns nonsense. A weighted union-find must compress paths <i>and</i> fix the ratios while doing it.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Tree DP: children first (reverse of parent-first), two numbers per node when a choice depends on the parent. DAG DP: topological order. Binary search: “is x enough?” must flip once. DSU: merge things that must be together; weighted DSU stores ratios or parities. Two heaps: smaller half in a max-heap, larger half in a min-heap. Trie: path = word.</p></div>
+<div class="quiz" data-quiz="x15"></div>
+</section>

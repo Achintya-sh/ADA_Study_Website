@@ -1,0 +1,44 @@
+<section class="topic half" id="b1" data-group="found" data-num="1.5" data-title="Growth, limits and induction">
+<div class="topic-head"><div class="badge">1.5</div><div><div class="meta">Bridge to stop 2</div><h2>Growth, limits and induction</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>Stop 2 compares functions as n grows huge, and proves recurrences with induction. Two tools make that painless: look at the <b>ratio f(n)/g(n)</b> as n grows, and learn the four-line shape of a <b>proof by induction</b>.</p></div>
+
+<h3>Who wins eventually? The ratio test</h3>
+<p>To compare two running times, divide one by the other and see where the ratio heads as n gets large:</p>
+<div class="tbl-wrap"><table>
+<tr><th>f(n) / g(n) as n grows</th><th>Meaning</th><th>Example</th></tr>
+<tr><td>→ 0</td><td>f grows strictly slower: f = O(g) but not Θ(g)</td><td>100n / n² = 100/n → 0</td></tr>
+<tr><td>→ a constant c &gt; 0</td><td>Same growth: f = Θ(g)</td><td>(3n² + 5n) / n² → 3</td></tr>
+<tr><td>→ ∞</td><td>f grows strictly faster: f = Ω(g) but not Θ(g)</td><td>2ⁿ / n¹⁰⁰ → ∞, eventually</td></tr>
+</table></div>
+<p>This is a shortcut, not the definition. Stop 2 gives the formal version with constants c and n₀; the ratio test tells you quickly which answer to aim for.</p>
+<h4>The pecking order, and why</h4>
+<div class="tbl-wrap"><table>
+<tr><th>Who beats whom (eventually)</th><th>Why</th></tr>
+<tr><td>any power of log n &lt; any power of n</td><td>(log n)/√n → 0. Even log¹⁰ n loses to n^0.01 in the end.</td></tr>
+<tr><td>any power of n &lt; any exponential aⁿ (a &gt; 1)</td><td>Each +1 to n multiplies aⁿ by a but nᵏ by only (1 + 1/n)ᵏ → 1.</td></tr>
+<tr><td>aⁿ &lt; n!</td><td>n! multiplies by n each step, which eventually exceeds any fixed a.</td></tr>
+</table></div>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p><b>Log bases don't matter; exponential bases do.</b> log₂ n = 3.32 · log₁₀ n, a constant factor, so both are Θ(log n). But 4ⁿ / 2ⁿ = 2ⁿ → ∞, so 4ⁿ is <i>not</i> O(2ⁿ). Similarly 2ⁿ⁺¹ = 2 · 2ⁿ is Θ(2ⁿ), while 2²ⁿ = 4ⁿ is not.</p></div>
+<div class="lab" data-w="ratio" data-title="Lab: who wins eventually?"></div>
+
+<h3>Proof by induction in four lines</h3>
+<p>Induction proves a statement P(n) for every n by knocking over dominoes: show the first one falls, and show that any falling domino knocks over the next.</p>
+<ol>
+<li><b>Claim.</b> State P(n) exactly.</li>
+<li><b>Base.</b> Check P(1) (or P(0)) directly.</li>
+<li><b>Step.</b> Assume P(k) is true for some k (the <i>inductive hypothesis</i>) and use it to show P(k + 1).</li>
+<li><b>Conclude.</b> P(n) holds for all n ≥ the base.</li>
+</ol>
+<div class="box tip"><div class="lbl" data-ico="✏️">Worked example</div><p><b>Claim:</b> 1 + 2 + … + n = n(n + 1)/2.<br><b>Base:</b> n = 1 gives 1 = 1·2/2. ✓<br><b>Step:</b> assume 1 + … + k = k(k + 1)/2. Then 1 + … + k + (k + 1) = k(k + 1)/2 + (k + 1) = (k + 1)(k + 2)/2, which is the formula for k + 1. ✓<br><b>Conclude:</b> true for every n ≥ 1.</p>
+<p>The same proof shows the recurrence T(1) = 1, T(n) = T(n − 1) + n solves to n(n + 1)/2: Quick Sort's worst case.</p></div>
+<p>Stop 2's <b>substitution method</b> is exactly this: guess the answer to a recurrence, then prove the guess by induction. If you can do the sum above, you can do that.</p>
+
+<h3>Why analyses pretend n is a power of 2</h3>
+<p>Recurrences like T(n) = 2T(n/2) + n only make sense when n/2 is a whole number. Analyses assume n = 2ᵏ so every split is exact; for other n the true cost sits between the costs at the neighbouring powers of 2, which differ by at most a constant factor. The Θ answer doesn't change, so the simplification is safe.</p>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><ul>
+<li>Ratio → 0: slower. → constant: Θ. → ∞: faster.</li>
+<li>logs &lt; powers &lt; exponentials &lt; factorials. Log bases are constants; exponential bases are not.</li>
+<li>Induction: claim, base, step (assume k, prove k + 1), conclude.</li>
+</ul></div>
+<div class="quiz" data-quiz="b1"></div>
+</section>

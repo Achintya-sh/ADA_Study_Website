@@ -1,0 +1,68 @@
+<section class="topic half" id="b0" data-group="found" data-num="0.5" data-title="Tracing code by hand">
+<div class="topic-head"><div class="badge">0.5</div><div><div class="meta">Bridge to stop 1</div><h2>Tracing code by hand</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>Before you can design an algorithm you have to be able to run one in your head. A <b>trace table</b> records every variable after every step; a <b>call stack</b> records every function call that hasn't finished yet. Both are exactly what "dry run" questions ask for, and stop 1 starts writing recursive code straight away.</p></div>
+
+<h3>The trace table</h3>
+<p>One column per variable, one row per step (usually one loop iteration). Fill it in strictly in order; never skip ahead to what you "know" the answer is.</p>
+<script type="text/plain" class="code">
+def find_max(a):
+    best = a[0]
+    for i in range(1, len(a)):
+        if a[i] > best:
+            best = a[i]
+    return best
+
+find_max([3, 8, 2, 9, 4])
+</script>
+<div class="tbl-wrap"><table>
+<tr><th>Step</th><th>i</th><th>a[i]</th><th>a[i] &gt; best?</th><th>best after the step</th></tr>
+<tr><td>start</td><td>–</td><td>–</td><td>–</td><td class="n">3</td></tr>
+<tr><td>1</td><td class="n">1</td><td class="n">8</td><td>yes</td><td class="n">8</td></tr>
+<tr><td>2</td><td class="n">2</td><td class="n">2</td><td>no</td><td class="n">8</td></tr>
+<tr><td>3</td><td class="n">3</td><td class="n">9</td><td>yes</td><td class="n">9</td></tr>
+<tr><td>4</td><td class="n">4</td><td class="n">4</td><td>no</td><td class="n">9</td></tr>
+<tr><td>return</td><td></td><td></td><td></td><td class="n"><b>9</b></td></tr>
+</table></div>
+
+<h3>Loop invariants: what stays true every lap</h3>
+<p>A <b>loop invariant</b> is a sentence about the variables that is true every time the loop is about to go round again. For <code>find_max</code>: <i>"best is the largest value in a[0..i]"</i>. You check three things, exactly as CLRS does:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Check</th><th>Question</th><th>For find_max</th></tr>
+<tr><td>Initialisation</td><td>Is it true before the first iteration?</td><td>best = a[0] is the largest of a[0..0].</td></tr>
+<tr><td>Maintenance</td><td>If it is true before an iteration, is it still true after?</td><td>If a[i] beats the old maximum it becomes best; otherwise best stays the largest.</td></tr>
+<tr><td>Termination</td><td>When the loop stops, what does it tell you?</td><td>i reached n − 1, so best is the largest of the whole array.</td></tr>
+</table></div>
+<div class="box analogy"><div class="lbl" data-ico="🧑‍🏫">Teacher's note</div><p>Invariants are how the rest of the course <i>explains</i> its algorithms. Quick Sort's partition keeps "everything in a[lo..k] is ≤ pivot". Sift down keeps "the heap rule holds everywhere except at i". BFS keeps "the queue holds vertices in order of distance". When an explanation in a later stop says "at every step…", it is stating an invariant.</p></div>
+
+<h3>Tracing recursion: frames and the way back</h3>
+<p>Every call gets its own <b>frame</b>: its own copy of the parameters and local variables. When a function calls itself, the caller <b>pauses on that line</b> and waits. The lines after the call run later, <b>on the way back</b>, once the inner call returns. Research on how students learn recursion finds that this "backward flow" is one of the most common sticking points, so trace it deliberately.</p>
+<script type="text/plain" class="code">
+def total(a, i):
+    if i == len(a):          # base case: nothing left
+        return 0
+    rest = total(a, i + 1)   # this frame pauses here
+    return a[i] + rest       # runs on the way back
+
+total([4, 1, 5], 0)          # 10
+</script>
+<div class="tbl-wrap"><table>
+<tr><th>Event</th><th>Call stack (top on the right)</th><th>What happens</th></tr>
+<tr><td>call</td><td class="n">i=0</td><td>i ≠ 3, call total(a, 1) and pause</td></tr>
+<tr><td>call</td><td class="n">i=0 · i=1</td><td>call total(a, 2) and pause</td></tr>
+<tr><td>call</td><td class="n">i=0 · i=1 · i=2</td><td>call total(a, 3) and pause</td></tr>
+<tr><td>call</td><td class="n">i=0 · i=1 · i=2 · i=3</td><td>base case: return 0</td></tr>
+<tr><td>return</td><td class="n">i=0 · i=1 · i=2</td><td>rest = 0, return 5 + 0 = 5</td></tr>
+<tr><td>return</td><td class="n">i=0 · i=1</td><td>rest = 5, return 1 + 5 = 6</td></tr>
+<tr><td>return</td><td class="n">i=0</td><td>rest = 6, return 4 + 6 = <b>10</b></td></tr>
+</table></div>
+<p>The deepest moment has n + 1 frames on the stack, which is why recursion over n items costs O(n) space even when it allocates nothing else.</p>
+<div class="lab" data-w="trace" data-title="Lab: step through a trace"></div>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p>Each frame has its <b>own</b> variables: the i in one call is not the i in another. And a recursive function whose base case is missing or unreachable doesn't loop forever quietly: Python stops it with <code>RecursionError</code> after about 1,000 nested calls (the default limit).</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><ul>
+<li>Trace table: one column per variable, one row per step, filled strictly in order.</li>
+<li>Invariant: true before the loop, kept by every lap, useful when the loop ends.</li>
+<li>Recursion: one frame per call; the caller pauses; code after the call runs on the way back.</li>
+<li>Deepest stack = space cost of the recursion.</li>
+</ul></div>
+<div class="quiz" data-quiz="b0"></div>
+</section>

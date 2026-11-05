@@ -1,0 +1,182 @@
+<section class="topic" id="ch2" data-group="found" data-num="2" data-title="Complexity analysis">
+<div class="topic-head"><div class="badge">2</div><div><div class="meta">Foundations line</div><h2>Complexity analysis</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>Time and space complexity, Big-O and its relatives, best/average/worst case, and how to solve the recurrences that recursive algorithms produce.</p></div>
+
+<h3>Why we count operations, not seconds</h3>
+<p>The same program runs at different speeds on a laptop and on a phone, in Python and in C. Seconds therefore tell us about the machine. What we want is a property of the <i>algorithm</i>: <b>how does the number of basic operations grow as the input grows?</b></p>
+<div class="box analogy"><div class="lbl" data-ico="🧑‍🏫">Teacher's note</div><p>Think of two taxi companies. One charges a flat fee however far you go. The other charges per kilometre. For a 1 km trip the flat fee looks bad. For a 100 km trip it wins easily. Complexity analysis is about the <b>100 km trip</b>: what happens for large n. That is why we ignore small inputs and constant details.</p></div>
+
+<h3>Two rules for simplifying</h3>
+<ol>
+<li><b>Drop constant factors.</b> 5n² and n² grow the same way: double n and either one becomes 4× bigger.</li>
+<li><b>Drop smaller terms.</b> In n³ + n² + n, once n is large the n³ part is almost everything.</li>
+</ol>
+<p>Applying both rules to a running time gives its <b>order of growth</b>, written with Big-O.</p>
+
+<h3>Counting operations in code</h3>
+<p>The method: find how many times the innermost statement runs. Loops <b>multiply</b>, code in sequence <b>adds</b> (and then the biggest term wins).</p>
+<div class="tbl-wrap"><table>
+<tr><th>Code shape</th><th>Times the body runs</th><th>Complexity</th></tr>
+<tr><td><code>for i in range(n)</code></td><td>n</td><td>O(n)</td></tr>
+<tr><td><code>for i in range(n): for j in range(n)</code></td><td>n × n</td><td>O(n²)</td></tr>
+<tr><td><code>for i in range(n): for j in range(i)</code></td><td>0+1+2+…+(n−1) = n(n−1)/2</td><td>O(n²)</td></tr>
+<tr><td><code>i = 1; while i &lt; n: i *= 2</code></td><td>i takes values 1,2,4,8,… so about log₂n steps</td><td>O(log n)</td></tr>
+<tr><td><code>for i in range(n): j = 1; while j &lt; n: j *= 2</code></td><td>n × log n</td><td>O(n log n)</td></tr>
+<tr><td>Two separate loops, one after the other (n and n)</td><td>n + n = 2n</td><td>O(n)</td></tr>
+<tr><td>A loop over n, then a nested n×n loop</td><td>n + n²</td><td>O(n²) (bigger term wins)</td></tr>
+<tr><td>Naive recursive <code>fib(n)</code> (two calls, each shrinking by 1 or 2)</td><td>roughly 1.618<sup>n</sup> calls</td><td>O(2<sup>n</sup>) (upper bound)</td></tr>
+</table></div>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p>The triangular loop (<code>for j in range(i)</code>) trips up many students. It is <b>not</b> n log n and it is <b>not</b> "half of n". It sums to n(n−1)/2, which is n²/2 − n/2, and dropping constants and the lower term leaves O(n²).</p></div>
+
+
+<h3>A recipe for analysing any code</h3>
+<ol>
+<li><b>Decide what n is.</b> The size of the input: array length, number of nodes, number of vertices. If there are two inputs (arrays of lengths n and m), keep two variables: a nested loop over both is O(n·m), not O(n²).</li>
+<li><b>Find the basic operation</b>: the line that runs the most (usually the innermost statement or a comparison).</li>
+<li><b>Count how many times it runs</b> as a function of n. Work from the inside out: a loop's count is (iterations) × (cost of its body).</li>
+<li><b>Combine:</b> statements in sequence <b>add</b>; nesting <b>multiplies</b>; an <code>if/else</code> costs the <b>larger</b> branch (for worst case).</li>
+<li><b>Simplify:</b> drop constants and lower-order terms.</li>
+</ol>
+<div class="tbl-wrap"><table>
+<tr><th>Rule</th><th>Example</th><th>Result</th></tr>
+<tr><td><b>Sum rule</b></td><td>O(n) loop followed by O(n²) loop</td><td>O(n + n²) = O(n²)</td></tr>
+<tr><td><b>Product rule</b></td><td>O(n) loop containing an O(log n) step</td><td>O(n log n)</td></tr>
+<tr><td><b>Constants vanish</b></td><td>3n + 7</td><td>O(n)</td></tr>
+<tr><td><b>Two inputs stay separate</b></td><td>loop over a (n items) containing loop over b (m items)</td><td>O(n·m)</td></tr>
+<tr><td><b>Recursion</b></td><td>(number of calls) × (work per call)</td><td>Often needs a recurrence</td></tr>
+<tr><td><b>Hidden costs</b></td><td><code>x in list</code> or slicing inside a loop</td><td>Each is O(n), so the loop is O(n²)</td></tr>
+</table></div>
+<div class="box tip"><div class="lbl" data-ico="✏️">Worked example</div><p><b>Analyse this.</b></p>
+<script type="text/plain" class="code">
+def mystery(a):                  # n = len(a)
+    total = 0
+    for x in a:                  # n iterations
+        total += x               # O(1)
+    for i in range(len(a)):      # n iterations
+        j = 1
+        while j < len(a):        # log n iterations (j doubles)
+            total += a[i] * j    # O(1)
+            j *= 2
+    return total
+</script>
+<p>First loop: n. Second loop nest: n × log n. Sequence adds: n + n log n. The bigger term wins: <b>O(n log n)</b>. Space: only a few variables, <b>O(1)</b>.</p></div>
+<p>Pick a loop pattern below and watch the real iteration counts as n doubles. The last column is the whole idea of "order of growth": it shows what happens to the work when the input doubles.</p>
+<div class="lab" data-w="loops" data-title="Lab: count the iterations"></div>
+
+<h3>The standard ladder of growth rates</h3>
+<p>From fastest to slowest: <b>O(1)</b> constant, <b>O(log n)</b> logarithmic, <b>O(n)</b> linear, <b>O(n log n)</b> linearithmic, <b>O(n²)</b> quadratic, <b>O(n³)</b> cubic, <b>O(2ⁿ)</b> exponential, <b>O(n!)</b> factorial. CLRS adds a formal fact: any exponential with base above 1 eventually beats any polynomial (nᵇ = o(aⁿ)), and n! grows faster than 2ⁿ.</p>
+<p>Play with the lab below. Slide n and watch how fast the bottom rows leave the others behind.</p>
+<div class="lab" data-w="growth" data-title="Lab: growth of functions"></div>
+
+<h3>Asymptotic notation, formally</h3>
+<p>Your lecture notes use Big-O loosely. CLRS gives five precise symbols. Each describes a <b>set of functions</b>, and "f(n) = O(g(n))" really means "f(n) belongs to that set".</p>
+<div class="tbl-wrap"><table>
+<tr><th>Symbol</th><th>Plain meaning</th><th>Formal definition</th><th>Like…</th></tr>
+<tr><td><b>O(g)</b></td><td>Upper bound: f grows no faster than g</td><td>∃ c &gt; 0, n₀ such that 0 ≤ f(n) ≤ c·g(n) for all n ≥ n₀</td><td>≤</td></tr>
+<tr><td><b>Ω(g)</b></td><td>Lower bound: f grows at least as fast as g</td><td>∃ c &gt; 0, n₀ such that 0 ≤ c·g(n) ≤ f(n) for all n ≥ n₀</td><td>≥</td></tr>
+<tr><td><b>Θ(g)</b></td><td>Tight bound: both of the above</td><td>∃ c₁, c₂ &gt; 0, n₀ such that c₁·g(n) ≤ f(n) ≤ c₂·g(n) for all n ≥ n₀</td><td>=</td></tr>
+<tr><td><b>o(g)</b></td><td>Strictly slower than g</td><td>f(n)/g(n) → 0 as n → ∞</td><td>&lt;</td></tr>
+<tr><td><b>ω(g)</b></td><td>Strictly faster than g</td><td>f(n)/g(n) → ∞ as n → ∞</td><td>&gt;</td></tr>
+</table></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><p><b>Key theorem:</b> f(n) = Θ(g(n)) if and only if f(n) = O(g(n)) <i>and</i> f(n) = Ω(g(n)).</p></div>
+
+<h4>Proving it with constants: 3n² + 10n + 5 = O(n²)</h4>
+<p>We must find c and n₀. Try c = 4. We need 3n² + 10n + 5 ≤ 4n², which rearranges to n² − 10n − 5 ≥ 0. At n = 10 this gives −5 (fails). At n = 11 it gives 6 (works), and it keeps working after that. So <b>c = 4, n₀ = 11</b> is a valid witness. The lab below lets you hunt for constants yourself.</p>
+<div class="lab" data-w="bigo" data-title="Lab: find the constants c and n₀"></div>
+
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p><b>Big-O is not "worst case".</b> These are two different axes. <i>Which input?</i> (best, average, worst case) is one question. <i>Which bound on the resulting function?</i> (O, Ω, Θ) is another. You can say "the worst-case time of Quick Sort is Θ(n²)" and "the best-case time is Θ(n log n)". Your lecture notes use "Big-O" and "worst case" together as shorthand: "O(n²) means for every input, the time is at most c·n²".</p></div>
+
+<h3>Best, average and worst case</h3>
+<p>The running time often depends on <i>which</i> input of size n you are given, not just n.</p>
+<ul>
+<li><b>Best case</b>: the input that makes the algorithm fastest.</li>
+<li><b>Worst case</b>: the input that makes it slowest. This is the usual default, because it is a guarantee.</li>
+<li><b>Average case</b>: the expected time over all inputs (needs an assumption about how inputs are distributed).</li>
+</ul>
+<p>Linear search for a value in an array shows all three. Try the buttons.</p>
+<div class="lab" data-w="search" data-title="Lab: linear search, best / average / worst"></div>
+<div class="tbl-wrap"><table>
+<tr><th>Algorithm</th><th>Best</th><th>Average</th><th>Worst</th><th>Why the cases differ</th></tr>
+<tr><td>Linear search</td><td>O(1)</td><td>O(n)</td><td>O(n)</td><td>Target first, middle, or absent</td></tr>
+<tr><td>Insertion sort</td><td>O(n)</td><td>O(n²)</td><td>O(n²)</td><td>Sorted input vs reverse-sorted</td></tr>
+<tr><td>Quick Sort (last-element pivot)</td><td>O(n log n)</td><td>O(n log n)</td><td>O(n²)</td><td>Balanced split vs split by 0 and n−1</td></tr>
+<tr><td>Merge Sort</td><td>O(n log n)</td><td>O(n log n)</td><td>O(n log n)</td><td>Always halves</td></tr>
+<tr><td>BST search</td><td>O(1) at the root, usually O(log n)</td><td>O(log n)</td><td>O(n)</td><td>Balanced vs skewed tree</td></tr>
+</table></div>
+
+<h3>Space complexity</h3>
+<p><b>Space complexity</b> counts the extra memory an algorithm needs as n grows. Usually we count <b>auxiliary space</b>: memory beyond the input itself.</p>
+<ul>
+<li>A few variables: O(1). An in-place swap, a running total.</li>
+<li>A new array or set of size n: O(n).</li>
+<li>Recursion: the call stack counts. Depth d means O(d) space. Merge sort needs O(n) for merging; Quick Sort needs O(log n) on average for the stack.</li>
+</ul>
+
+<h3>Divide and conquer and recurrences</h3>
+<p>Divide and conquer has three steps: <b>divide</b> into smaller subproblems of the same kind, <b>conquer</b> by solving them recursively, <b>combine</b> the answers. Merge sort: split the array in half, sort each half, merge. The time is described by a <b>recurrence relation</b>, a one-line equation for a recursive function:</p>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><p style="font-family:var(--f-mono)">T(n) = a·T(n/b) + f(n)</p>
+<p><b>a</b> = number of subproblems per call. <b>b</b> = how much the input shrinks. <b>f(n)</b> = work done outside the recursive calls (dividing and combining).</p></div>
+<p>Merge sort: a = 2, b = 2, f(n) = n (merging), so T(n) = 2T(n/2) + n.</p>
+
+<h4>Method 1: the recursion tree</h4>
+<p>Draw every call as a node, write the work at each node, add up each level, then add up the levels. For T(n) = a·T(n/b) + f(n):</p>
+<div class="tbl-wrap"><table>
+<tr><th>Level</th><th>Nodes</th><th>Work per node</th><th>Work in the whole level</th></tr>
+<tr><td>0</td><td>1</td><td>f(n)</td><td>f(n)</td></tr>
+<tr><td>1</td><td>a</td><td>f(n/b)</td><td>a·f(n/b)</td></tr>
+<tr><td>2</td><td>a²</td><td>f(n/b²)</td><td>a²·f(n/b²)</td></tr>
+<tr><td>last: log<sub>b</sub>n</td><td>a<sup>log_b n</sup> = n<sup>log_b a</sup></td><td>f(1) = constant</td><td>n<sup>log_b a</sup></td></tr>
+</table></div>
+<p>The tree has about log<sub>b</sub>n levels. The total depends on how the level sums change as you go down, and there are only three patterns:</p>
+<div class="cols">
+<div class="card"><h4>Growing</h4><p>1 + 2 + 4 + … + n. The <b>last</b> term dominates. Total ≈ the last level.</p></div>
+<div class="card"><h4>Equal</h4><p>n + n + … + n over log n levels. Total = one level × number of levels = <b>n log n</b>.</p></div>
+<div class="card"><h4>Shrinking</h4><p>n² + n²/2 + n²/4 + …. The <b>first</b> term dominates. Total ≈ the root.</p></div>
+</div>
+<div class="box tip"><div class="lbl" data-ico="✏️">Worked example</div><p><b>T(n) = 3T(n/4) + cn² (CLRS).</b> Level i has 3<sup>i</sup> nodes, each costing c(n/4<sup>i</sup>)², so the level costs (3/16)<sup>i</sup>·cn². Ratio 3/16 &lt; 1, so the sum shrinks like a geometric series: total ≤ cn²·(1 / (1 − 3/16)) = (16/13)cn². Root dominates, T(n) = Θ(n²).</p>
+<p><b>Unbalanced split T(n) = T(n/3) + T(2n/3) + cn.</b> Every level costs at most cn. The longest path shrinks by 2/3 each step, so its length is log<sub>3/2</sub>n. Total = O(n log n). This is why Quick Sort stays fast even with uneven splits.</p></div>
+
+<h4>Method 2: the Master theorem (the cookbook)</h4>
+<p>For T(n) = a·T(n/b) + f(n) with a ≥ 1, b &gt; 1, compute the <b>watershed function</b> n<sup>c</sup> where <b>c = log<sub>b</sub>a</b> (this is the number of leaves). Then compare f(n) with n<sup>c</sup>. Whoever is bigger "wins".</p>
+<div class="tbl-wrap"><table>
+<tr><th>Case</th><th>Comparison</th><th>Picture</th><th>Answer</th></tr>
+<tr><td><b>1. Leaf heavy</b></td><td>f(n) is <i>polynomially smaller</i> than n<sup>c</sup>: f(n) = O(n<sup>c−ε</sup>)</td><td>Bottom level dominates</td><td>T(n) = Θ(n<sup>c</sup>)</td></tr>
+<tr><td><b>2. Balanced</b></td><td>f(n) = Θ(n<sup>c</sup>)</td><td>Every level equal</td><td>T(n) = Θ(n<sup>c</sup> log n)</td></tr>
+<tr><td><b>3. Root heavy</b></td><td>f(n) is <i>polynomially larger</i>: f(n) = Ω(n<sup>c+ε</sup>), <b>and</b> a·f(n/b) ≤ k·f(n) for some k &lt; 1 (regularity)</td><td>Top level dominates</td><td>T(n) = Θ(f(n))</td></tr>
+</table></div>
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><p><b>Two details your slide notes skip.</b> (1) "Smaller" and "larger" must be <i>polynomially</i> so, by a factor of n<sup>ε</sup> for some ε &gt; 0. (2) Case 3 needs the <b>regularity condition</b>. Polynomials like n² always satisfy it. The famous gap: <b>T(n) = 2T(n/2) + n log n</b>. Here c = 1 and f(n) = n log n is larger than n, but only by a log n factor, which is smaller than n<sup>ε</sup> for every ε &gt; 0. The theorem does not apply. Use a recursion tree: log n levels each costing about n log n, so the answer is Θ(n log² n).</p></div>
+<p>Use the calculator, then try the practice problems underneath. Predict the case before you press the button.</p>
+<div class="lab" data-w="master" data-title="Lab: Master theorem calculator"></div>
+<h4>Practice (click to reveal)</h4>
+<details class="rv"><summary>T(n) = 27T(n/3) + n² (from your notes)</summary><div><p>a=27, b=3, c = log₃27 = 3. f = n² &lt; n³. Case 1 → <b>Θ(n³)</b>.</p></div></details>
+<details class="rv"><summary>T(n) = 9T(n/3) + n² (from your notes)</summary><div><p>c = 2, f = n² = n². Case 2 → <b>Θ(n² log n)</b>.</p></div></details>
+<details class="rv"><summary>T(n) = 3T(n/3) + n² (from your notes)</summary><div><p>c = 1, f = n² &gt; n. Case 3, regularity: 3(n/3)² = n²/3 ≤ ⅓·n² ✓ → <b>Θ(n²)</b>.</p></div></details>
+<details class="rv"><summary>T(n) = T(n/2) + 1 (binary search)</summary><div><p>a=1, b=2, c = 0, so n^c = 1 and f = 1 = n⁰. Case 2 → <b>Θ(log n)</b>.</p></div></details>
+<details class="rv"><summary>T(n) = 2T(n/2) + 1 (visiting every node of a balanced tree)</summary><div><p>c = 1, f = 1 &lt; n. Case 1 → <b>Θ(n)</b>. This is why traversing a whole tree is linear.</p></div></details>
+<details class="rv"><summary>T(n) = 7T(n/2) + n² (Strassen matrix multiplication)</summary><div><p>c = lg 7 ≈ 2.81, f = n² is smaller. Case 1 → <b>Θ(n<sup>2.81</sup>)</b>.</p></div></details>
+<details class="rv"><summary>T(n) = 2T(n/2) + n log n</summary><div><p>The gap case. Master theorem fails. Recursion tree gives <b>Θ(n log² n)</b>.</p></div></details>
+<details class="rv"><summary>T(n) = T(n−1) + n (Quick Sort worst case)</summary><div><p>Not of the form T(n/b), so the Master theorem does not apply. Unroll: n + (n−1) + … + 1 = n(n+1)/2 → <b>Θ(n²)</b>.</p></div></details>
+
+<h4>Method 3: substitution (guess and prove)</h4>
+<p>Guess the answer, then prove it by induction. Example: T(n) = 2T(⌊n/2⌋) + n, guess T(n) ≤ c·n lg n. Assume it holds for smaller values:</p>
+<p style="font-family:var(--f-mono);font-size:.88rem">T(n) ≤ 2·c⌊n/2⌋·lg⌊n/2⌋ + n ≤ c·n·lg(n/2) + n = c·n·lg n − c·n + n ≤ c·n·lg n, as long as c ≥ 1.</p>
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><p><b>Trick when the induction almost works.</b> If proving T(n) ≤ cn + d fails, strengthen the guess by <i>subtracting</i> a lower-order term: try T(n) ≤ cn − d. A stronger hypothesis gives you more to work with in the inductive step.</p></div>
+
+<h4>Recurrences worth memorising</h4>
+<div class="tbl-wrap"><table>
+<tr><th>Recurrence</th><th>Solution</th><th>Where it appears</th></tr>
+<tr><td>T(n) = T(n/2) + O(1)</td><td>O(log n)</td><td>Binary search</td></tr>
+<tr><td>T(n) = 2T(n/2) + O(1)</td><td>O(n)</td><td>Tree traversal, finding max by halves</td></tr>
+<tr><td>T(n) = 2T(n/2) + O(n)</td><td>O(n log n)</td><td>Merge sort, Quick Sort best/average</td></tr>
+<tr><td>T(n) = T(n−1) + O(1)</td><td>O(n)</td><td>Factorial, linear recursion</td></tr>
+<tr><td>T(n) = T(n−1) + O(n)</td><td>O(n²)</td><td>Quick Sort worst, selection sort</td></tr>
+<tr><td>T(n) = 2T(n−1) + O(1)</td><td>O(2ⁿ)</td><td>Subsets, naive Fibonacci (roughly)</td></tr>
+<tr><td>T(n) = n·T(n−1)</td><td>O(n!)</td><td>Permutations</td></tr>
+</table></div>
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><p><b>Correction to your notes' quick-reference table.</b> It lists "T(n) = 2T(n/2) + O(1) → Binary Search Tree ops → O(n)". That recurrence describes visiting <i>every</i> node (traversal), not a BST search. Search follows one path, so it is O(h), not O(n), unless the tree is skewed.</p></div>
+
+<h4>Amortised analysis, in one paragraph</h4>
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><p>A Python <code>list.append</code> is "O(1) amortised". Occasionally the array is full and must be copied to double its size, costing O(n). But that expensive copy happens only after n cheap appends, so spread over all appends the average cost per append is O(1). Amortised means <i>average over a sequence of operations</i>, with no randomness involved. It also explains why building a heap with n inserts costs O(n log n) but the cleverer build-heap costs O(n).</p></div>
+
+<div class="quiz" data-quiz="s2"></div>
+</section>

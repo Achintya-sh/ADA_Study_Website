@@ -1,0 +1,165 @@
+<section class="topic" id="practice" data-group="exam" data-num="X6" data-title="Practice problems">
+  <div class="topic-head"><div class="badge">X6</div><div><div class="meta">Exam line</div><h2>Exam-style practice problems</h2></div></div>
+  <div class="box tip"><div class="lbl" data-ico="✍️">How to practise</div><p>Write each answer on paper, the way you would in the exam: a table for every dry run, the recurrence before the answer, the five DP questions before any code. Try for 10 minutes before opening the hint, and 10 more before the solution. Reading a solution feels like understanding; producing it from a blank page is what the exam asks for. Problems follow the order of the stops.</p></div>
+
+  <div class="prob"><div class="lvl">Problem 1: complexity of code</div><h4>Count the work in three functions</h4>
+  <p>Give the time complexity of each function in Θ notation, with a one-line justification, and the space complexity of <code>c</code>.</p>
+<script type="text/plain" class="code">
+def a(n):
+    total = 0
+    for i in range(n):
+        for j in range(i, n):
+            total += 1
+    return total
+
+def b(n):
+    count, i = 0, n
+    while i > 1:
+        i //= 2
+        count += 1
+    return count
+
+def c(n):
+    if n <= 1:
+        return 1
+    return c(n // 2) + c(n // 2)
+</script>
+  <details><summary>Hint</summary><p>For <code>a</code>, write down how many times the inner loop runs for i = 0, 1, 2, … and add them up. For <code>b</code>, ask how many halvings reach 1. For <code>c</code>, write the recurrence first: how many recursive calls, on what size, plus how much other work?</p></details>
+  <details><summary>Solution</summary>
+  <p><b>a:</b> the inner loop runs n − i times, so the total is n + (n − 1) + … + 1 = n(n + 1)/2. That is <b>Θ(n²)</b>. Space O(1).</p>
+  <p><b>b:</b> i is halved each pass, so the loop runs about log₂ n times: <b>Θ(log n)</b>.</p>
+  <p><b>c:</b> T(n) = 2T(n/2) + O(1). Master theorem: a = 2, b = 2, c = log₂ 2 = 1. f(n) = 1 is polynomially smaller than n¹, so the leaves dominate: <b>Θ(n)</b>. (Calling c(n // 2) twice doubles the number of calls at every level, so the recursion tree ends with about n leaves. One call would give Θ(log n).) Space: the recursion goes log₂ n levels deep, so <b>O(log n)</b> stack.</p></details></div>
+
+  <div class="prob"><div class="lvl">Problem 2: recurrences</div><h4>Solve four recurrences with the Master theorem</h4>
+  <p>For each, state a, b, c = log_b(a), which case applies and the answer. If the theorem does not apply, say why and solve it another way.</p>
+  <p>(i) T(n) = 4T(n/2) + n &nbsp; (ii) T(n) = 2T(n/2) + n &nbsp; (iii) T(n) = T(n/2) + n &nbsp; (iv) T(n) = 2T(n/2) + n log n</p>
+  <details><summary>Hint</summary><p>Compare f(n) with n^c. Smaller by a power of n: leaves win. Equal: every level is equal, multiply by log n. Larger by a power of n (and the regularity check holds): the root wins. Bigger by only a log factor is the gap.</p></details>
+  <details><summary>Solution</summary>
+  <div class="tbl-wrap"><table>
+    <tr><th></th><th>a, b</th><th>c = log_b a</th><th>f(n) vs n^c</th><th>Answer</th></tr>
+    <tr><td>(i)</td><td>4, 2</td><td>2</td><td>n is polynomially smaller than n²</td><td><b>Θ(n²)</b></td></tr>
+    <tr><td>(ii)</td><td>2, 2</td><td>1</td><td>n = Θ(n¹): equal</td><td><b>Θ(n log n)</b></td></tr>
+    <tr><td>(iii)</td><td>1, 2</td><td>0</td><td>n is polynomially larger than n⁰ = 1; regularity: 1 · (n/2) ≤ ½ · n holds</td><td><b>Θ(n)</b></td></tr>
+    <tr><td>(iv)</td><td>2, 2</td><td>1</td><td>n log n is larger than n, but only by a log factor, not by any n^ε</td><td>Theorem does not apply</td></tr>
+  </table></div>
+  <p>For (iv), draw the recursion tree. Level k has 2ᵏ subproblems of size n/2ᵏ, each costing (n/2ᵏ) log(n/2ᵏ), so level k costs n(log n − k). Adding over log n levels gives about n · (log n)²/2, so <b>T(n) = Θ(n log² n)</b>.</p></details></div>
+
+  <div class="prob"><div class="lvl">Problem 3: Quick Sort dry run</div><h4>Partition [5, 2, 8, 1, 9, 3], then finish the sort</h4>
+  <p>Use the last element as the pivot (Lomuto). Show the array and k after every step of the first partition, then list every later call to <code>partition</code> and count the comparisons in total.</p>
+  <details><summary>Hint</summary><p>k starts at lo − 1 = −1. Each time arr[pos] ≤ pivot, add one to k and swap arr[k] with arr[pos]. At the end the pivot swaps into k + 1. A partition of a range with m elements makes m − 1 comparisons.</p></details>
+  <details><summary>Solution</summary>
+  <div class="tbl-wrap"><table>
+    <tr><th>pos</th><th>arr[pos] ≤ 3?</th><th>k</th><th>Array after the step</th></tr>
+    <tr><td class="n">start</td><td></td><td class="n">−1</td><td class="n">[5, 2, 8, 1, 9, 3]</td></tr>
+    <tr><td class="n">0</td><td>5: no</td><td class="n">−1</td><td class="n">[5, 2, 8, 1, 9, 3]</td></tr>
+    <tr><td class="n">1</td><td>2: yes, swap arr[0] and arr[1]</td><td class="n">0</td><td class="n">[2, 5, 8, 1, 9, 3]</td></tr>
+    <tr><td class="n">2</td><td>8: no</td><td class="n">0</td><td class="n">[2, 5, 8, 1, 9, 3]</td></tr>
+    <tr><td class="n">3</td><td>1: yes, swap arr[1] and arr[3]</td><td class="n">1</td><td class="n">[2, 1, 8, 5, 9, 3]</td></tr>
+    <tr><td class="n">4</td><td>9: no</td><td class="n">1</td><td class="n">[2, 1, 8, 5, 9, 3]</td></tr>
+    <tr><td class="n">end</td><td>pivot into k + 1 = 2</td><td class="n">1</td><td class="n">[2, 1, <b>3</b>, 5, 9, 8], returns 2</td></tr>
+  </table></div>
+  <p>Next calls: <code>partition(arr, 0, 1)</code> on [2, 1] with pivot 1 gives [1, 2], pivot at index 0. <code>partition(arr, 3, 5)</code> on [5, 9, 8] with pivot 8 gives [5, 8, 9], pivot at index 4. Every remaining range has 0 or 1 element. Final array [1, 2, 3, 5, 8, 9].</p>
+  <p>Comparisons: 5 + 1 + 2 = <b>8</b>. A sorted input of the same size would cost 5 + 4 + 3 + 2 + 1 = 15, the worst case.</p></details></div>
+
+  <div class="prob"><div class="lvl">Problem 4: BST operations</div><h4>Build, traverse, delete</h4>
+  <p>Insert 45, 25, 65, 15, 35, 55, 75, 30 into an empty BST in that order. Draw it, give its height in edges, and write the inorder, preorder and postorder traversals. Then delete 25 and give the new preorder and height.</p>
+  <details><summary>Hint</summary><p>Each key walks down from the root: smaller goes left, larger goes right, until an empty spot. 25 has two children, so replace it with its inorder successor: the smallest key in its right subtree.</p></details>
+  <details><summary>Solution</summary>
+  <p>Shape: 45 has children 25 and 65; 25 has 15 and 35; 35 has a left child 30; 65 has 55 and 75. The longest root-to-leaf path is 45 → 25 → 35 → 30, so the <b>height is 3</b>.</p>
+  <div class="tbl-wrap"><table>
+    <tr><th>Traversal</th><th>Before</th><th>After deleting 25</th></tr>
+    <tr><td>Inorder</td><td class="n">15 25 30 35 45 55 65 75</td><td class="n">15 30 35 45 55 65 75</td></tr>
+    <tr><td>Preorder</td><td class="n">45 25 15 35 30 65 55 75</td><td class="n">45 30 15 35 65 55 75</td></tr>
+    <tr><td>Postorder</td><td class="n">15 30 35 25 55 75 65 45</td><td class="n">15 35 30 55 75 65 45</td></tr>
+  </table></div>
+  <p>Delete 25: the successor is the minimum of the right subtree (35 → 30), so 30 is copied into 25's node and the old 30 leaf is removed. 35 is left with no children and the <b>height drops to 2</b>. The inorder list is still sorted, which is how you check your answer.</p></details></div>
+
+  <div class="prob"><div class="lvl">Problem 5: heaps</div><h4>Build a max-heap from [4, 10, 3, 5, 1, 8], then delete the max</h4>
+  <p>Use the O(n) bottom-up method. Show the array after every <code>sift_down</code> call, then show the array after one <code>delete_max</code>.</p>
+  <details><summary>Hint</summary><p>n = 6, so the last parent is at index n // 2 − 1 = 2. Sift down index 2, then 1, then 0. Each sift down swaps with the larger child and keeps going until the order rule holds.</p></details>
+  <details><summary>Solution</summary>
+  <div class="tbl-wrap"><table>
+    <tr><th>Step</th><th>What happens</th><th>Array</th></tr>
+    <tr><td>start</td><td></td><td class="n">[4, 10, 3, 5, 1, 8]</td></tr>
+    <tr><td>sift_down(2)</td><td>3 vs its only child 8: swap</td><td class="n">[4, 10, 8, 5, 1, 3]</td></tr>
+    <tr><td>sift_down(1)</td><td>10 vs children 5 and 1: already fine</td><td class="n">[4, 10, 8, 5, 1, 3]</td></tr>
+    <tr><td>sift_down(0)</td><td>4 vs 10 and 8: swap with 10; then 4 vs 5 and 1: swap with 5</td><td class="n">[10, 5, 8, 4, 1, 3]</td></tr>
+    <tr><td>delete_max</td><td>return 10; last value 3 moves to the root; 3 vs 5 and 8: swap with 8; index 2 has no children</td><td class="n">[8, 5, 3, 4, 1]</td></tr>
+  </table></div>
+  <p>Check: every parent is at least as large as its children (8 ≥ 5, 3; 5 ≥ 4, 1). Building cost O(n), the delete O(log n).</p></details></div>
+
+  <div class="prob"><div class="lvl">Problem 6: backtracking</div><h4>Subsets that add up to a target</h4>
+  <p>Write a backtracking function that returns every subset of a list of distinct positive integers whose sum equals a target, using each number at most once. Prune as early as you can. Give the output for nums = [2, 3, 5, 6], target = 8, and the worst-case time.</p>
+  <details><summary>Hint</summary><p>Sort the list first. The state is (start index, remaining sum). If the next number is bigger than what remains, every number after it is too, so you can stop the loop.</p></details>
+  <details><summary>Solution</summary>
+<script type="text/plain" class="code">
+def combo_sum(nums, target):
+    nums.sort()
+    res, cur = [], []
+    def go(start, remaining):
+        if remaining == 0:
+            res.append(cur[:])            # a complete answer: save a copy
+            return
+        for j in range(start, len(nums)):
+            if nums[j] > remaining:
+                break                     # sorted: everything after is too big
+            cur.append(nums[j])           # CHOOSE
+            go(j + 1, remaining - nums[j])   # EXPLORE (j + 1: each number once)
+            cur.pop()                     # UNDO
+    go(0, target)
+    return res
+
+print(combo_sum([2, 3, 5, 6], 8))    # [[2, 6], [3, 5]]
+</script>
+  <p>Worst case every subset is explored: O(2ⁿ) nodes, O(n · 2ⁿ) counting the copies. The sort costs O(n log n) once and makes the <code>break</code> prune whole branches.</p></details></div>
+
+  <div class="prob"><div class="lvl">Problem 7: graph traversal</div><h4>DFS, BFS and shortest paths by hand</h4>
+  <p>An undirected graph has 6 vertices and edges 0–1, 0–2, 1–3, 2–3, 3–4, 4–5. Write the adjacency list (neighbours in increasing order). Starting from 0, give the DFS visit order, the BFS order, the BFS distance of every vertex and the shortest path from 0 to 5. Does the graph have a cycle?</p>
+  <details><summary>Hint</summary><p>DFS: go as deep as possible through the smallest unvisited neighbour, back out only when stuck. BFS: process the queue in order, marking each vertex as it is enqueued. Keep a parent array to rebuild the path.</p></details>
+  <details><summary>Solution</summary>
+  <p>Adjacency list: 0: [1, 2], 1: [0, 3], 2: [0, 3], 3: [1, 2, 4], 4: [3, 5], 5: [4].</p>
+  <div class="tbl-wrap"><table>
+    <tr><th>Question</th><th>Answer</th></tr>
+    <tr><td>DFS order</td><td class="n">0 1 3 2 4 5</td></tr>
+    <tr><td>BFS order</td><td class="n">0 1 2 3 4 5</td></tr>
+    <tr><td>BFS distances (vertex 0 to 5)</td><td class="n">0, 1, 1, 2, 3, 4</td></tr>
+    <tr><td>Parents</td><td class="n">1 ← 0, 2 ← 0, 3 ← 1, 4 ← 3, 5 ← 4</td></tr>
+    <tr><td>Shortest path 0 to 5</td><td class="n">0 → 1 → 3 → 4 → 5 (4 edges)</td></tr>
+  </table></div>
+  <p><b>Cycle:</b> yes, 0 – 1 – 3 – 2 – 0. DFS finds it when, at vertex 2, it sees 0 already visited and 0 is not 2's parent. One connected component; degree sum 12 = 2 × 6 edges. Both traversals are O(V + E).</p></details></div>
+
+  <div class="prob"><div class="lvl">Problem 8: dynamic programming in one dimension</div><h4>Fewest coins</h4>
+  <p>Coins come in values 1, 3 and 4 (as many of each as you like). Find the fewest coins that make 6. Answer the five DP questions, fill the table, write the code and give its complexity. Why does greedy fail here?</p>
+  <details><summary>Hint</summary><p>State: dp[a] = fewest coins that make amount a. Choice: which coin is used last. If the last coin is c, the rest makes a − c.</p></details>
+  <details><summary>Solution</summary>
+  <p><b>State</b> dp[a]: fewest coins for amount a. <b>Choices</b>: the last coin c. <b>Transition</b>: dp[a] = 1 + min over coins c ≤ a of dp[a − c]. <b>Base</b>: dp[0] = 0. <b>Order</b>: a from 1 up to the amount; the answer is dp[6].</p>
+  <div class="tbl-wrap"><table>
+    <tr><th>a</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th></tr>
+    <tr><td>dp[a]</td><td class="n">0</td><td class="n">1</td><td class="n">2</td><td class="n">1</td><td class="n">1</td><td class="n">2</td><td class="n"><b>2</b></td></tr>
+  </table></div>
+<script type="text/plain" class="code">
+def min_coins(coins, amount):
+    INF = float('inf')
+    dp = [0] + [INF] * amount          # dp[0] = 0, everything else unknown
+    for a in range(1, amount + 1):
+        for c in coins:
+            if c <= a and dp[a - c] + 1 < dp[a]:
+                dp[a] = dp[a - c] + 1  # use coin c last
+    return dp[amount] if dp[amount] != INF else -1
+</script>
+  <p>Answer: <b>2 coins</b> (3 + 3). Greedy grabs the biggest coin first: 4 + 1 + 1, which is 3 coins. Time O(amount × number of coins), space O(amount).</p></details></div>
+
+  <div class="prob"><div class="lvl">Problem 9: dynamic programming in two dimensions</div><h4>0/1 Knapsack table and traceback</h4>
+  <p>Items have weights [1, 3, 4, 5] and values [1, 4, 5, 7]; the capacity is 7. Fill the table dp[i][c] (best value using the first i items with capacity c), give the best value and which items achieve it.</p>
+  <details><summary>Hint</summary><p>Row 0 is all zeros. For each cell: skip item i (copy the cell above) or, if it fits, take it (value plus the cell one row up and w columns left). Trace back from the bottom-right: if a cell differs from the one above, the item was taken.</p></details>
+  <details><summary>Solution</summary>
+  <div class="tbl-wrap"><table>
+    <tr><th>i (w, v)</th><th>c = 0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th></tr>
+    <tr><td>0 (none)</td><td class="n">0</td><td class="n">0</td><td class="n">0</td><td class="n">0</td><td class="n">0</td><td class="n">0</td><td class="n">0</td><td class="n">0</td></tr>
+    <tr><td>1 (1, 1)</td><td class="n">0</td><td class="n">1</td><td class="n">1</td><td class="n">1</td><td class="n">1</td><td class="n">1</td><td class="n">1</td><td class="n">1</td></tr>
+    <tr><td>2 (3, 4)</td><td class="n">0</td><td class="n">1</td><td class="n">1</td><td class="n">4</td><td class="n">5</td><td class="n">5</td><td class="n">5</td><td class="n">5</td></tr>
+    <tr><td>3 (4, 5)</td><td class="n">0</td><td class="n">1</td><td class="n">1</td><td class="n">4</td><td class="n">5</td><td class="n">6</td><td class="n">6</td><td class="n">9</td></tr>
+    <tr><td>4 (5, 7)</td><td class="n">0</td><td class="n">1</td><td class="n">1</td><td class="n">4</td><td class="n">5</td><td class="n">7</td><td class="n">8</td><td class="n"><b>9</b></td></tr>
+  </table></div>
+  <p>Best value <b>9</b>. Traceback from dp[4][7] = 9: equal to dp[3][7], so item 4 is skipped. dp[3][7] = 9 differs from dp[2][7] = 5, so item 3 (weight 4) is taken; move to c = 3. dp[2][3] = 4 differs from dp[1][3] = 1, so item 2 (weight 3) is taken; c = 0. <b>Items 2 and 3</b>: weight 7, value 9. Time and space O(nW).</p></details></div>
+</section>

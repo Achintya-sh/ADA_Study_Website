@@ -1,0 +1,58 @@
+<section class="topic half" id="b6" data-group="graph" data-num="6.5" data-title="Pairs, sets and grids">
+<div class="topic-head"><div class="badge">6.5</div><div><div class="meta">Bridge to stop 7</div><h2>Pairs, sets and grids: the language of graphs</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>A graph is a set of things V and a set of pairs E. Stop 7 writes everything in that notation and stores it in Python lists of lists, dictionaries and matrices. Get comfortable with pairs, set notation and nested lists first, including the one Python trap that silently corrupts an adjacency matrix.</p></div>
+
+<h3>Set notation in a few symbols</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Symbol</th><th>Read as</th><th>Example</th></tr>
+<tr><td>{ … }</td><td>the set containing …</td><td>V = {0, 1, 2, 3}</td></tr>
+<tr><td>x ∈ S</td><td>x is a member of S</td><td>2 ∈ V</td></tr>
+<tr><td>|S|</td><td>how many members S has</td><td>|V| = 4. In complexity, V and E are shorthand for |V| and |E|.</td></tr>
+<tr><td>(u, v)</td><td>ordered pair: order matters</td><td>a directed edge from u to v; (u, v) ≠ (v, u)</td></tr>
+<tr><td>{u, v}</td><td>unordered pair</td><td>an undirected edge; {u, v} = {v, u}</td></tr>
+</table></div>
+
+<h3>Relations become graphs</h3>
+<p>Any rule saying which things are connected is a graph. Whether the rule is <b>symmetric</b> decides the kind: "is a friend of" works both ways, so it is undirected; "follows" on social media need not, so it is directed; "must happen before" never loops back, so it is a directed graph without cycles.</p>
+
+<h3>How many edges can there be?</h3>
+<p>Using bridge 5.5's counting: with n vertices there are C(n, 2) = <b>n(n − 1)/2</b> unordered pairs, so at most that many undirected edges (no self-loops, no repeats). Ordered pairs give at most <b>n(n − 1)</b> directed edges. Either way E = O(V²), which also means log E = O(log V).</p>
+<div class="tbl-wrap"><table>
+<tr><th></th><th>Edges</th><th>Typical example</th><th>Better storage (stop 7)</th></tr>
+<tr><td>Sparse</td><td>E close to V</td><td>road maps, trees, grids</td><td>adjacency list, O(V + E)</td></tr>
+<tr><td>Dense</td><td>E close to V²</td><td>"everyone knows everyone" networks</td><td>adjacency matrix, O(V²)</td></tr>
+</table></div>
+
+<h3>Nested lists without the trap</h3>
+<p>A matrix in Python is a list of rows. <code>grid[r][c]</code> means row r, then column c. Build it so every row is its own list:</p>
+<script type="text/plain" class="code">
+R, C = 3, 4
+good = [[0] * C for _ in range(R)]   # R separate rows
+bad  = [[0] * C] * R                 # ONE row, listed R times
+
+bad[0][1] = 1
+print(bad)        # [[0, 1, 0, 0], [0, 1, 0, 0], [0, 1, 0, 0]]  every row changed
+print(bad[0] is bad[1])     # True: the same list object
+
+adj = {u: [] for u in range(4)}      # dict of lists: one neighbour list per vertex
+adj[0].append(1)
+</script>
+<p><code>[0] * C</code> is fine because 0 is a number and can't be mutated. <code>[row] * R</code> copies the <i>tag</i> to row R times (bridge 3.5), so every "row" is the same list.</p>
+
+<h3>A grid is a graph</h3>
+<p>Many problems never mention graphs but are graphs anyway: each grid cell is a vertex, joined to its up, down, left and right neighbours. Stop 8's islands and rotting-oranges problems are this. The neighbour loop with a bounds check is worth knowing by heart:</p>
+<script type="text/plain" class="code">
+for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+    nr, nc = r + dr, c + dc
+    if 0 <= nr < R and 0 <= nc < C:     # stay inside the grid
+        ...                              # (nr, nc) is a neighbour of (r, c)
+</script>
+<div class="lab" data-w="gridtrap" data-title="Lab: shared rows, and grids as graphs"></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><ul>
+<li>(u, v) is ordered (directed edge); {u, v} is unordered (undirected edge).</li>
+<li>At most n(n − 1)/2 undirected or n(n − 1) directed edges: E = O(V²).</li>
+<li>Build matrices with <code>[[0] * C for _ in range(R)]</code>, never <code>[[0] * C] * R</code>.</li>
+<li>Grids are graphs: 4 neighbours inside, 3 on an edge, 2 in a corner.</li>
+</ul></div>
+<div class="quiz" data-quiz="b6"></div>
+</section>

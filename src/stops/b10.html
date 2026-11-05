@@ -1,0 +1,48 @@
+<section class="topic half" id="b10" data-group="exam" data-num="10.5" data-title="Choosing the technique">
+<div class="topic-head"><div class="badge">10.5</div><div><div class="meta">Bridge to the exam line</div><h2>Choosing the technique</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>Exam questions rarely say "use DP". They describe a problem and leave the choice to you. This stop connects every technique in the course: what each one assumes, what it costs, and the words in a question that point to it.</p></div>
+
+<h3>One problem, four techniques</h3>
+<p>"In how many ways can you climb n stairs taking 1 or 2 steps at a time?"</p>
+<div class="tbl-wrap"><table>
+<tr><th>Technique</th><th>What it does</th><th>Cost</th></tr>
+<tr><td>Backtracking (stop 6)</td><td>lists every way, one by one</td><td>grows like 1.6ⁿ: at n = 40 that is 165,580,141 ways</td></tr>
+<tr><td>Plain recursion</td><td>counts without listing, but repeats subproblems</td><td>also exponential</td></tr>
+<tr><td>Memoized recursion (stop 9)</td><td>remembers each count</td><td>O(n) time, O(n) space</td></tr>
+<tr><td>Bottom-up DP (stop 9)</td><td>fills the table from small to large</td><td>O(n) time, O(1) space with two variables</td></tr>
+</table></div>
+<p>The question asked for a <b>count</b>, not a list, so listing every way is wasted effort. Reading what is actually asked is the first decision.</p>
+
+<h3>Questions to ask, in order</h3>
+<ol>
+<li><b>Must every valid arrangement be listed?</b> Backtracking, with pruning (stop 6). Check the size with bridge 5.5.</li>
+<li><b>Is it a minimum, maximum or count over many choices, and do smaller versions repeat?</b> Dynamic programming (stops 9–10). Consider greedy only if you can prove it (bridge 8.5).</li>
+<li><b>Is it a graph or a grid?</b> Fewest steps with equal-cost moves: BFS. Reachability, connected groups, cycles: DFS (stop 8).</li>
+<li><b>Do you repeatedly need the current best item?</b> A heap (stop 5).</li>
+<li><b>Must data stay sorted while it changes, with order queries?</b> A BST (stop 4).</li>
+<li><b>Does it split into independent halves?</b> Divide and conquer; write and solve the recurrence (stops 2–3).</li>
+<li><b>Is it "have I seen this before?"</b> A set or dictionary: O(1) average lookups (stop 0).</li>
+</ol>
+<p>Then check the input size against stop 1's table: n ≤ ~11 allows n!, n ≤ ~25 allows 2ⁿ, n up to about 10⁶ needs O(n log n) or better.</p>
+
+<h3>Technique map</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Technique</th><th>Words that point to it</th><th>Typical cost</th></tr>
+<tr><td>Backtracking</td><td>"all", "every", "list each", "generate", small n</td><td>exponential, cut by pruning</td></tr>
+<tr><td>Divide and conquer</td><td>"sort", "halves", "merge", "binary search"</td><td>from the recurrence: n log n, log n</td></tr>
+<tr><td>Greedy</td><td>"earliest finishing", "largest first", with a proof</td><td>usually O(n log n) for the sort</td></tr>
+<tr><td>Dynamic programming</td><td>"number of ways", "minimum cost", "maximum value", "longest"</td><td>states × work per state</td></tr>
+<tr><td>BFS</td><td>"fewest moves", "shortest path" (unweighted), "levels"</td><td>O(V + E)</td></tr>
+<tr><td>DFS</td><td>"connected", "reachable", "components", "cycle", "islands"</td><td>O(V + E)</td></tr>
+<tr><td>Heap</td><td>"k largest", "repeatedly the smallest", "streaming", "median"</td><td>O(log n) per operation</td></tr>
+<tr><td>BST</td><td>"keep sorted while inserting", "kth smallest", "range"</td><td>O(h) per operation</td></tr>
+<tr><td>Hash set / dict</td><td>"seen before", "duplicates", "pair with sum T"</td><td>O(1) average per lookup</td></tr>
+</table></div>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p>Two answers can both be "correct" and still score differently. DFS finds <i>a</i> path; only BFS guarantees the <i>shortest</i> one in an unweighted graph. Greedy gives <i>an</i> answer; only a proof (or DP) makes it the best one. Say which guarantee your choice gives.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><ul>
+<li>Read what is asked: list, count, best, or yes/no. Counting is not listing.</li>
+<li>Overlapping choices + best/count → DP. Equal-cost fewest steps → BFS. All arrangements → backtracking.</li>
+<li>Check n against the time budget before writing anything.</li>
+</ul></div>
+<div class="quiz" data-quiz="b10"></div>
+</section>

@@ -1,0 +1,81 @@
+<section class="topic" id="cheat" data-group="exam" data-num="X8" data-title="Cheat sheet">
+  <div class="topic-head"><div class="badge">X8</div><div><div class="meta">Exam line</div><h2>One-page cheat sheet</h2></div></div>
+  <p>Read this the night before and on the way to the exam. Every line is something that has appeared above.</p>
+  <h3>Complexity cheat sheet</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Algorithm / operation</th><th>Best</th><th>Average</th><th>Worst</th><th>Space</th></tr>
+<tr><td>Quick Sort (last pivot)</td><td>n log n</td><td>n log n</td><td><b>n²</b></td><td>log n avg, n worst</td></tr>
+<tr><td>Randomized Quick Sort</td><td>n log n</td><td>n log n (expected)</td><td>n² (very unlikely)</td><td>log n expected</td></tr>
+<tr><td>Merge Sort</td><td>n log n</td><td>n log n</td><td>n log n</td><td>n</td></tr>
+<tr><td>Heap Sort</td><td>n log n</td><td>n log n</td><td>n log n</td><td>1</td></tr>
+<tr><td>BST search / insert / delete</td><td>log n</td><td>log n</td><td>n (skewed)</td><td>O(h) recursion</td></tr>
+<tr><td>BST inorder traversal</td><td colspan="3">Θ(n)</td><td>O(h)</td></tr>
+<tr><td>Heap: peek / insert / delete max</td><td colspan="3">O(1) / O(log n) / O(log n)</td><td>O(1)</td></tr>
+<tr><td>Build heap (n items)</td><td colspan="3">O(n)</td><td>O(1)</td></tr>
+<tr><td>DFS / BFS (adjacency list)</td><td colspan="3">O(V + E)</td><td>O(V)</td></tr>
+<tr><td>DFS / BFS (adjacency matrix)</td><td colspan="3">O(V²)</td><td>O(V)</td></tr>
+<tr><td>Permutations / subsets by backtracking</td><td colspan="3">O(n · n!) / O(n · 2ⁿ)</td><td>O(n) depth</td></tr>
+<tr><td>Climbing stairs / House robber (DP)</td><td colspan="3">O(n)</td><td>O(n), or O(1) optimised</td></tr>
+<tr><td>Grid path / LCS / Edit distance (2D DP)</td><td colspan="3">O(mn)</td><td>O(mn), or O(n) with a rolling row</td></tr>
+<tr><td>0/1 Knapsack (2D DP)</td><td colspan="3">O(nW) pseudo-polynomial</td><td>O(nW), or O(W) with a 1D array</td></tr>
+</table></div>
+<h3>Master theorem on one card</h3>
+<pre class="code" style="white-space:pre-wrap">T(n) = a·T(n/b) + f(n)        let c = log_b(a)      compare f(n) with n^c
+
+f(n) polynomially smaller than n^c  →  T(n) = Θ(n^c)            leaves dominate
+f(n) = Θ(n^c)                       →  T(n) = Θ(n^c · log n)    every level equal
+f(n) polynomially larger than n^c   →  T(n) = Θ(f(n))           root dominates
+                                        (and a·f(n/b) ≤ k·f(n), k &lt; 1)
+Gap (e.g. f = n^c · log n): theorem fails. Use a recursion tree.</pre>
+<h3>Data structure rule cards</h3>
+<div class="cols">
+<div class="card"><h4>BST</h4><p>Left &lt; node &lt; right at <b>every</b> node. Inorder is sorted. Cost O(h). Delete: leaf, one child, or two children (replace with inorder successor).</p></div>
+<div class="card"><h4>Heap</h4><p>Complete tree + parent ≥ children (max). Array: children 2i+1, 2i+2; parent (i−1)//2. Insert = bubble up. Delete = swap root with last, sift down. Build = O(n).</p></div>
+<div class="card"><h4>Backtracking</h4><p>Choose, explore, undo. Prune early. Copy before saving. Counts: n! permutations, 2ⁿ subsets.</p></div>
+<div class="card"><h4>Graph</h4><p>Adjacency list for sparse graphs: O(V+E). Matrix: O(V²) space, O(1) edge test. Sum of degrees = 2E.</p></div>
+<div class="card"><h4>DFS / BFS</h4><p>visited[] always. DFS = stack/recursion, finds cycles and components. BFS = queue, mark when enqueued, shortest path in unweighted graphs.</p></div>
+<div class="card"><h4>DP</h4><p>State, choices, transition, base, order. Memo = recursion + cache. Naive Fibonacci-type recursion is exponential, DP makes it linear.</p></div>
+<div class="card"><h4>2D DP</h4><p>State is a pair (i, j). Time = cells × work per cell. LCS: match → diagonal + 1, else max(up, left). Knapsack: max(skip, take); 1D version loops capacity <b>downward</b>. Keep the full table if you need the traceback.</p></div>
+</div>
+<h3>Exam-writing tips</h3>
+<ul>
+<li>For "analyse the complexity", name the recurrence or the loop count first, then simplify. Marks are for the working.</li>
+<li>For "dry run", draw a table with one row per step. Show the state after every step (array, stack, queue, visited).</li>
+<li>State your assumptions: index base (0 or 1), duplicate policy, tree height convention, adjacency order.</li>
+<li>Always say which case you are discussing: best, average or worst.</li>
+</ul>
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><p><b>Corrections and clarifications to your lecture notes</b>, collected in one place:<br>
+(1) BST operations are O(h), not O(log n), unless the tree is balanced. (2) The row "2T(n/2)+O(1) → BST ops → O(n)" in the quick-reference table really describes a full traversal. (3) Quick Sort's O(log n) space is an <i>average</i>; worst case O(n) unless you recurse into the smaller side first. (4) The notes' Master theorem has no "polynomially" or regularity condition; the gap case n log n exists. (5) DFS/BFS time O(V+E) assumes adjacency lists. (6) Heap build is O(n), not O(n log n). (7) Heap delete swaps with the larger child.</p></div>
+<h3>Model structure for long-answer questions</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Question type</th><th>What to write, in order</th></tr>
+<tr><td>"Explain algorithm X with an example"</td><td>1. One-sentence idea. 2. Steps or pseudocode. 3. A small worked example as a table, state after every step. 4. Time and space complexity (best, average, worst). 5. One strength and one weakness.</td></tr>
+<tr><td>"State and explain the rules of data structure Y"</td><td>1. Definition. 2. Shape rule and order rule, with a small valid and invalid example. 3. How it is stored. 4. Each operation with cost. 5. When to use it.</td></tr>
+<tr><td>"Analyse the complexity of this code / recurrence"</td><td>1. Say what n is. 2. Count (loops multiply, sequence adds) or write the recurrence. 3. Solve (recursion tree or Master theorem, showing a, b, c and the case). 4. State Θ or O, and space.</td></tr>
+<tr><td>"Compare X and Y"</td><td>A table with the same rows for both: idea, time (best/avg/worst), space, when to prefer each.</td></tr>
+<tr><td>"Trace / dry run"</td><td>Table with one row per step; columns for the variables, data structure contents, and output so far.</td></tr>
+<tr><td>"Design a solution for problem Z"</td><td>Brute force and its cost, the observation that improves it, the chosen technique, pseudocode, dry run on the example, complexity.</td></tr>
+</table></div>
+  <h3>Bridge essentials</h3>
+  <div class="tbl-wrap"><table>
+    <tr><th>Half stop</th><th>Must-know</th></tr>
+    <tr><td class="n"><a href="#b0">0.5</a></td><td>Trace one row per step. Code after a recursive call runs on the way back. Deepest stack = recursion space.</td></tr>
+    <tr><td class="n"><a href="#b1">1.5</a></td><td>f/g → 0: slower; → constant: Θ; → ∞: faster. logs &lt; powers &lt; exponentials &lt; factorials. 4ⁿ is not O(2ⁿ). Induction: base, assume k, prove k + 1.</td></tr>
+    <tr><td class="n"><a href="#b2">2.5</a></td><td>Reader–writer partition: k ends the kept zone; grow k, then swap. Not stable. Three-way partition for duplicates.</td></tr>
+    <tr><td class="n"><a href="#b3">3.5</a></td><td>Mutating is shared, rebinding is local. Return and re-attach subtrees. Save nxt before turning an arrow.</td></tr>
+    <tr><td class="n"><a href="#b4">4.5</a></td><td>0-based: children 2i + 1, 2i + 2; parent (i − 1) // 2. Height ⌊log₂ n⌋, leaves from index n // 2.</td></tr>
+    <tr><td class="n"><a href="#b5">5.5</a></td><td>kⁿ, 2ⁿ, n!, n!/(n − k)!, C(n, k). Brute force: 2ⁿ to n ≈ 25, n! to n ≈ 11. Record cur[:].</td></tr>
+    <tr><td class="n"><a href="#b6">6.5</a></td><td>At most n(n − 1)/2 undirected edges. [[0] * C for _ in range(R)]. Grid cell: up to 4 neighbours.</td></tr>
+    <tr><td class="n"><a href="#b7">7.5</a></td><td>Queue → BFS, stack → deep first. Visited set because of cycles. O(V + E).</td></tr>
+    <tr><td class="n"><a href="#b8">8.5</a></td><td>DP needs overlapping subproblems and optimal substructure. lru_cache needs hashable arguments. Greedy needs a proof.</td></tr>
+    <tr><td class="n"><a href="#b9">9.5</a></td><td>Table (m + 1) × (n + 1); dp[i][j] compares x[i − 1] and y[j − 1]; fill so sources come first.</td></tr>
+    <tr><td class="n"><a href="#b10">10.5</a></td><td>Counting is not listing. Fewest equal-cost steps → BFS. Best or count over overlapping choices → DP.</td></tr>
+  </table></div>
+  <div class="box tip"><div class="lbl" data-ico="🎯">During the exam</div><ul>
+    <li>Read every question first and note what each one asks for: a trace, a complexity argument, code, or a comparison.</li>
+    <li>For a dry run, draw the table before you start: one row per step, the whole state in every row.</li>
+    <li>Write the loop count or the recurrence before the answer. The working earns most of the marks.</li>
+    <li>Before handing in, scan for: 0-based indices, <code>&lt;</code> versus <code>&lt;=</code>, the pivot left out of both halves, the larger child in sift down, a copy before saving in backtracking, marking on enqueue in BFS.</li>
+  </ul></div>
+  <p style="color:var(--muted);font-size:15px;margin-top:30px">You've reached the end of the line. Good luck in the exam.</p>
+</section>

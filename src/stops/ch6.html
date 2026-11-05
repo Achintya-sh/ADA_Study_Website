@@ -1,0 +1,332 @@
+<section class="topic" id="ch6" data-group="bt" data-num="6" data-title="Backtracking">
+<div class="topic-head"><div class="badge">6</div><div><div class="meta">Backtracking line</div><h2>Backtracking</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>Complete search done politely: build an answer one choice at a time, and the moment a choice cannot work, take it back.</p></div>
+
+<h3>Two ideas to start from</h3>
+<p><b>Recursion</b> (chapter 1): a function that solves a smaller version of itself. <b>Complete search</b>: when no clever shortcut exists, try every possibility. A 4-dial lock with digits 0–9 has 10⁴ = 10,000 combinations; try them all.</p>
+<p>Complete search has two problems: (1) how do you write the loops when the number of dials depends on the input? (2) how do you avoid wasting time on obviously bad combinations? Backtracking answers both: (1) with recursion, (2) with pruning.</p>
+
+<h3>Backtracking, defined</h3>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><p>Backtracking is an <b>organised complete search</b>. You build the solution step by step, one decision at a time. If a decision leads to a dead end, <b>undo it</b> and try the next option.</p></div>
+<p>At every step, the same three moves:</p>
+<ol>
+<li><b>Choose</b>: add one option to the current partial solution.</li>
+<li><b>Explore</b>: recurse to make the next decision.</li>
+<li><b>Undo</b>: remove that option so the state is exactly as it was, then try the next option.</li>
+</ol>
+<p>Analogy: a rat in a maze walks down a corridor. If it hits a wall it walks back to the last junction and tries a different corridor. Doctor Strange viewing 14,000,605 futures does the same: follow a decision, see whether it wins, rewind if it does not.</p>
+<div class="box analogy"><div class="lbl" data-ico="🧑‍🏫">Teacher's note</div><p>Picture the search as a <b>tree</b>. The root is "no decisions yet". Each edge is a decision. Each node is a partial solution. A leaf is either a complete answer or a dead end. Going <b>down</b> an edge is choose + explore. Coming <b>back up</b> is undo. The program is simply a depth-first walk of this tree (that is why chapter 8's DFS will feel familiar).</p></div>
+
+<h3>The universal template</h3>
+<script type="text/plain" class="code">
+def backtrack(state):
+    if is_complete(state):               # base case: a full solution
+        record(state)
+        return
+    for choice in options(state):
+        if is_valid(choice, state):      # PRUNING: skip doomed branches
+            make(choice, state)          # CHOOSE
+            backtrack(state)             # EXPLORE
+            undo(choice, state)          # UNDO (restore state exactly)
+</script>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p>The #1 bug: forgetting to undo (or undoing incompletely). If the state after the call is not identical to the state before it, the next iteration starts from a corrupted state. Always ask: "what did I change when I chose? Did I change it back?" Also: when you save a solution, save a <b>copy</b> (<code>curr[:]</code>), not the list itself, or later undos will erase what you saved.</p></div>
+
+
+<h3>How to design a backtracking solution</h3>
+<p>Before writing any code, answer five questions. They turn a vague problem into a template you fill in.</p>
+<ol>
+<li><b>What is the state?</b> What do I need to remember about the decisions made so far? (The partial answer, plus any helper data such as <code>visited</code> or a count.)</li>
+<li><b>What is one decision?</b> At each step I fill one position / pick one element / place one queen.</li>
+<li><b>What are the options for that decision?</b> The loop's range: each character, each unused number, each column, include-or-exclude.</li>
+<li><b>When is a choice invalid?</b> The pruning test, checked <i>before</i> recursing.</li>
+<li><b>When am I done, and how do I undo?</b> The base case (answer complete) and the exact reverse of every change made when choosing.</li>
+</ol>
+<div class="tbl-wrap"><table>
+<tr><th></th><th>Passwords</th><th>Permutations</th><th>N-Queens</th><th>Subsets</th></tr>
+<tr><td><b>State</b></td><td>position i, list curr</td><td>i, curr, visited[]</td><td>row, board (or column sets)</td><td>index i, list curr</td></tr>
+<tr><td><b>One decision</b></td><td>the character at position i</td><td>the number at position i</td><td>the column of the queen in this row</td><td>include or exclude element i</td></tr>
+<tr><td><b>Options</b></td><td>each character</td><td>each number 1..n</td><td>columns 0..n−1</td><td>2 options</td></tr>
+<tr><td><b>Invalid when</b></td><td>repeats previous / too many digits</td><td>already used</td><td>column or diagonal attacked</td><td>never (nothing to prune)</td></tr>
+<tr><td><b>Done when</b></td><td>i == n</td><td>i == n</td><td>row == n</td><td>i == len(nums)</td></tr>
+<tr><td><b>Undo</b></td><td>pop</td><td>pop; visited = False</td><td>remove the queen</td><td>pop</td></tr>
+</table></div>
+<div class="box analogy"><div class="lbl" data-ico="🧑‍🏫">Teacher's note</div><p><b>Counting the work.</b> The running time is roughly <i>(number of nodes in the decision tree) × (work per node)</i>. With b options per level and depth d, that is up to bᵈ leaves. Pruning cuts whole subtrees but the worst case can stay exponential.</p></div>
+
+<h3>Problem 1: generate every password of length n</h3>
+<p>Alphabet "aeiou1234@" (10 characters), length n. We need n nested loops, but n is only known at run time. Recursion solves that: each call fills <b>one position</b>. The state is <code>i</code> (the position being filled) and <code>curr</code> (characters chosen so far).</p>
+<script type="text/plain" class="code">
+def generate(i, curr, n, chars):
+    if i == n:                           # all positions filled
+        print("".join(curr))
+        return
+    for ch in chars:
+        curr.append(ch)                  # CHOOSE
+        generate(i + 1, curr, n, chars)  # EXPLORE
+        curr.pop()                       # UNDO
+# Strings are immutable in Python, so we build with a list and join at the end.
+# Number of results: 10^n.  Time: O(n * 10^n) counting the join.
+</script>
+<h3>Pruning: cut dead branches early</h3>
+<p>Now add rules: (1) no two equal characters in a row, (2) at most two digits. The lazy way generates all 10<sup>n</sup> passwords and filters. The smart way checks <b>before recursing</b>. If the choice already breaks a rule, skip it, and with it the entire subtree below, which might contain 10<sup>n−i</sup> useless leaves.</p>
+<script type="text/plain" class="code">
+def generate(i, curr, num_count, n, chars):
+    if i == n:
+        print("".join(curr))
+        return
+    for ch in chars:
+        if curr and ch == curr[-1]:              # rule 1: no repeats in a row
+            continue
+        if ch in "1234" and num_count >= 2:      # rule 2: at most two digits
+            continue
+        curr.append(ch)
+        generate(i + 1, curr, num_count + (ch in "1234"), n, chars)
+        curr.pop()
+</script>
+<p>Watch the difference on a small case. Choose one of the four problems and step through (the last one, subsets, is the include / exclude pattern). In the tree, red nodes are pruned: they are created, rejected, and their whole subtree is never visited.</p>
+<div class="lab" data-w="bt1" data-title="Lab: recursion tree of choose / explore / undo"></div>
+
+<h3>Problem 2: permutations (no repeats)</h3>
+<p>Arrange the numbers 1..n in every possible order. At each position choose a number that is <b>not already used</b>. A boolean <code>visited</code> array answers "already used?" in O(1) (checking <code>num in curr</code> would cost O(n) each time). There are n! results.</p>
+<script type="text/plain" class="code">
+def permute(i, curr, visited, n):
+    if i == n:
+        print(curr[:])                   # copy!
+        return
+    for num in range(1, n + 1):
+        if not visited[num]:             # prune: number already used
+            visited[num] = True          # CHOOSE (two things changed)
+            curr.append(num)
+            permute(i + 1, curr, visited, n)   # EXPLORE
+            curr.pop()                   # UNDO (both things)
+            visited[num] = False
+# permute(0, [], [False]*(n+1), n)   n=3 prints 123 132 213 231 312 321
+</script>
+<p>Compare with <b>sequences with repetition</b> (no visited array: 1..n each position, n<sup>n</sup> results). The only difference is the pruning line.</p>
+
+<h3>Problem 3: N-Queens</h3>
+<p>Place N queens on an N × N chessboard so that <b>no two attack each other</b>: no two share a row, a column, or a diagonal.</p>
+<div class="box analogy"><div class="lbl" data-ico="🧑‍🏫">Teacher's note</div><p><b>The clever framing.</b> A naive search picks N squares out of N² (a huge number). But we already know that each row holds <i>exactly one</i> queen. So just decide, row by row, <b>which column</b> that row's queen goes in. The decisions are now "column for row 0, column for row 1, …": a tree of depth N with N options per level, pruned heavily.</p></div>
+<p><b>Plan:</b> process row 0, 1, 2, … For the current row try each column. If the square is <b>safe</b> (not attacked by queens already placed above), place a queen and move to the next row. If no column in a row works, return, and the previous row's queen is moved to its next column. That "return and move on" is the backtrack.</p>
+<script type="text/plain" class="code">
+n = int(input())
+board = [['.'] * n for _ in range(n)]
+
+def solve(row):
+    if row == n:                       # every row has a queen
+        for r in board: print("".join(r))
+        print()
+        return
+    for col in range(n):
+        if is_safe(row, col):
+            board[row][col] = 'Q'      # CHOOSE
+            solve(row + 1)             # EXPLORE
+            board[row][col] = '.'      # UNDO
+
+def is_safe(row, col):
+    i = row - 1                        # column above
+    while i >= 0:
+        if board[i][col] == 'Q': return False
+        i -= 1
+    i, j = row - 1, col - 1            # upper-left diagonal
+    while i >= 0 and j >= 0:
+        if board[i][j] == 'Q': return False
+        i -= 1; j -= 1
+    i, j = row - 1, col + 1            # upper-right diagonal
+    while i >= 0 and j < n:
+        if board[i][j] == 'Q': return False
+        i -= 1; j += 1
+    return True
+
+solve(0)
+</script>
+<p><b>Why only check upward?</b> We fill rows from the top. Rows below the current one are still empty, and the current row has no other queen. Only rows 0 .. row−1 can contain attackers.</p>
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><p><b>Faster safety check in O(1).</b> Two queens share a "\" diagonal exactly when <code>row − col</code> is equal, and a "/" diagonal exactly when <code>row + col</code> is equal. Keep three sets: used columns, used (row−col) values, used (row+col) values. Safe means the column, row−col and row+col are all absent from the sets. Add them when you choose and remove them when you undo.</p></div>
+<script type="text/plain" class="code">
+def n_queens_count(n):
+    cols, d1, d2 = set(), set(), set()
+    def go(row):
+        if row == n:
+            return 1
+        total = 0
+        for col in range(n):
+            if col in cols or (row - col) in d1 or (row + col) in d2:
+                continue                             # attacked: prune
+            cols.add(col); d1.add(row - col); d2.add(row + col)      # CHOOSE
+            total += go(row + 1)                                     # EXPLORE
+            cols.remove(col); d1.remove(row - col); d2.remove(row + col)  # UNDO
+        return total
+    return go(0)
+# n=4 -> 2 solutions, n=5 -> 10, n=6 -> 4, n=8 -> 92
+</script>
+<p>Step through the N = 4 case and watch each "attacked" skip and each undo. Try N = 5 and N = 6 and use "Next solution".</p>
+<div class="lab" data-w="nq" data-title="Lab: N-Queens"></div>
+
+<h3>Two more patterns you should be able to write</h3>
+<h4>Subsets: include or exclude each element</h4>
+<script type="text/plain" class="code">
+def subsets(nums):
+    res, cur = [], []
+    def go(i):
+        if i == len(nums):
+            res.append(cur[:])           # save a copy
+            return
+        go(i + 1)                        # option 1: exclude nums[i]
+        cur.append(nums[i])              # option 2: include it
+        go(i + 1)
+        cur.pop()                        # undo
+    go(0)
+    return res
+# [1,2,3] -> [], [3], [2], [2,3], [1], [1,3], [1,2], [1,2,3]    2^n subsets
+</script>
+<h4>Generate balanced parentheses (pruning in action)</h4>
+<p>Add "(" only if fewer than n are used. Add ")" only if it would not exceed the "(" count. Invalid strings are never even started.</p>
+<script type="text/plain" class="code">
+def gen_parens(n):
+    res, cur = [], []
+    def go(opened, closed):
+        if len(cur) == 2 * n:
+            res.append("".join(cur)); return
+        if opened < n:
+            cur.append('('); go(opened + 1, closed); cur.pop()
+        if closed < opened:
+            cur.append(')'); go(opened, closed + 1); cur.pop()
+    go(0, 0)
+    return res
+# gen_parens(3) -> ((())), (()()), (())(), ()(()), ()()()
+</script>
+
+<h3>How slow is backtracking?</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Problem</th><th>Size of the search tree (leaves)</th><th>Reasonable n</th></tr>
+<tr><td>Strings of length n over k symbols</td><td>kⁿ</td><td>small</td></tr>
+<tr><td>Permutations</td><td>n!</td><td>n ≤ 10 or 11</td></tr>
+<tr><td>Subsets</td><td>2ⁿ</td><td>n ≤ 20 to 25</td></tr>
+<tr><td>N-Queens</td><td>at most n!, far fewer after pruning</td><td>n up to ~12–14</td></tr>
+</table></div>
+<p>Backtracking is exponential in the worst case. Pruning does not change the worst-case bound, but it can cut the real running time by orders of magnitude. The art is finding the earliest possible moment to say "this can never work".</p>
+<div class="tbl-wrap"><table>
+<tr><th></th><th>Brute force</th><th>Backtracking</th><th>Dynamic programming</th></tr>
+<tr><td>Idea</td><td>Generate everything, check at the end</td><td>Check while building, abandon early</td><td>Remember answers to repeated subproblems</td></tr>
+<tr><td>Output</td><td>All solutions</td><td>All solutions (or the first)</td><td>Usually one best value or a count</td></tr>
+<tr><td>Use when</td><td>Tiny inputs</td><td>"List all / find any valid arrangement"</td><td>Subproblems overlap, "min / max / how many"</td></tr>
+</table></div>
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><p><b>Other famous backtracking problems</b> (same template): Sudoku solver, rat in a maze, combination sum, word search in a grid, graph colouring, Hamiltonian path, knight's tour.</p></div>
+
+<h3 class="pat-head">Patterns for contests: backtracking</h3>
+<div class="box tip"><div class="lbl" data-ico="🎯">Seen in your contests</div><p><b>Mid-sem Q4 Generate Parentheses</b> (40/80, late) and <b>Q7 Palindrome Partitioning</b> (0/120) were on a topic you hadn’t studied yet. Q7 is solved at the bottom of this page: one table for “is s[i..j] a palindrome?”, then backtracking that only ever cuts at palindromes.</p></div>
+<div class="tbl-wrap"><table>
+<tr><th>Pattern</th><th>Words in the statement</th><th>Tool</th></tr>
+<tr><td>Generate everything</td><td>“return all …”, n ≤ 10–20</td><td>choose, recurse, undo</td></tr>
+<tr><td>Avoid duplicates</td><td>input has repeated values, “distinct results”</td><td>sort, skip an equal sibling at the same depth</td></tr>
+<tr><td>Cut dead branches</td><td>“can you split into k …”, “does a solution exist”</td><td>bound check, big items first, skip symmetric states</td></tr>
+<tr><td>Precompute a test</td><td>“every piece must be a palindrome”</td><td>fill a table first, branch only where it says yes</td></tr>
+<tr><td>Count, don’t list</td><td>“how many ways”, n ≤ 40</td><td>meet in the middle: two halves of 2^(n/2)</td></tr>
+<tr><td>Same state again and again</td><td>the arguments repeat across branches</td><td>add a cache: it just became DP</td></tr>
+</table></div>
+<script type="text/plain" class="code">
+def permute_unique(nums):                 # LC 47: no repeated permutations
+    nums.sort()
+    res, cur, used = [], [], [False] * len(nums)
+    def go():
+        if len(cur) == len(nums):
+            res.append(cur[:]); return
+        for i in range(len(nums)):
+            if used[i]:
+                continue
+            if i and nums[i] == nums[i - 1] and not used[i - 1]:
+                continue                  # same value as the sibling branch we just finished
+            used[i] = True; cur.append(nums[i])
+            go()
+            cur.pop(); used[i] = False
+    go()
+    return res
+</script>
+<script type="text/plain" class="code">
+def subsets_dup(nums):                    # LC 90
+    nums.sort()
+    res, cur = [], []
+    def go(start):
+        res.append(cur[:])
+        for i in range(start, len(nums)):
+            if i > start and nums[i] == nums[i - 1]:
+                continue                  # skip an equal sibling at the same depth
+            cur.append(nums[i]); go(i + 1); cur.pop()
+    go(0)
+    return res
+</script>
+<script type="text/plain" class="code">
+def palindrome_partitions(s):             # mid-sem Q7 / LC 131
+    n = len(s)
+    pal = [[False] * n for _ in range(n)] # pal[i][j]: is s[i..j] a palindrome?
+    for i in range(n - 1, -1, -1):        # pal[i][j] needs pal[i+1][j-1]: fill i downward
+        for j in range(i, n):
+            pal[i][j] = s[i] == s[j] and (j - i < 2 or pal[i + 1][j - 1])
+    res, cur = [], []
+    def go(i):
+        if i == n:
+            res.append(cur[:]); return
+        for j in range(i, n):
+            if pal[i][j]:                 # cut only where the piece is a palindrome: prunes dead branches
+                cur.append(s[i:j + 1]); go(j + 1); cur.pop()
+    go(0)
+    return res
+
+def min_cuts(s):                          # LC 132: same table, DP instead of listing everything
+    n = len(s)
+    pal = [[False] * n for _ in range(n)]
+    for i in range(n - 1, -1, -1):
+        for j in range(i, n):
+            pal[i][j] = s[i] == s[j] and (j - i < 2 or pal[i + 1][j - 1])
+    cuts = [0] * n                        # cuts[j]: fewest cuts for the prefix s[0..j]
+    for j in range(n):
+        cuts[j] = 0 if pal[0][j] else min(cuts[i - 1] + 1 for i in range(1, j + 1) if pal[i][j])
+    return cuts[-1]
+</script>
+<p>The same table answers “fewest cuts” without listing anything: <code>min_cuts</code> above is DP, and that switch is the rule: <b>if you only need a count or a best value, and states repeat, stop listing and tabulate</b>.</p>
+<script type="text/plain" class="code">
+def can_partition_k(nums, k):             # LC 698: k buckets with equal sums
+    total = sum(nums)
+    if total % k:
+        return False
+    target = total // k
+    nums.sort(reverse=True)               # big items first: dead ends show up early
+    if nums[0] > target:
+        return False
+    buckets = [0] * k
+    def go(i):
+        if i == len(nums):
+            return True
+        seen = set()
+        for b in range(k):
+            if buckets[b] + nums[i] > target or buckets[b] in seen:
+                continue                  # two buckets with the same fill are the same situation
+            seen.add(buckets[b])
+            buckets[b] += nums[i]
+            if go(i + 1):
+                return True
+            buckets[b] -= nums[i]
+        return False
+    return go(0)
+</script>
+<script type="text/plain" class="code">
+from collections import Counter
+
+def count_subsets(a, T):                  # subsets with sum exactly T, n up to about 40
+    def sums(part):
+        res = [0]
+        for x in part:
+            res += [s + x for s in res]   # every old sum, with and without x
+        return res
+    mid = len(a) // 2
+    left = Counter(sums(a[:mid]))         # 2^(n/2) sums instead of 2^n
+    return sum(left[T - s] for s in sums(a[mid:]))
+</script>
+<div class="box warnbox"><div class="lbl" data-ico="🎯">Choosing by n</div><p>n ≤ 10: all orderings (10! ≈ 3.6 million). n ≤ 20: all subsets (2²⁰ ≈ 10⁶), with pruning. n ≤ 40: meet in the middle (2²⁰ per half). Larger: this is not a backtracking problem; look for DP or a greedy.</p></div>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p>Append <code>cur[:]</code>, not <code>cur</code>: otherwise every saved result is the same list that later gets emptied. Undo exactly what you did. Skip duplicates with <code>i &gt; start</code> (same depth), not <code>i &gt; 0</code>. Pruning before recursing is cheaper than pruning after.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Choose, recurse, undo. Sort and skip equal siblings. Big items first, skip identical states.</p>
+<p>Precompute the yes/no test (palindrome table), then branch only on yes.</p>
+<p>Count or best value with repeating states → DP. n ≤ 40 counting → meet in the middle.</p>
+<p>Practice: the Ladder, tab Backtracking.</p></div>
+<div class="quiz" data-quiz="s6"></div>
+</section>

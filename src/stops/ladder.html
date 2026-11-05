@@ -1,0 +1,172 @@
+<section class="topic" id="ladder" data-group="ladder" data-num="L" data-title="The Ladder">
+<div class="topic-head"><div class="badge">L</div><div><div class="meta">Practise at the edge of your ability</div><h2>The Ladder</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>Reading solutions feels like progress; solving problems at the edge of your ability under a clock is what moves you. The Ladder holds every problem in the notebook in one place, rated on both Codeforces and LeetCode scales, from warm-ups to the Ego tier. Tick a problem only when it was accepted without reading a solution: each tick earns XP, and harder tiers pay more.</p></div>
+<div class="lab" data-w="ladder2" data-title="The Ladder"></div>
+
+<h3>Your plan for today</h3>
+<p>Set the end-sem date when it’s announced; the plan shows which phase you’re in.</p>
+<div class="lab" data-w="endplan" data-title="Lab: your plan for today"></div>
+
+<h3>Your three contests, mapped to the stops</h3>
+<p>Each contest came before you had studied its topics, which is why the late solves cluster there. Every problem now has a home: the stop that teaches its pattern.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Contest</th><th>Problem</th><th>Result</th><th>Taught in</th></tr>
+<tr><td rowspan="6">Contest 1 · 11 Sep</td><td>Minimum in BST</td><td>in time</td><td><a href="#ch4">stop 4</a></td></tr>
+<tr><td>Second Minimum in a Heap</td><td>in time</td><td><a href="#ch5">stop 5</a></td></tr>
+<tr><td>Insertion in Min Heap (no heapq)</td><td>20/40, late</td><td><a href="#ch5">stop 5</a></td></tr>
+<tr><td>Validate BST</td><td>40/80, late</td><td><a href="#ch4">stop 4</a></td></tr>
+<tr><td>Quick Sort, reverse sorted</td><td>in time</td><td><a href="#ch3">stop 3</a></td></tr>
+<tr><td>Balanced BST from a binary tree</td><td>in time</td><td><a href="#ch4">stop 4</a></td></tr>
+<tr><td rowspan="7">Mid-sem · 14 Oct</td><td>Inorder traversal of a BST</td><td>in time</td><td><a href="#ch4">stop 4</a></td></tr>
+<tr><td>Adjacency matrix to edge list</td><td>in time</td><td><a href="#b6">stop 6.5</a></td></tr>
+<tr><td>Convert array to min-heap</td><td>in time</td><td><a href="#ch5">stop 5</a></td></tr>
+<tr><td>Generate Parentheses</td><td>40/80, late</td><td><a href="#ch6">stop 6</a></td></tr>
+<tr><td>Min Cost Climbing Stairs</td><td>40/80, late</td><td><a href="#ch10">stop 10</a></td></tr>
+<tr><td>Signal Propagation at Time K</td><td>in time</td><td><a href="#ch8">stop 8</a></td></tr>
+<tr><td>Palindrome Partitioning</td><td>0/120, open</td><td><a href="#ch6">stop 6</a></td></tr>
+<tr><td rowspan="5">Contest 2 · 30 Oct</td><td>Bag of Coins</td><td>in time</td><td><a href="#ch11">stop 11</a></td></tr>
+<tr><td>Apple Baskets</td><td>in time</td><td><a href="#ch11">stop 11</a></td></tr>
+<tr><td>Count Graph Components</td><td>in time</td><td><a href="#ch8">stop 8</a></td></tr>
+<tr><td>0/1/2 Knapsack</td><td>40/80, late</td><td><a href="#ch10">stop 10</a></td></tr>
+<tr><td>Chakravyuh</td><td>0/120, open</td><td><a href="#ch8">stop 8</a></td></tr>
+</table></div>
+<p>Two problems are still open on Newton, and both are solved in their stops. Re-solve them from a blank file before you tick them here.</p>
+
+<h3 id="vault">The Vault: problems that don’t look like anything you’ve seen</h3>
+<p>Chakravyuh was hard because the pattern was new, not because the code was long. These six problems are written the same way: a plain statement, two subtasks, and one observation between you and the full marks. Each follows the routine of stop 14: read the subtasks, write the brute force, then look for the trick. Every solution below was checked against its brute force on thousands of random inputs. The Ladder’s Vault tab adds real Codeforces problems chosen for the same quality, grouped by the trick.</p>
+
+<div class="prob" id="v-rev"><div class="lvl">≈ CF 1900 · graphs · subtasks 40 / 60</div><h4>Chakravyuh Reversed</h4>
+<p>Every node of a directed graph on nodes 0 … n−1 has at most one outgoing edge. You are told, for every node i, the number c[i] of distinct nodes reachable from i by following edges as long as possible, counting i itself. Print any array a (a[i] = −1 for no edge, otherwise the node i points to) that produces exactly this c, or print −1 if no graph does.</p>
+<p><b>Subtask 1:</b> n ≤ 6. <b>Subtask 2:</b> n ≤ 10⁵, 1 ≤ c[i] ≤ n.</p>
+<details><summary>Hints (one at a time)</summary><p>1. What value does a node on a cycle of length L have? What value does a node hanging off one of them have, compared with its successor?</p><p>2. Count how many nodes hold each value v.</p><p>3. A node with value v ≥ 2 either points to a node with value v − 1, or lies on a cycle of exactly v nodes.</p></details>
+<details><summary>Subtask 1: the brute force</summary><script type="text/plain" class="code">
+import itertools
+
+def rev_brute(c):                         # Chakravyuh Reversed, subtask 1 (n <= 6): try every graph
+    n = len(c)
+    for a in itertools.product(range(-1, n), repeat=n):
+        if chak_brute(list(a)) == c:
+            return list(a)
+    return None
+</script></details>
+<details><summary>The trick and the full solution</summary><p>Group nodes by value. Value 1: dead ends. Value v ≥ 2: if any node has value v − 1, point every v-node at it; otherwise the v-nodes must form cycles of length v, so their count must be a multiple of v. The solution is <code>reverse_chak</code> in <a href="#ch8">stop 8</a>; it matched every possible graph for n ≤ 5.</p></details></div>
+
+<div class="prob" id="v-odd"><div class="lvl">≈ CF 1700 · graphs · subtasks 30 / 70</div><h4>Odd Walk</h4>
+<p>A country has n cities and m two-way roads. Find the fewest roads in a trip from city s to city t that uses an <b>odd</b> number of roads. A trip may use the same road, or visit the same city, any number of times. Print −1 if no such trip exists.</p>
+<p><b>Subtask 1:</b> n ≤ 8. <b>Subtask 2:</b> n, m ≤ 2·10⁵.</p>
+<details><summary>Hints</summary><p>1. A city can be reached by both an odd and an even trip. Do they need the same distance?</p><p>2. What if each city had two distances?</p></details>
+<details><summary>Subtask 1: the brute force</summary><script type="text/plain" class="code">
+def odd_walk_brute(n, edges, s, t):       # Odd Walk, subtask 1: which vertices can a walk of exactly L edges reach?
+    adj = [[] for _ in range(n)]
+    for u, v in edges:
+        adj[u].append(v); adj[v].append(u)
+    here = {s}
+    for L in range(1, 2 * n + 3):
+        here = {v for u in here for v in adj[u]}
+        if L % 2 == 1 and t in here:
+            return L
+    return -1
+</script></details>
+<details><summary>The trick and the full solution</summary><p>The node is (city, parity of roads so far). Every road flips the parity, so a plain BFS over these doubled nodes finds the shortest odd trip. See <code>shortest_odd_walk</code> in <a href="#ch8">stop 8</a>.</p></details></div>
+
+<div class="prob" id="v-free"><div class="lvl">≈ CF 1900 · graphs II · subtasks 30 / 70</div><h4>Free Passes</h4>
+<p>n cities, m one-way roads with non-negative tolls. You hold k passes; each pass makes one road on your route free. What is the cheapest trip from city 0 to city n−1? Print −1 if there is no route.</p>
+<p><b>Subtask 1:</b> n ≤ 6, k ≤ 3. <b>Subtask 2:</b> n ≤ 10⁵, m ≤ 2·10⁵, k ≤ 10.</p>
+<details><summary>Hints</summary><p>1. Where would you remember how many passes are left?</p><p>2. Draw k + 1 copies of the map. What does using a pass look like as an edge?</p></details>
+<details><summary>Subtask 1: the brute force</summary><script type="text/plain" class="code">
+def free_brute(n, edges, s, t, k):        # Free Passes, subtask 1: every simple path, free the k heaviest edges
+    adj = [[] for _ in range(n)]
+    for u, v, w in edges:
+        adj[u].append((v, w))
+    best = float('inf')
+    def go(u, seen, ws):
+        nonlocal best
+        if u == t:
+            best = min(best, sum(sorted(ws)[:max(0, len(ws) - k)]))
+            return
+        for v, w in adj[u]:
+            if v not in seen:
+                go(v, seen | {v}, ws + [w])
+    go(s, {s}, [])
+    return best
+</script></details>
+<details><summary>The trick and the full solution</summary><p>Dijkstra on states (city, passes used): a normal edge stays in the same layer at its toll, a pass edge goes one layer down at cost 0. The answer is the best over all layers of city n−1. See <code>min_cost_k_free</code> in <a href="#ch12">stop 12</a>.</p></details></div>
+
+<div class="prob" id="v-vis"><div class="lvl">≈ CF 1800 · monotonic stack · subtasks 40 / 60</div><h4>Visible Pairs</h4>
+<p>n people stand in a row with heights h[i]. Two people i &lt; j can see each other when nobody standing between them is taller than the shorter of the two. Count the pairs that can see each other.</p>
+<p><b>Subtask 1:</b> n ≤ 3,000. <b>Subtask 2:</b> n ≤ 2·10⁵, heights up to 10⁹, and equal heights do occur.</p>
+<details><summary>Hints</summary><p>1. For person j, which earlier people can still see them? Think of the people who haven’t been blocked yet.</p><p>2. Keep them in a stack in order of height. When j arrives, who gets popped, and why do they never matter again?</p><p>3. What do you store so equal heights are counted correctly?</p></details>
+<details><summary>Subtask 1: the brute force</summary><script type="text/plain" class="code">
+def visible_brute(a):                     # Visible Pairs, subtask 1: O(n^2) with a running maximum
+    n, ans = len(a), 0
+    for i in range(n):
+        mx = 0                            # tallest person strictly between i and j
+        for j in range(i + 1, n):
+            if mx <= min(a[i], a[j]):
+                ans += 1
+            mx = max(mx, a[j])
+    return ans
+</script></details>
+<details><summary>The trick and the full solution</summary><p>Monotonic stack of (height, count). Everyone shorter than the newcomer is popped and sees them once; then the newcomer sees the equal group, and the first taller person behind it. See <code>visible_pairs</code> in <a href="#ch13">stop 13</a>.</p></details></div>
+
+<div class="prob" id="v-tre"><div class="lvl">≈ CF 2000 · backtracking · subtasks 40 / 60</div><h4>Split the Treasure</h4>
+<p>You found n gems with integer values (some are cursed and negative). Count the subsets of gems whose values add up to exactly T. The empty subset counts if T = 0. Two subsets are different if they use different gems, even when the values are equal.</p>
+<p><b>Subtask 1:</b> n ≤ 20. <b>Subtask 2:</b> n ≤ 36.</p>
+<details><summary>Hints</summary><p>1. 2³⁶ is far too many; 2¹⁸ is not.</p><p>2. List all subset sums of each half separately.</p><p>3. A subset is a left part plus a right part. For a left sum s, how many right parts sum to T − s?</p></details>
+<details><summary>Subtask 1: the brute force</summary><script type="text/plain" class="code">
+def subsets_brute(a, T):                  # Split the Treasure, subtask 1: n <= 20, every subset
+    n, cnt = len(a), 0
+    for mask in range(1 << n):
+        if sum(a[i] for i in range(n) if mask >> i & 1) == T:
+            cnt += 1
+    return cnt
+</script></details>
+<details><summary>The trick and the full solution</summary><p>Meet in the middle: count the left half’s sums in a dictionary and look up T − s for every right-half sum. See <code>count_subsets</code> in <a href="#ch6">stop 6</a>.</p></details></div>
+
+<div class="prob" id="v-fro"><div class="lvl">≈ CF 1700 · observation · subtasks 30 / 70</div><h4>Frozen Middle</h4>
+<p>A row of n cards holds a permutation of 0 … n−1. You may swap the cards at positions i and j only when |i − j| ≥ k. Using any number of legal swaps, can you sort the row into 0, 1, …, n−1?</p>
+<p><b>Subtask 1:</b> n ≤ 7. <b>Subtask 2:</b> n ≤ 2·10⁵.</p>
+<details><summary>Hints</summary><p>1. Write the BFS for n ≤ 7 and print which rows are sortable for n = 5, k = 3. Look at what the unsortable ones have in common.</p><p>2. Which positions have no legal partner at all, whatever the other cards do?</p></details>
+<details><summary>Subtask 1: the brute force</summary><script type="text/plain" class="code">
+import itertools
+from collections import deque
+
+def sortable_brute(p, k):                 # subtask 1 (n <= 7): BFS over every arrangement reachable by legal swaps
+    n = len(p)
+    start, goal = tuple(p), tuple(range(n))
+    seen = {start}
+    q = deque([start])
+    while q:
+        cur = q.popleft()
+        if cur == goal:
+            return True
+        for i in range(n):
+            for j in range(i + k, n):         # legal swaps only: distance at least k
+                nxt = list(cur)
+                nxt[i], nxt[j] = nxt[j], nxt[i]
+                nxt = tuple(nxt)
+                if nxt not in seen:
+                    seen.add(nxt); q.append(nxt)
+    return False
+
+def sortable(p, k):                       # positions n-k .. k-1 have no legal partner: they must already be right
+    n = len(p)
+    return all(p[i] == i for i in range(max(0, n - k), min(n, k)))
+</script></details>
+<details><summary>The trick</summary><p>Position i can swap with j ≤ i − k or j ≥ i + k. Positions n − k … k − 1 have neither, so they are frozen: those cards must already be correct. Everything else is movable enough to be sorted. The one-line check <code>sortable</code> above matches the brute force on every permutation with n ≤ 6 and every k. Why the rest is always fixable is worth proving yourself.</p></details></div>
+
+<h3>Timed mocks</h3>
+<p>Three-rung mocks use real Codeforces problems at the exam’s 1400, 1500 and 1600, the Summit mocks one tier above, the Ego mocks two. Open all three problems, press Start, and score honestly: nothing, a brute force that passed some tests, or fully accepted.</p>
+<div class="lab" data-w="mock3" data-title="Three-rung mock with subtask scoring"></div>
+<p>Your end-sem is LeetCode-style, so here are <b>three-problem LeetCode mocks</b>, one easy, one medium and one hard, built from the topics of stops 9–17. Mark a brute force that passes some tests as half; the clock decides how much of each you can finish.</p>
+<div class="lab" data-w="mocklc" data-title="Three-problem LeetCode mock (easy, medium, hard)"></div>
+<p>The original LeetCode-style mocks A–H, four problems each, are still here:</p>
+<div class="lab" data-w="mock" data-title="Mock contest A–H (LeetCode)"></div>
+<div class="box tip"><div class="lbl" data-ico="🔁">After every mock</div>
+<ul>
+<li>For each problem not fully accepted, write one line: the pattern, and the twist you missed.</li>
+<li>For each zero, write the brute force now, untimed. If it takes under ten minutes, the zero was a routine failure, not a knowledge gap.</li>
+<li>Read the idea, close it, and re-code the problem from a blank file the next day.</li>
+<li>Say three sentences out loud for every problem you solved: the pattern, the state or observation, the complexity. That is the Mock AI Interview (10%).</li>
+</ul></div>
+</section>

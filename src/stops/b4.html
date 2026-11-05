@@ -1,0 +1,41 @@
+<section class="topic half" id="b4" data-group="trees" data-num="4.5" data-title="Complete trees and priority queues">
+<div class="topic-head"><div class="badge">4.5</div><div><div class="meta">Bridge to stop 5</div><h2>Complete trees by numbers, and the priority queue idea</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>A heap glues two separate ideas together: a <b>promise</b> (the priority queue: always hand out the most important item next) and a <b>shape</b> (the complete binary tree, which packs perfectly into an array with simple index arithmetic). Learn each one on its own and stop 5 is just the glue.</p></div>
+
+<h3>What versus how: abstract data types</h3>
+<p>An <b>abstract data type</b> (ADT) lists operations and what they promise, nothing about memory. A <b>data structure</b> is one way to keep those promises. A stack is an ADT (push, pop, last in first out); a Python list is one structure that implements it.</p>
+<p>The <b>priority queue</b> ADT promises: <code>insert(x)</code>, <code>peek_max()</code>, <code>extract_max()</code>. Several structures can keep that promise, at very different costs:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Implementation</th><th>insert</th><th>peek max</th><th>extract max</th></tr>
+<tr><td>Unsorted list</td><td>O(1) append</td><td>O(n) scan</td><td>O(n) scan + remove</td></tr>
+<tr><td>Sorted list</td><td>O(n) shift to make room</td><td>O(1) last item</td><td>O(1) <code>pop()</code></td></tr>
+<tr><td>BST (stop 4)</td><td>O(h)</td><td>O(h) rightmost</td><td>O(h): log n if balanced, n if skewed</td></tr>
+<tr class="hl"><td><b>Binary heap (stop 5)</b></td><td>O(log n)</td><td>O(1)</td><td>O(log n), always</td></tr>
+</table></div>
+<p>Each of the first three is fast at something and slow at something else. The heap is never the fastest at any single operation, but it is never slow, and its height is guaranteed to be log n because of its shape.</p>
+
+<h3>Numbering a complete tree level by level</h3>
+<p>A <b>complete</b> binary tree fills every level left to right with no gaps (only the last level may be partly full). Number its nodes in that reading order starting from 0, and the numbers fall into a pattern:</p>
+<ul>
+<li>Level d starts at index 2ᵈ − 1 and holds 2ᵈ slots (1, 2, 4, 8, …).</li>
+<li>Take node i, the j-th node on level d, so i = 2ᵈ − 1 + j. Its left child is the 2j-th node on level d + 1, at index 2ᵈ⁺¹ − 1 + 2j = 2(2ᵈ − 1 + j) + 1 = <b>2i + 1</b>.</li>
+<li>So the right child is <b>2i + 2</b>, and going back up, the parent is <b>(i − 1) // 2</b>.</li>
+</ul>
+<p>No pointers are needed: the array position <i>is</i> the tree position. This only works because there are no gaps, which is why a heap insists on being complete.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Fact about a complete tree with n nodes</th><th>Value</th><th>n = 12</th></tr>
+<tr><td>Height (in edges)</td><td>⌊log₂ n⌋</td><td class="n">3</td></tr>
+<tr><td>Number of leaves</td><td>⌈n / 2⌉</td><td class="n">6</td></tr>
+<tr><td>First leaf (0-based)</td><td>n // 2</td><td class="n">6</td></tr>
+<tr><td>Last node with a child (0-based)</td><td>n // 2 − 1</td><td class="n">5</td></tr>
+</table></div>
+<p>That last row is where heap building starts in stop 5: leaves are already valid one-node heaps, so only indices n // 2 − 1 down to 0 need fixing.</p>
+<div class="lab" data-w="ctree" data-title="Lab: complete tree index explorer"></div>
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><p><b>0-based versus 1-based.</b> CLRS numbers from 1: children 2i and 2i + 1, parent ⌊i/2⌋. Python lists start at 0: children 2i + 1 and 2i + 2, parent (i − 1) // 2. Mixing the two is the classic heap bug. In an exam, say which convention you are using.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><ul>
+<li>ADT = the promise; data structure = how it's kept. A heap implements a priority queue.</li>
+<li>0-based: children 2i + 1, 2i + 2; parent (i − 1) // 2.</li>
+<li>n nodes: height ⌊log₂ n⌋, ⌈n/2⌉ leaves, last internal node n // 2 − 1.</li>
+</ul></div>
+<div class="quiz" data-quiz="b4"></div>
+</section>

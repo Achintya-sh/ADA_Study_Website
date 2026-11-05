@@ -1,0 +1,289 @@
+<section class="topic" id="ch3" data-group="trees" data-num="3" data-title="Quick Sort">
+<div class="topic-head"><div class="badge">3</div><div><div class="meta">Sorting and trees line</div><h2>Advanced sorting: Quick Sort</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>The sort that skips the merge step. Learn partition until you can do it with your eyes closed; everything else follows from it.</p></div>
+
+
+<h3>Sorting basics (read this first)</h3>
+<p><b>Sorting</b> means rearranging a list into increasing (or decreasing) order. It is the most studied problem in computing because so many other tasks, like searching and merging, become easy once data is sorted.</p>
+<h4>Vocabulary</h4>
+<div class="tbl-wrap"><table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><b>Comparison sort</b></td><td>Learns the order only by comparing pairs ("is a[i] ≤ a[j]?"). All sorts in this course are comparison sorts.</td></tr>
+<tr><td><b>In-place</b></td><td>Uses only O(1) extra memory beyond the array (swapping elements inside it). Quick Sort, heap sort, insertion sort are in-place. Merge sort is not.</td></tr>
+<tr><td><b>Stable</b></td><td>Equal keys keep their original relative order. Matters when sorting records, e.g. sorting students by grade after sorting them by name. Merge and insertion sort are stable; Quick Sort and heap sort are not.</td></tr>
+<tr><td><b>Pivot</b></td><td>The element Quick Sort uses to split the array.</td></tr>
+<tr><td><b>Partition</b></td><td>Rearranging so everything ≤ pivot comes before it and everything &gt; pivot after it.</td></tr>
+</table></div>
+<h4>The sorts you already know, in 30 seconds each</h4>
+<div class="tbl-wrap"><table>
+<tr><th>Sort</th><th>Idea</th><th>Time (worst)</th><th>Space</th></tr>
+<tr><td>Bubble</td><td>Repeatedly swap adjacent out-of-order pairs; big values "bubble" to the end.</td><td>O(n²)</td><td>O(1)</td></tr>
+<tr><td>Selection</td><td>Find the minimum of the unsorted part, swap it to the front. Repeat.</td><td>O(n²)</td><td>O(1)</td></tr>
+<tr><td>Insertion</td><td>Take the next element and slide it left into place among the already-sorted prefix (like sorting a hand of cards).</td><td>O(n²), best O(n)</td><td>O(1)</td></tr>
+<tr><td>Merge</td><td>Split in half, sort each half recursively, <b>merge</b> the two sorted halves.</td><td><b>O(n log n)</b></td><td>O(n)</td></tr>
+</table></div>
+<p>The quadratic sorts are fine for tiny inputs but hopeless for a million items (10¹² steps). To see exactly what Merge Sort's merge step is (the thing Quick Sort wants to avoid), here it is:</p>
+<script type="text/plain" class="code">
+def merge_sort(a):
+    if len(a) <= 1:
+        return a
+    mid = len(a) // 2
+    left  = merge_sort(a[:mid])          # sort left half
+    right = merge_sort(a[mid:])          # sort right half
+    return merge(left, right)
+
+def merge(left, right):                  # combine two SORTED lists
+    out, i, j = [], 0, 0
+    while i < len(left) and j < len(right):
+        if left[i] <= right[j]:
+            out.append(left[i]); i += 1  # take the smaller front item
+        else:
+            out.append(right[j]); j += 1
+    out.extend(left[i:]); out.extend(right[j:])   # leftovers
+    return out                           # new list of size n: the O(n) extra space
+</script>
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><p><b>Why O(n log n) is the best a comparison sort can do.</b> With n distinct items there are n! possible orderings. Each comparison has two outcomes, so after k comparisons you can distinguish at most 2<sup>k</sup> orderings. To be able to tell all n! orderings apart you need 2<sup>k</sup> ≥ n!, so k ≥ log₂(n!) = Θ(n log n). No comparison-based sort can beat n log n in the worst case, so Merge Sort, Heap Sort and Quick Sort's average are all optimal up to constants.</p></div>
+
+<h3>The motivation</h3>
+<p>You already know sorts that cost O(n²) (bubble, insertion, selection) and Merge Sort at O(n log n). Merge Sort has one annoying cost: to merge two sorted halves it copies them into extra arrays, so it needs <b>O(n) extra memory</b>.</p>
+<p>Quick Sort asks: <i>can we split the array so that no merging is needed at all?</i> Yes, if we split it so that <b>everything in the left part is ≤ everything in the right part</b>. Then sorting the left part and the right part separately automatically sorts the whole array. The work moves from the "combine" step (Merge Sort) to the "divide" step (Quick Sort).</p>
+<div class="box analogy"><div class="lbl" data-ico="🧑‍🏫">Teacher's note</div><p>Picture 20 students who must line up by height. Pick one student as the <b>pivot</b>. Everyone shorter stands on the pivot's left, everyone taller on the right. The pivot is now standing in <i>exactly the right place</i> and never needs to move again. Now repeat inside the left group and inside the right group. When every group has one student, the whole line is sorted.</p></div>
+
+<h3>The rules</h3>
+<ol>
+<li><b>Pick a pivot.</b> In your course: the <b>last element</b>.</li>
+<li><b>Partition</b>: rearrange so that all elements ≤ pivot come first, then the pivot, then all elements &gt; pivot.</li>
+<li>The pivot is now in its <b>final sorted position</b>. Never touched again.</li>
+<li><b>Recurse</b> on the left part and the right part.</li>
+<li><b>Base case</b>: a part with 0 or 1 element is already sorted.</li>
+</ol>
+
+<h3>Partition, step by step</h3>
+<p>The naive way builds two new lists, <code>smaller[]</code> and <code>greater[]</code>, using O(n) extra space (no better than Merge Sort). The <b>in-place</b> way (called Lomuto partition) uses two markers:</p>
+<ul>
+<li><b>pos</b>: the scanner. It walks from the left end to just before the pivot.</li>
+<li><b>k</b>: the boundary of the "≤ pivot" zone. It starts at lo−1 (the zone is empty) and always points at the last element of the zone.</li>
+</ul>
+<p>For each element at pos: if it is ≤ pivot, <b>grow the zone</b> (k += 1) and swap it into the zone. If it is bigger, leave it alone: it automatically becomes part of the "&gt; pivot" zone sitting between k and pos. At the end, swap the pivot into position k+1, right between the two zones.</p>
+<div class="fig"><svg viewBox="0 0 560 120" role="img" aria-label="Array divided into three zones during partition: less-or-equal zone, greater zone, and unexamined zone, followed by the pivot" style="min-width:520px">
+<g font-size="12">
+<rect x="10" y="30" width="170" height="40" rx="6" fill="var(--good-soft)" stroke="var(--good)"/><text x="95" y="55" text-anchor="middle">≤ pivot</text>
+<rect x="180" y="30" width="150" height="40" fill="var(--bad-soft)" stroke="var(--bad)"/><text x="255" y="55" text-anchor="middle">&gt; pivot</text>
+<rect x="330" y="30" width="150" height="40" fill="var(--bg)" stroke="var(--muted)" stroke-dasharray="4 3"/><text x="405" y="55" text-anchor="middle">not looked at yet</text>
+<rect x="480" y="30" width="70" height="40" rx="6" fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="2"/><text x="515" y="55" text-anchor="middle">pivot</text>
+<line x1="180" y1="78" x2="180" y2="96" stroke="var(--cur)" stroke-width="2"/><text x="180" y="112" text-anchor="middle" fill="var(--cur)">k (last ≤ element)</text>
+<line x1="330" y1="78" x2="330" y2="96" stroke="var(--cur)" stroke-width="2"/><text x="330" y="112" text-anchor="middle" fill="var(--cur)">pos (scanner)</text>
+<text x="10" y="20" fill="var(--muted)">lo</text><text x="540" y="20" fill="var(--muted)">hi</text>
+</g></svg>
+<figcaption>The invariant that makes Lomuto partition correct: at every moment, a[lo..k] ≤ pivot, a[k+1..pos−1] &gt; pivot, a[pos..hi−1] is unexamined, a[hi] is the pivot.</figcaption></div>
+<script type="text/plain" class="code">
+def quick_sort(arr, lo, hi):
+    if lo >= hi:                    # 0 or 1 element: already sorted
+        return
+    pos = partition(arr, lo, hi)    # pivot lands at its final index
+    quick_sort(arr, lo, pos - 1)    # sort everything left of the pivot
+    quick_sort(arr, pos + 1, hi)    # sort everything right of the pivot
+
+def partition(arr, lo, hi):
+    pivot = arr[hi]                 # last element is the pivot
+    k = lo - 1                      # the "<= pivot" zone starts empty
+    for pos in range(lo, hi):       # scan everything except the pivot
+        if arr[pos] <= pivot:
+            k += 1                  # grow the zone ...
+            arr[k], arr[pos] = arr[pos], arr[k]   # ... and swap into it
+    arr[k + 1], arr[hi] = arr[hi], arr[k + 1]     # pivot into its home
+    return k + 1
+
+data = [7, 4, 10, 1, 9, 6, 3, 8, 2, 5]
+quick_sort(data, 0, len(data) - 1)
+print(data)        # [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+</script>
+
+<h3>Dry run of the first partition</h3>
+<p>Array: <code>[7, 4, 10, 1, 9, 6, 3, 8, 2, 5]</code>, lo = 0, hi = 9, pivot = <b>5</b>, k = −1.</p>
+<div class="tbl-wrap"><table>
+<tr><th>pos</th><th>a[pos]</th><th>a[pos] ≤ 5 ?</th><th>k after</th><th>Action</th><th>Array afterwards</th></tr>
+<tr><td>0</td><td>7</td><td>no</td><td>−1</td><td>skip</td><td class="n">7 4 10 1 9 6 3 8 2 | 5</td></tr>
+<tr><td>1</td><td>4</td><td>yes</td><td>0</td><td>swap a[0], a[1]</td><td class="n">4 7 10 1 9 6 3 8 2 | 5</td></tr>
+<tr><td>2</td><td>10</td><td>no</td><td>0</td><td>skip</td><td class="n">4 7 10 1 9 6 3 8 2 | 5</td></tr>
+<tr><td>3</td><td>1</td><td>yes</td><td>1</td><td>swap a[1], a[3]</td><td class="n">4 1 10 7 9 6 3 8 2 | 5</td></tr>
+<tr><td>4</td><td>9</td><td>no</td><td>1</td><td>skip</td><td class="n">4 1 10 7 9 6 3 8 2 | 5</td></tr>
+<tr><td>5</td><td>6</td><td>no</td><td>1</td><td>skip</td><td class="n">4 1 10 7 9 6 3 8 2 | 5</td></tr>
+<tr><td>6</td><td>3</td><td>yes</td><td>2</td><td>swap a[2], a[6]</td><td class="n">4 1 3 7 9 6 10 8 2 | 5</td></tr>
+<tr><td>7</td><td>8</td><td>no</td><td>2</td><td>skip</td><td class="n">4 1 3 7 9 6 10 8 2 | 5</td></tr>
+<tr><td>8</td><td>2</td><td>yes</td><td>3</td><td>swap a[3], a[8]</td><td class="n">4 1 3 2 9 6 10 8 7 | 5</td></tr>
+<tr class="hl"><td>end</td><td colspan="2">swap pivot with a[k+1] = a[4]</td><td>3</td><td>return 4</td><td class="n"><b>4 1 3 2 5 6 10 8 7 9</b></td></tr>
+</table></div>
+<p>Left of index 4: 4, 1, 3, 2 (all ≤ 5). Right: 6, 10, 8, 7, 9 (all &gt; 5). The pivot 5 sits at index 4, its final home. (Your notes show a slightly different arrangement of each side. The order <i>within</i> a side is not fixed; only the left/right split matters.)</p>
+
+<h4>The whole sort, partition by partition</h4>
+<p>Quick Sort is just partition applied again and again to ever smaller ranges. For the same array, each row is one call that does real work (single elements and empty ranges need no work):</p>
+<div class="tbl-wrap"><table>
+<tr><th>Depth</th><th>Range (lo..hi)</th><th>Pivot</th><th>Pivot lands at</th><th>Array afterwards</th></tr>
+<tr><td>0</td><td>0..9</td><td>5</td><td>index 4</td><td class="n">4 1 3 2 <b>5</b> 6 10 8 7 9</td></tr>
+<tr><td>1</td><td>0..3 (left of 5)</td><td>2</td><td>index 1</td><td class="n">1 <b>2</b> 3 4 5 6 10 8 7 9</td></tr>
+<tr><td>2</td><td>2..3</td><td>4</td><td>index 3</td><td class="n">1 2 3 <b>4</b> 5 6 10 8 7 9</td></tr>
+<tr><td>1</td><td>5..9 (right of 5)</td><td>9</td><td>index 8</td><td class="n">1 2 3 4 5 6 8 7 <b>9</b> 10</td></tr>
+<tr><td>2</td><td>5..7</td><td>7</td><td>index 6</td><td class="n">1 2 3 4 5 6 <b>7</b> 8 9 10</td></tr>
+</table></div>
+<p>The recursion tree has depth 3 here because the splits were reasonably even. The bold entries are values that have arrived at their final position, one per partition. Every element is eventually a pivot or a single-element range, so it ends up in place. Now run it yourself:</p>
+
+<div class="lab" data-w="qs" data-title="Lab: Quick Sort stepper"></div>
+
+<h3>How fast is it?</h3>
+<h4>Worst case: Θ(n²)</h4>
+<p>If the pivot is always the smallest or largest element, partition splits n elements into 0 and n−1. Recurrence: T(n) = T(n−1) + Θ(n), which unrolls to n + (n−1) + … + 1 = Θ(n²). With the last-element pivot, this happens on <b>already sorted</b> or <b>reverse sorted</b> input: the pivot is the maximum every time. It also happens when <b>all elements are equal</b> (every element is ≤ pivot, so k runs all the way to hi−1).</p>
+<h4>Best case: Θ(n log n)</h4>
+<p>If the pivot is always the median, each side gets n/2. Recurrence T(n) = 2T(n/2) + Θ(n), the same as Merge Sort → Θ(n log n) by Master theorem case 2.</p>
+<h4>Average case: Θ(n log n)</h4>
+<p>You do not need a perfect split. <b>Any split in constant proportion</b> keeps the tree logarithmic. Take a terrible 1 : 9 split: T(n) = T(n/10) + T(9n/10) + cn. The deepest path shrinks by a factor of 9/10 each step, so its length is log<sub>10/9</sub>n = O(log n). Every level costs at most cn. Total ≤ cn × O(log n) = <b>O(n log n)</b>. Only splits like 0 : n−1 (constant <i>difference</i>, not proportion) are fatal.</p>
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><p><b>The formal argument (CLRS 7.4).</b> The running time is dominated by the number of comparisons. Let the elements in sorted order be z₁ … zₙ. Two elements zᵢ and zⱼ are compared at most once, and only if one of them is the first pivot chosen from the range {zᵢ, …, zⱼ}. With a random pivot that happens with probability 2/(j−i+1). Summing: Σᵢ Σⱼ 2/(j−i+1) = O(n log n), because the inner sum is a harmonic series.</p></div>
+
+<div class="lab" data-w="qsexp" data-title="Lab: count the comparisons yourself"></div>
+
+<h3>Space and the stack</h3>
+<p>Partition is in-place (O(1)). But the recursion uses a stack: average depth O(log n), <b>worst depth O(n)</b> (the skewed case). A neat fix, not in your notes: after partitioning, recurse into the <i>smaller</i> side and loop on the larger side. The stack is then at most log n deep even in the worst case.</p>
+
+<h3>Randomized Quick Sort</h3>
+<p>An adversary (or just sorted data, which is very common) can feed the last-element rule its worst case. The cure: choose the pivot <b>at random</b>. Either swap a random element into the last position before partitioning, or shuffle the whole array first. No fixed input is bad any more; the expected time is Θ(n log n) for <i>every</i> input. The worst case still exists, but its probability is astronomically small.</p>
+<script type="text/plain" class="code">
+import random
+
+def randomized_partition(arr, lo, hi):
+    r = random.randint(lo, hi)          # pick a random index
+    arr[r], arr[hi] = arr[hi], arr[r]   # move it to the end ...
+    return partition(arr, lo, hi)       # ... then partition as usual
+
+def randomized_quick_sort(arr, lo, hi):
+    if lo < hi:
+        q = randomized_partition(arr, lo, hi)
+        randomized_quick_sort(arr, lo, q - 1)
+        randomized_quick_sort(arr, q + 1, hi)
+</script>
+
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><p><b>Extras examiners like.</b></p>
+<ul>
+<li><b>Pivot strategies:</b> first, last, random, <i>median-of-three</i> (median of first, middle, last).</li>
+<li><b>Not stable:</b> equal elements can be reordered by the swaps. Merge Sort is stable.</li>
+<li><b>In place</b> (apart from the stack), unlike Merge Sort.</li>
+<li><b>Many duplicates:</b> this partition degrades to O(n²) on all-equal input. The fix is <b>3-way partition</b> (less / equal / greater), used by real libraries.</li>
+<li><b>Hoare partition</b> is the older two-pointer scheme (pointers move inward from both ends); it does fewer swaps. What you have learned is the <b>Lomuto</b> scheme.</li>
+<li><b>Quickselect:</b> to find the k-th smallest element, partition once and recurse into only the side containing position k. Average O(n).</li>
+</ul></div>
+<div class="tbl-wrap"><table>
+<tr><th></th><th>Quick Sort</th><th>Merge Sort</th><th>Heap Sort</th></tr>
+<tr><td>Best</td><td>n log n</td><td>n log n</td><td>n log n</td></tr>
+<tr><td>Average</td><td>n log n</td><td>n log n</td><td>n log n</td></tr>
+<tr><td>Worst</td><td><b>n²</b></td><td>n log n</td><td>n log n</td></tr>
+<tr><td>Extra space</td><td>O(log n) stack</td><td>O(n)</td><td>O(1)</td></tr>
+<tr><td>Stable?</td><td>No</td><td>Yes</td><td>No</td></tr>
+<tr><td>In practice</td><td>Usually fastest (cache friendly, small constants)</td><td>Great for linked lists and stability</td><td>Guaranteed bound, slower constants</td></tr>
+</table></div>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p>"Quick Sort is O(n log n)" is only the <b>average</b> claim. If a question says "worst-case time complexity of Quick Sort", the answer is <b>O(n²)</b>. If it says "on a sorted array with the last element as pivot", the answer is also O(n²).</p></div>
+
+<h3 class="pat-head">Patterns for contests: sorting</h3>
+<div class="box tip"><div class="lbl" data-ico="🎯">Seen in your contests</div><p><b>Contest 1 Q5</b> asked for Quick Sort in descending order and scored by test. The usual trap: with the last element as pivot, a reverse-sorted or all-equal array makes every partition peel off a single element. That is n² work and n levels of recursion. The fix is a random pivot, a three-way split so equal values are finished at once, and an explicit stack.</p></div>
+<div class="tbl-wrap"><table>
+<tr><th>Pattern</th><th>Words in the statement</th><th>Tool</th></tr>
+<tr><td>Sort, then scan</td><td>“overlapping”, “closest”, “group equal”, “pair up”</td><td>sort, then one pass</td></tr>
+<tr><td>Custom order</td><td>“arrange to make the largest number”, “order by two rules”</td><td><code>key=</code> or <code>cmp_to_key</code></td></tr>
+<tr><td>k-th without sorting</td><td>“median”, “k-th largest”, n large</td><td>quickselect, expected O(n); or a heap</td></tr>
+<tr><td>Count out-of-order pairs</td><td>“number of swaps”, “pairs i &lt; j with a[i] &gt; a[j]”</td><td>merge sort that counts while merging</td></tr>
+<tr><td>Small value range</td><td>values up to 10⁶, “frequencies”</td><td>counting sort, <code>Counter</code></td></tr>
+<tr><td>Minimise the maximum</td><td>“smallest x such that …”</td><td>sort, then binary search the answer (stop 14)</td></tr>
+</table></div>
+<p>In a contest, use Python’s built-in <code>sort</code> (stable, O(n log n)). Write Quick Sort yourself only when the problem tells you to.</p>
+<script type="text/plain" class="code">
+def merge_intervals(intervals):           # sort by start, then one pass
+    intervals.sort()
+    out = []
+    for s, e in intervals:
+        if out and s <= out[-1][1]:       # touches or overlaps the last block
+            out[-1][1] = max(out[-1][1], e)
+        else:
+            out.append([s, e])
+    return out
+</script>
+<script type="text/plain" class="code">
+from functools import cmp_to_key
+
+def largest_number(nums):                 # LC 179: which order gives the biggest number?
+    def cmp(a, b):                        # a goes first if a+b beats b+a as text
+        return -1 if a + b > b + a else (1 if a + b < b + a else 0)
+    s = sorted(map(str, nums), key=cmp_to_key(cmp))
+    r = "".join(s)
+    return "0" if r[0] == "0" else r
+</script>
+<p>Quickselect is Quick Sort that follows only one side: after the split, the answer lies in exactly one of the three zones.</p>
+<script type="text/plain" class="code">
+import random
+
+def quickselect(a, k):                    # k-th smallest (0-based), expected O(n)
+    a = a[:]
+    lo, hi = 0, len(a) - 1
+    while lo < hi:
+        p = a[random.randint(lo, hi)]
+        lt, i, gt = lo, lo, hi            # < p | == p | > p, the Dutch flag
+        while i <= gt:
+            if a[i] < p:
+                a[lt], a[i] = a[i], a[lt]; lt += 1; i += 1
+            elif a[i] > p:
+                a[i], a[gt] = a[gt], a[i]; gt -= 1
+            else:
+                i += 1
+        if k < lt:
+            hi = lt - 1                   # the answer is in the "< p" part
+        elif k > gt:
+            lo = gt + 1                   # ... or in the "> p" part
+        else:
+            return p                      # ... or it is p itself
+    return a[lo]
+</script>
+<script type="text/plain" class="code">
+def count_inversions(a):                  # pairs i < j with a[i] > a[j], via merge sort
+    def go(a):
+        if len(a) <= 1:
+            return a, 0
+        m = len(a) // 2
+        L, x = go(a[:m])
+        R, y = go(a[m:])
+        out, i, j, c = [], 0, 0, x + y
+        while i < len(L) and j < len(R):
+            if L[i] <= R[j]:
+                out.append(L[i]); i += 1
+            else:
+                out.append(R[j]); j += 1
+                c += len(L) - i           # R[j] jumps over every remaining element of L
+        out += L[i:] + R[j:]
+        return out, c
+    return go(a)[1]
+</script>
+<p>The merge step is the only place that changes: when an element of the right half is placed before the remaining left elements, it jumps over every one of them, and each jump is one inversion.</p>
+<script type="text/plain" class="code">
+import random
+
+def quick_sort_desc(a):                   # Contest 1 Q5: survives reverse-sorted and all-equal input
+    stack = [(0, len(a) - 1)]             # explicit stack: no recursion limit problems
+    while stack:
+        lo, hi = stack.pop()
+        if lo >= hi:
+            continue
+        p = a[random.randint(lo, hi)]     # random pivot: no input is "always bad"
+        lt, i, gt = lo, lo, hi            # three zones: bigger | equal | smaller
+        while i <= gt:
+            if a[i] > p:
+                a[lt], a[i] = a[i], a[lt]; lt += 1; i += 1
+            elif a[i] < p:
+                a[i], a[gt] = a[gt], a[i]; gt -= 1
+            else:
+                i += 1
+        stack.append((lo, lt - 1))        # the equal zone is finished: skip it
+        stack.append((gt + 1, hi))
+</script>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p><code>a.sort()</code> returns <code>None</code> (use <code>sorted(a)</code> to keep the original). A comparison function needs <code>cmp_to_key</code>. Touching intervals <code>[1,4]</code> and <code>[4,5]</code> merge when the statement says “overlap or touch” and not when it says “share a point”. Lomuto partition with the last element as pivot is O(n²) on sorted input: say so in a written answer.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Sort first and the problem often becomes one pass. Out-of-order pairs: count while merging.</p>
+<p>A fixed pivot loses to sorted input; a random pivot and a three-way split don’t.</p>
+<p>Practice: the Ladder, tab Sorting.</p></div>
+<div class="quiz" data-quiz="s3"></div>
+</section>

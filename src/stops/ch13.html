@@ -1,0 +1,122 @@
+<section class="topic" id="ch13" data-group="trees" data-num="13" data-title="Monotonic stacks and queues">
+<div class="topic-head"><div class="badge">13</div><div><div class="meta">Sorting and trees line · a stop your outline lists</div><h2>Monotonic stacks and queues</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>A <b>monotonic stack</b> keeps its contents in sorted order by popping everything that can no longer matter before pushing the new item. That one rule turns “for each element, find the nearest bigger/smaller one” from O(n²) into O(n): every element is pushed once and popped once. Your course outline lists monotonic stacks as a feature; this stop is where they live. The <b>monotonic deque</b> is the same idea with the front also expiring, for sliding windows.</p></div>
+<div class="tbl-wrap"><table>
+<tr><th>Words in the statement</th><th>Tool</th></tr>
+<tr><td>“next greater”, “next warmer day”, “previous smaller”, “stock span”</td><td>stack of indices; pop while the top is beaten</td></tr>
+<tr><td>“largest rectangle”, “widest range where this is the minimum”</td><td>the popped element’s left and right boundaries</td></tr>
+<tr><td>“sum over all subarrays of the minimum (or maximum)”</td><td>count each element’s contribution: left span × right span</td></tr>
+<tr><td>“smallest number / lexicographically smallest after removing k”</td><td>pop while the top is bigger than the new item and removals remain</td></tr>
+<tr><td>“maximum of every window of size k”</td><td>monotonic deque</td></tr>
+<tr><td>“trapped water”</td><td>two pointers, or a stack of walls</td></tr>
+<tr><td>“pairs that can see each other”</td><td>stack of (height, count)</td></tr>
+</table></div>
+<h3>The template: next greater element</h3>
+<p>The stack holds indices whose answer is still unknown, with decreasing values. A new value that beats the top is the answer for everything it beats.</p>
+<script type="text/plain" class="code">
+def next_greater(a):                      # index of the next strictly greater element, or -1
+    res, st = [-1] * len(a), []           # st: indices whose answer is still unknown
+    for i, x in enumerate(a):
+        while st and a[st[-1]] < x:
+            res[st.pop()] = i             # x is the first bigger value to the right of st[-1]
+        st.append(i)
+    return res
+</script>
+<p>Dry run on <code>[2, 1, 2, 4, 3]</code>: push 0; 1 doesn’t beat 2, push 1; the second 2 beats index 1 (answer 2), not index 0 (equal), push 2; 4 beats indices 2 and 0 (answer 3), push 3; 3 beats nothing, push 4. Result <code>[3, 2, 3, −1, −1]</code>. Strict versus non-strict comparison (<code>&lt;</code> versus <code>&lt;=</code>) is the one decision that changes with the wording “greater” or “greater or equal”.</p>
+<h3>Histogram: each bar, as the shortest bar of a rectangle</h3>
+<script type="text/plain" class="code">
+def largest_rectangle(h):                 # LC 84
+    st, best = [], 0                      # st: indices with increasing heights
+    for i, x in enumerate(h + [0]):       # the sentinel 0 flushes the stack
+        while st and h[st[-1]] >= x:
+            height = h[st.pop()]
+            left = st[-1] if st else -1   # the bar is the shortest between left and i
+            best = max(best, height * (i - left - 1))
+        st.append(i)
+    return best
+</script>
+<h3>Contribution counting, and the tie-break that avoids double counting</h3>
+<p>Sum of the minimum over all subarrays: element i is the minimum of (distance to the previous smaller) × (distance to the next smaller) subarrays. With equal values both sides would count the same subarray, so make one side strict and the other non-strict.</p>
+<script type="text/plain" class="code">
+def sum_subarray_mins(a):                 # LC 907: contribution of each element as the minimum
+    n = len(a)
+    left, right, st = [0] * n, [0] * n, []
+    for i in range(n):                    # distance back to the previous STRICTLY smaller element
+        while st and a[st[-1]] >= a[i]:
+            st.pop()
+        left[i] = i - (st[-1] if st else -1)
+        st.append(i)
+    st = []
+    for i in range(n - 1, -1, -1):        # distance forward to the next smaller-or-EQUAL element
+        while st and a[st[-1]] > a[i]:
+            st.pop()
+        right[i] = (st[-1] if st else n) - i
+        st.append(i)
+    return sum(a[i] * left[i] * right[i] for i in range(n))
+</script>
+<h3>Remove k digits, sliding window, rain water</h3>
+<script type="text/plain" class="code">
+def remove_k_digits(num, k):              # LC 402: smallest number after deleting k digits
+    st = []
+    for ch in num:
+        while k and st and st[-1] > ch:   # a bigger digit before a smaller one: delete it
+            st.pop(); k -= 1
+        st.append(ch)
+    if k:
+        st = st[:-k]                      # still deleting: take them from the end
+    return "".join(st).lstrip("0") or "0"
+</script>
+<script type="text/plain" class="code">
+from collections import deque
+
+def sliding_max(a, k):                    # LC 239: maximum of every window of size k
+    dq, out = deque(), []                 # dq: indices, values decreasing
+    for i, x in enumerate(a):
+        while dq and a[dq[-1]] <= x:
+            dq.pop()                      # smaller values can never be a window maximum again
+        dq.append(i)
+        if dq[0] <= i - k:
+            dq.popleft()                  # the front slid out of the window
+        if i >= k - 1:
+            out.append(a[dq[0]])
+    return out
+</script>
+<script type="text/plain" class="code">
+def trap(h):                              # LC 42: rain water, two pointers
+    lo, hi, lmax, rmax, water = 0, len(h) - 1, 0, 0, 0
+    while lo < hi:
+        if h[lo] < h[hi]:                 # the lower side decides: the other side is at least as tall
+            lmax = max(lmax, h[lo]); water += lmax - h[lo]; lo += 1
+        else:
+            rmax = max(rmax, h[hi]); water += rmax - h[hi]; hi -= 1
+    return water
+</script>
+<h3>A pairs problem: Visible Pairs</h3>
+<p>Count pairs of people who can see each other when nobody between them is taller than the shorter of the two. The stack holds (height, how many people have it) so that equal heights, which really happen, are counted once per person. It’s in the Vault on the Ladder with the full statement; the solution is:</p>
+<script type="text/plain" class="code">
+def visible_pairs(a):                     # pairs i < j with every element between them <= min(a[i], a[j])
+    st, ans = [], 0                       # st: (value, how many equal), values strictly decreasing
+    for x in a:
+        cnt = 1
+        while st and st[-1][0] < x:
+            ans += st.pop()[1]            # each smaller person on the stack sees x
+        if st and st[-1][0] == x:
+            c = st.pop()[1]
+            ans += c                      # x sees every equal person too
+            cnt = c + 1
+            if st:
+                ans += 1                  # ... and the first taller one behind them
+        elif st:
+            ans += 1                      # the taller person on top of the stack
+        st.append((x, cnt))
+    return ans
+</script>
+<p>Every function on this page was checked against an O(n²) or O(n³) brute force on random inputs.</p>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p>Store indices, not values, when you need distances. Decide strict versus non-strict from the statement’s wording about equal values. Flush the stack at the end (a sentinel 0 in the histogram) or the last bars never get an answer. Pop in a <code>while</code>, not an <code>if</code>. Each element is pushed once and popped once, so the whole thing is O(n) even though there’s a loop inside a loop.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Pop what can’t matter any more, then push. Next/previous greater/smaller in O(n).</p>
+<p>Min or max over all subarrays: each element’s contribution = left span × right span, one side strict.</p>
+<p>Sliding window maximum: a deque whose front expires.</p>
+<p>Practice: the Ladder, tab Monotonic stack.</p></div>
+<div class="quiz" data-quiz="m13"></div>
+</section>

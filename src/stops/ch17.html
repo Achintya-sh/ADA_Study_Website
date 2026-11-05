@@ -1,0 +1,260 @@
+<section class="topic" id="ch17" data-group="found" data-num="17" data-title="Appendix: beyond the outline">
+<div class="topic-head"><div class="badge">17</div><div><div class="meta">Foundations line · merge sort, amortised analysis, hashing, what comes next</div><h2>Appendix: beyond the outline</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p><b>Beyond the course outline.</b> Everything here is optional for the end-sem. These are the topics a strong algorithms course would add next: <b>merge sort</b> and counting inversions during the merge, <b>amortised analysis</b> (why occasional expensive steps average out), and <b>hashing</b> (what a Python <code>dict</code> does underneath). They explain costs you have been quoting without proof, such as union-find and heap-build. A final page lists what comes after, with pointers, so you know it exists.</p></div>
+
+<h3>1. Merge sort</h3>
+<p>Quick Sort (stop 3) partitions then recurses. <b>Merge sort</b> recurses then merges: split the list in half, sort each half, merge the two sorted halves by repeatedly taking the smaller front item. Every level of the recursion does O(n) merging and there are log₂ n levels, so the cost is <b>O(n log n) in every case</b>, with no bad input. The price is <b>O(n) extra space</b> for the merge.</p>
+<p>It is <b>stable</b>: items that compare equal keep their original order, as long as ties are resolved in favour of the <i>left</i> half (<code>&lt;=</code>, not <code>&lt;</code>). Python’s built-in <code>sort</code> is stable too, which is why sorting by one key and then another works.</p>
+<script type="text/plain" class="code">
+def merge_sort(a):                         # LC 912: new sorted list; stable; O(n log n) time, O(n) extra space
+    if len(a) <= 1:
+        return a[:]
+    mid = len(a) // 2
+    left, right = merge_sort(a[:mid]), merge_sort(a[mid:])
+    out, i, j = [], 0, 0
+    while i < len(left) and j < len(right):
+        if left[i] <= right[j]:            # <=, not <: on a tie the LEFT item goes first, and that is stability
+            out.append(left[i])
+            i += 1
+        else:
+            out.append(right[j])
+            j += 1
+    out.extend(left[i:])                   # one side is empty; the other is already sorted
+    out.extend(right[j:])
+    return out
+</script>
+<p>Hand trace of the merge of [2, 5, 9] and [3, 4, 10]: compare 2 and 3, take 2; 5 and 3, take 3; 5 and 4, take 4; 5 and 10, take 5; 9 and 10, take 9; the left side is empty, so append the rest: [2, 3, 4, 5, 9, 10].</p>
+<h4>The contest payoff: counting while you merge</h4>
+<p>An <b>inversion</b> is a pair i &lt; j with a[i] &gt; a[j]. During a merge, when you take an item from the right half while left items remain, that right item is smaller than all of them: you have just counted that many inversions in O(1). This turns the O(n²) pair count into O(n log n). The same idea answers <b>LC 315</b> (for each element, how many later elements are smaller; sort the <i>indices</i> so you remember who is who) and <b>LC 493</b> (count pairs with a[i] &gt; 2·a[j] in a separate sweep before each merge, since both halves are sorted). Stop 2 uses merge sort to show the recurrence T(n) = 2T(n/2) + O(n), and the sorting patterns in stop 3 have a plain <code>count_inversions</code>; LC 912 itself is simply “implement a sort”.</p>
+<script type="text/plain" class="code">
+def count_smaller(nums):                   # LC 315: for each i, how many later elements are smaller?
+    n = len(nums)
+    idx = list(range(n))                   # sort the INDICES by value, so we remember who is who
+    res = [0] * n
+    def sort(lo, hi):
+        if hi - lo <= 1:
+            return
+        mid = (lo + hi) // 2
+        sort(lo, mid)
+        sort(mid, hi)
+        tmp, i, j = [], lo, mid
+        while i < mid or j < hi:
+            if j == hi or (i < mid and nums[idx[i]] <= nums[idx[j]]):
+                res[idx[i]] += j - mid     # the j - mid right-half items already taken were strictly smaller
+                tmp.append(idx[i])
+                i += 1
+            else:
+                tmp.append(idx[j])
+                j += 1
+        idx[lo:hi] = tmp
+    sort(0, n)
+    return res
+
+def reverse_pairs(nums):                   # LC 493: pairs i < j with nums[i] > 2 * nums[j]
+    a = nums[:]
+    def sort(lo, hi):
+        if hi - lo <= 1:
+            return 0
+        mid = (lo + hi) // 2
+        cnt = sort(lo, mid) + sort(mid, hi)
+        j = mid
+        for i in range(lo, mid):           # both halves are sorted, so j only moves forward
+            while j < hi and a[i] > 2 * a[j]:
+                j += 1
+            cnt += j - mid
+        a[lo:hi] = sorted(a[lo:hi])        # merging two sorted runs is linear; write the manual merge on an exam
+        return cnt
+    return sort(0, len(a))
+</script>
+<div class="box tip"><div class="lbl" data-ico="🎯">Practice</div><p>LC 912, LC 315, LC 493 (all on the Ladder, tab Sorting). Checked against the O(n²) pair count and, for stability, against Python’s stable <code>sorted</code>.</p></div>
+
+<h3>2. Amortised analysis</h3>
+<p>Some operations are usually cheap and occasionally expensive. <b>Amortised cost</b> is the average per operation over a whole sequence, worst case guaranteed. It is not average over random inputs.</p>
+<p><b>The dynamic array.</b> <code>list.append</code> is O(1) most of the time, but when the array is full it allocates a bigger one and copies everything. If the capacity <b>doubles</b>, the copies happen at sizes 1, 2, 4, 8, …, and the sum of that series is less than 2n. So n appends cost under 3n elementary steps in total: O(1) amortised per append. If the capacity grew by only <b>1</b> each time, the copies would be 1 + 2 + … + (n − 1) = n(n − 1)/2, which is O(n²). The multiplicative growth is what matters.</p>
+<script type="text/plain" class="code">
+class DynArray:                            # what list.append does underneath, with the copies counted
+    def __init__(self, grow=2):
+        self.cap, self.n, self.copies, self.grow = 1, 0, 0, grow
+        self.data = [None]
+    def append(self, x):
+        if self.n == self.cap:             # full: allocate bigger and copy everything over
+            self.cap = self.cap * 2 if self.grow == 2 else self.cap + 1
+            new = [None] * self.cap
+            for i in range(self.n):
+                new[i] = self.data[i]
+                self.copies += 1
+            self.data = new
+        self.data[self.n] = x
+        self.n += 1
+</script>
+<p>The code counts the copies: after n appends with doubling, <code>copies &lt; 2n</code>; with growth by one it is exactly n(n − 1)/2 (both asserted for sizes up to 5,000).</p>
+<p><b>Other costs you have been quoting.</b> <i>Building a heap</i> from n items is O(n), not O(n log n), because most nodes are near the bottom and sift down only a step or two (stop 5). <i>Union-find</i> with union by size and path compression costs O(α(n)) amortised per operation, where α is the inverse Ackermann function, below 5 for any input that fits in a computer; that is why Kruskal’s sort dominates its running time. <i>Monotonic stacks</i> are O(n) because each element is pushed once and popped at most once, however many pops one step makes. All three use the same accounting idea: a charge per item, paid once.</p>
+
+<h3>3. Hashing, and what a dict does</h3>
+<p>A <b>hash table</b> stores a key at position <code>hash(key) % size</code>. Two keys can land on the same position: a <b>collision</b>. There are two standard answers.</p>
+<ul>
+<li><b>Chaining.</b> Each position holds a small list of the entries that landed there. Lookup walks one list. Simple, and deletes are easy.</li>
+<li><b>Open addressing.</b> One entry per slot; on a collision, probe the next slot (linear probing: the next one, then the next…). A deleted slot must become a <b>tombstone</b>, not empty: an empty slot ends a search, and would cut off the keys that were placed after it.</li>
+</ul>
+<p>The <b>load factor</b> is entries ÷ slots. As it rises, chains lengthen and probe runs grow, so tables <b>resize</b> (usually doubling) and re-place every key, which is another amortised O(1) argument. With a good hash and a controlled load factor, insert, lookup and delete cost O(1) on average. The worst case is O(n), if every key collides. This is why Python’s <code>dict</code> and <code>set</code> are fast but can be slowed by an adversarial input in a contest, and why keys must be hashable (a <code>list</code> is not; use a tuple).</p>
+<script type="text/plain" class="code">
+class ChainedMap:                          # buckets are small lists; the table doubles when the load factor passes 0.75
+    def __init__(self):
+        self.buckets = [[] for _ in range(8)]
+        self.n = 0
+    def _bucket(self, key):
+        return self.buckets[hash(key) % len(self.buckets)]
+    def put(self, key, val):
+        b = self._bucket(key)
+        for i, (k, _) in enumerate(b):
+            if k == key:
+                b[i] = (key, val)
+                return
+        b.append((key, val))
+        self.n += 1
+        if self.n / len(self.buckets) > 0.75:
+            self._grow()
+    def get(self, key, default=None):
+        for k, v in self._bucket(key):
+            if k == key:
+                return v
+        return default
+    def remove(self, key):
+        b = self._bucket(key)
+        for i, (k, _) in enumerate(b):
+            if k == key:
+                b.pop(i)
+                self.n -= 1
+                return True
+        return False
+    def _grow(self):
+        old = [kv for b in self.buckets for kv in b]
+        self.buckets = [[] for _ in range(2 * len(self.buckets))]
+        for k, v in old:                   # every key moves: hash % newsize changed
+            self.buckets[hash(k) % len(self.buckets)].append((k, v))
+
+_EMPTY, _TOMB = object(), object()
+
+class ProbeMap:                            # open addressing, linear probing, tombstones for deletes
+    def __init__(self):
+        self.slots = [_EMPTY] * 8
+        self.n = self.used = 0             # n live keys; used = live + tombstones
+    def _find(self, key):                  # (slot of key or None, first free slot to insert into)
+        cap = len(self.slots)
+        i, first_free = hash(key) % cap, None
+        while True:
+            s = self.slots[i]
+            if s is _EMPTY:
+                return None, (first_free if first_free is not None else i)
+            if s is _TOMB:
+                if first_free is None:
+                    first_free = i         # a deleted slot can be reused, but keep looking: the key may be further on
+            elif s[0] == key:
+                return i, None
+            i = (i + 1) % cap
+    def put(self, key, val):
+        at, free = self._find(key)
+        if at is not None:
+            self.slots[at] = (key, val)
+            return
+        if self.slots[free] is _EMPTY:
+            self.used += 1
+        self.slots[free] = (key, val)
+        self.n += 1
+        if self.used / len(self.slots) > 0.5:      # linear probing degrades fast above one half
+            self._rebuild()
+    def get(self, key, default=None):
+        at, _ = self._find(key)
+        return default if at is None else self.slots[at][1]
+    def remove(self, key):
+        at, _ = self._find(key)
+        if at is None:
+            return False
+        self.slots[at] = _TOMB                     # not EMPTY: that would cut the probe chain of other keys
+        self.n -= 1
+        return True
+    def _rebuild(self):
+        live = [s for s in self.slots if s is not _EMPTY and s is not _TOMB]
+        self.slots = [_EMPTY] * (2 * len(self.slots))
+        self.n = self.used = 0
+        for k, v in live:
+            self.put(k, v)
+
+class LRUCache:                            # LC 146: dict for O(1) lookup, doubly linked list for O(1) reordering
+    class _N:
+        __slots__ = ('k', 'v', 'prev', 'next')
+        def __init__(self, k=0, v=0):
+            self.k, self.v, self.prev, self.next = k, v, None, None
+    def __init__(self, capacity):
+        self.cap, self.map = capacity, {}
+        self.head, self.tail = self._N(), self._N()     # sentinels: no edge cases at the ends
+        self.head.next, self.tail.prev = self.tail, self.head
+    def _unlink(self, x):
+        x.prev.next, x.next.prev = x.next, x.prev
+    def _push_front(self, x):
+        x.next, x.prev = self.head.next, self.head
+        self.head.next.prev = x
+        self.head.next = x
+    def get(self, key):
+        if key not in self.map:
+            return -1
+        x = self.map[key]
+        self._unlink(x)
+        self._push_front(x)                # most recently used goes to the front
+        return x.v
+    def put(self, key, value):
+        if key in self.map:
+            x = self.map[key]
+            x.v = value
+            self._unlink(x)
+            self._push_front(x)
+            return
+        if len(self.map) == self.cap:
+            lru = self.tail.prev           # least recently used sits at the back
+            self._unlink(lru)
+            del self.map[lru.k]
+        x = self._N(key, value)
+        self.map[key] = x
+        self._push_front(x)
+
+class MyHashMap:                           # LC 706 (and LC 705 with the value dropped): fixed buckets, chaining
+    def __init__(self):
+        self.B = [[] for _ in range(769)]  # a prime number of buckets spreads keys better
+    def put(self, key, value):
+        b = self.B[key % 769]
+        for i, (k, _) in enumerate(b):
+            if k == key:
+                b[i] = (key, value)
+                return
+        b.append((key, value))
+    def get(self, key):
+        for k, v in self.B[key % 769]:
+            if k == key:
+                return v
+        return -1
+    def remove(self, key):
+        b = self.B[key % 769]
+        for i, (k, _) in enumerate(b):
+            if k == key:
+                b.pop(i)
+                return
+</script>
+<p>Both maps were run against Python’s own <code>dict</code> on random sequences of inserts, updates, lookups and deletes with integer and string keys, and the load factor stayed below its limit.</p>
+<p><b>LC 146 LRU Cache</b> is a hash table plus a doubly linked list: the table finds an entry in O(1), the list moves it to the front in O(1), and the back of the list is always the least recently used. Sentinel nodes at both ends remove the edge cases. <b>LC 705 and LC 706</b> ask you to build a set and a map from nothing; fixed-size chaining, as in <code>MyHashMap</code>, is enough.</p>
+<div class="box tip"><div class="lbl" data-ico="🎯">Practice</div><p>LC 146, LC 705, LC 706 (Ladder tab Arrays and search). The LRU cache was checked against Python’s <code>OrderedDict</code> on random operation sequences.</p></div>
+
+<h3>4. What comes after: a map, not a lesson</h3>
+<p>These are not in your course. Each is a single idea you can learn in an evening once the course tools are solid. Nothing here is on the end-sem outline.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Topic</th><th>What it is</th><th>Builds on</th></tr>
+<tr><td>Strongly connected components (Kosaraju, Tarjan)</td><td>groups of vertices that can all reach each other; collapsing them leaves a DAG</td><td>DFS, reverse graph, topological order (stops 8, 12). CSES Planets and Kingdoms is on the Ladder.</td></tr>
+<tr><td>Bridges and articulation points</td><td>edges or vertices whose removal disconnects the graph; found with DFS “low-link” values</td><td>DFS tree (stop 8)</td></tr>
+<tr><td>Lowest common ancestor, binary lifting</td><td>jump up a tree 2ᵏ steps at a time; O(log n) per query</td><td>trees, the <code>build_jump</code> sample in stop 8</td></tr>
+<tr><td>Balanced BSTs (AVL, red-black)</td><td>rotations keep height O(log n) so every operation is O(log n)</td><td>BST (stop 4)</td></tr>
+<tr><td>Segment tree, sparse table</td><td>range queries with updates (segment tree) or without (sparse table); Fenwick is the lighter cousin</td><td>trees, prefix sums; Fenwick is in stop 14</td></tr>
+<tr><td>Digit DP, matrix exponentiation</td><td>count numbers by their digits; compute linear recurrences in O(log n)</td><td>DP (stops 9–10)</td></tr>
+</table></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Merge sort: O(n log n) always, O(n) space, stable if the left wins ties; counting inversions is free inside the merge. Doubling a dynamic array gives O(1) amortised append. Hash tables: collisions, load factor, resizing; tombstones for open addressing; O(1) average, O(n) worst.</p></div>
+<div class="quiz" data-quiz="x17"></div>
+</section>

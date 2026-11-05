@@ -1,0 +1,109 @@
+<section class="topic" id="ch1" data-group="found" data-num="1" data-title="Problem-solving foundations">
+<div class="topic-head"><div class="badge">1</div><div><div class="meta">Foundations line</div><h2>Problem-solving foundations</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>Before any data structure: how to read a problem, choose a strategy, and know whether your idea is fast enough before you write a line of code.</p></div>
+
+<h3>What is an algorithm, really?</h3>
+<p>An <b>algorithm</b> is a finite, unambiguous list of steps that turns an <b>input</b> into a desired <b>output</b>. A recipe is an algorithm for cooking. "Look up a word by opening the dictionary in the middle, deciding which half the word is in, and repeating" is an algorithm for searching.</p>
+<p>A <b>data structure</b> is a way of arranging data in memory so that certain operations are cheap. Arrays make "get the 5th item" cheap. Heaps make "get the biggest item" cheap. Trees make "find this key" cheap. Every algorithm in this course is really a pairing: <i>a data structure plus a strategy for using it</i>.</p>
+<div class="box analogy"><div class="lbl" data-ico="🧑‍🏫">Teacher's note</div><p>When you meet any new topic in this course, ask three questions in order: (1) <b>What rule does this structure enforce?</b> (2) <b>Which operations does that rule make fast?</b> (3) <b>What does keeping the rule cost on insert and delete?</b> Every chapter below is organised around those three questions.</p></div>
+
+<h3>A repeatable approach for any problem</h3>
+<p>Exam questions and interview questions both reward a calm routine over inspiration. Use these six steps.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Step</th><th>What you do</th><th>Typical mistake it prevents</th></tr>
+<tr><td><b>1. Understand</b></td><td>Restate the problem. Write the input, the output, and the limits (how big can n be? can values repeat? can the input be empty?). Make one small example by hand.</td><td>Solving a different problem from the one asked.</td></tr>
+<tr><td><b>2. Brute force</b></td><td>Describe the slowest correct solution, even if silly. State its time complexity.</td><td>Having no answer at all. Also gives you a correctness checker.</td></tr>
+<tr><td><b>3. Match a pattern</b></td><td>Look at the clue words (table below) and choose a technique: sort, heap, BST, BFS, DFS, backtracking, DP.</td><td>Reinventing something that already has a name.</td></tr>
+<tr><td><b>4. Plan</b></td><td>Write pseudocode or the recurrence on paper. Decide the data structures.</td><td>Starting to code and getting lost halfway.</td></tr>
+<tr><td><b>5. Dry run</b></td><td>Trace your plan on the example by hand, then on edge cases: empty, one element, duplicates, already sorted, all equal, maximum size.</td><td>Off-by-one errors and missed base cases.</td></tr>
+<tr><td><b>6. Analyse</b></td><td>State time and space complexity, and compare with the limit from step 1.</td><td>Submitting something that is correct but too slow.</td></tr>
+</table></div>
+
+<h3>Clue words that point to a technique</h3>
+<div class="tbl-wrap"><table>
+<tr><th>If the problem says…</th><th>Think…</th><th>Chapter</th></tr>
+<tr><td>"generate all", "list every arrangement", "place items so that no two conflict"</td><td>Backtracking (complete search with pruning)</td><td>6</td></tr>
+<tr><td>"minimum / maximum / number of ways", and each choice leaves a smaller version of the same problem</td><td>Dynamic programming</td><td>9</td></tr>
+<tr><td>"shortest number of steps / fewest moves" in an unweighted setting, "level by level", "spreads every minute"</td><td>BFS</td><td>8</td></tr>
+<tr><td>"is it reachable", "count connected groups", "does it contain a cycle", "explore everything"</td><td>DFS</td><td>8</td></tr>
+<tr><td>"k largest", "always remove the best item", "scheduling by priority", "running median"</td><td>Heap / priority queue</td><td>5</td></tr>
+<tr><td>"keep items in sorted order while inserting and deleting", "smallest value greater than x"</td><td>BST (or a balanced variant)</td><td>4</td></tr>
+<tr><td>"split in half, solve each half, combine"</td><td>Divide and conquer, analysed with the Master theorem</td><td>2, 3</td></tr>
+<tr><td>"sort quickly in place on average"</td><td>Quick Sort</td><td>3</td></tr>
+</table></div>
+
+<h3>Let the input size choose your algorithm</h3>
+<p>A modern computer does roughly 10<sup>8</sup> simple operations per second. If the problem tells you the largest n, you can work out which complexity classes are allowed <i>before</i> designing anything.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Largest n</th><th>Complexity you can afford</th><th>Typical technique</th></tr>
+<tr><td>n ≤ 10 or 11</td><td>O(n!)</td><td>Try all permutations (backtracking)</td></tr>
+<tr><td>n ≤ 20 to 25</td><td>O(2<sup>n</sup>)</td><td>Try all subsets</td></tr>
+<tr><td>n ≤ 500</td><td>O(n³)</td><td>Triple loops, some DP</td></tr>
+<tr><td>n ≤ 5,000</td><td>O(n²)</td><td>Double loops, simple DP</td></tr>
+<tr><td>n ≤ 10<sup>6</sup></td><td>O(n log n)</td><td>Sorting, heaps, balanced trees</td></tr>
+<tr><td>n ≤ 10<sup>7</sup> to 10<sup>8</sup></td><td>O(n)</td><td>One pass, hashing, BFS/DFS</td></tr>
+<tr><td>n larger than that</td><td>O(log n) or O(1)</td><td>Binary search, math formula</td></tr>
+</table></div>
+
+<div class="lab" data-w="feasible" data-title="Lab: can my algorithm finish in time?"></div>
+
+<h3>Worked example: two numbers that add to a target</h3>
+<div class="box tip"><div class="lbl" data-ico="✏️">Worked example</div><p><b>Problem.</b> Given a list of n numbers and a target T, decide whether two different positions hold numbers that add up to T. Example: [8, 3, 5, 11], T = 14 → yes (3 + 11).</p>
+<p><b>Brute force (step 2).</b> Check every pair. There are n(n−1)/2 pairs, so O(n²) time, O(1) space.</p>
+<p><b>Better idea (step 3).</b> For each number x, the partner we need is T − x. If we remember the numbers already seen in a set, we can ask "have I seen T − x?" in O(1). One pass: O(n) time, O(n) space. We traded memory for speed.</p></div>
+<script type="text/plain" class="code">
+def has_pair_brute(a, T):
+    n = len(a)
+    for i in range(n):
+        for j in range(i + 1, n):      # each pair once
+            if a[i] + a[j] == T:
+                return True
+    return False                       # O(n^2) time, O(1) space
+
+def has_pair_fast(a, T):
+    seen = set()
+    for x in a:
+        if (T - x) in seen:            # set lookup is O(1) on average
+            return True
+        seen.add(x)
+    return False                       # O(n) time, O(n) space
+</script>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><p>Almost every optimisation in this course follows the same story: spot the repeated or wasted work in the brute force, then add a structure (set, heap, tree, table) that removes it.</p></div>
+
+<h3>Recursion: the engine behind half of this course</h3>
+<p>A <b>recursive</b> function solves a problem by calling itself on a <i>smaller version of the same problem</i>. It needs three ingredients:</p>
+<ul>
+<li><b>Base case</b>: the smallest problem, answered directly. Without it the function never stops.</li>
+<li><b>Subproblem</b>: a strictly smaller input (n−1, or half the array, or the left subtree).</li>
+<li><b>Recursive call</b>: trust that the call returns the correct answer for the smaller input, then use it to build your answer.</li>
+</ul>
+<script type="text/plain" class="code">
+def factorial(n):
+    if n == 0:                 # base case
+        return 1
+    return n * factorial(n - 1)   # smaller problem: n-1
+</script>
+<p>Each call waits on the <b>call stack</b> until the call it made returns. Dry run of <code>factorial(4)</code>:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Moment</th><th>Call stack (bottom → top)</th><th>What happens</th></tr>
+<tr><td>1</td><td>f(4)</td><td>4 ≠ 0, so compute 4 × f(3). Wait.</td></tr>
+<tr><td>2</td><td>f(4), f(3)</td><td>3 × f(2). Wait.</td></tr>
+<tr><td>3</td><td>f(4), f(3), f(2)</td><td>2 × f(1). Wait.</td></tr>
+<tr><td>4</td><td>f(4), f(3), f(2), f(1)</td><td>1 × f(0). Wait.</td></tr>
+<tr><td>5</td><td>f(4), f(3), f(2), f(1), f(0)</td><td>Base case: return 1.</td></tr>
+<tr class="hl"><td>6 (unwinding)</td><td>f(1) returns 1×1 = 1, f(2) returns 2, f(3) returns 6, f(4) returns <b>24</b></td><td>The stack is popped one frame at a time.</td></tr>
+</table></div>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p>Recursion uses memory. <code>factorial(n)</code> is O(n) <i>time</i> and also O(n) <i>space</i>, because n frames sit on the stack at once. Exam questions about "space complexity of a recursive function" are asking about the stack depth.</p></div>
+
+<h3>Strategy families you will meet</h3>
+<div class="cols">
+<div class="card"><h4>Divide and conquer</h4><p>Split the input into <b>fractions</b> (like halves), solve each recursively, <b>combine</b>. Merge Sort and Quick Sort. Note: factorial is recursive but <i>not</i> divide and conquer, because it shrinks by 1, not by a fraction.</p></div>
+<div class="card"><h4>Complete search / backtracking</h4><p>Try every possibility, building the answer one choice at a time, and undo choices that fail. Slow in theory, but pruning makes it practical.</p></div>
+<div class="card"><h4>Dynamic programming</h4><p>Like complete search, but remember the answer to each subproblem so it is never computed twice.</p></div>
+<div class="card"><h4>Greedy</h4><p>Take the locally best choice and never look back. Fast, but only correct when the problem has a special structure. (Not in your syllabus list, but useful to contrast with DP.)</p></div>
+</div>
+
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><p><b>Debugging checklist you can use in the exam.</b> Empty input. Single element. Two elements. Duplicates. Already sorted. Reverse sorted. All equal. Negative numbers. The largest allowed n. If your dry run survives all nine, you are probably right.</p></div>
+
+<div class="quiz" data-quiz="s1"></div>
+</section>

@@ -1,0 +1,166 @@
+<section class="topic" id="ch9" data-group="dp" data-num="9" data-title="Dynamic Programming I">
+<div class="topic-head"><div class="badge">9</div><div><div class="meta">Dynamic programming line</div><h2>Dynamic Programming I</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>Recursion that never repeats itself. First see the waste, then remove it with memoization, then learn the recipe through two classic problems.</p></div>
+
+
+<h3>Start here: what is a "subproblem"?</h3>
+<p>Many problems can be answered by first answering <b>smaller versions of the same problem</b>. The smaller versions are <b>subproblems</b>. For example, the Fibonacci numbers are defined by F(0) = 0, F(1) = 1 and F(n) = F(n−1) + F(n−2). To find F(5) you need two subproblems, F(4) and F(3), and each of those needs smaller ones.</p>
+<p>Writing that definition as code is straightforward recursion. But watch what happens to F(5):</p>
+<pre class="code" style="white-space:pre">                    F(5)
+                  /      \
+              F(4)        F(3)
+             /    \       /   \
+          F(3)   F(2)  F(2)  F(1)
+          /  \
+       F(2) F(1) ...</pre>
+<p>F(3) is computed twice, F(2) three times, and the duplication grows with n. The idea of DP is almost embarrassingly simple: <b>write each answer down the first time you compute it, and look it up the next time</b>. That one idea turns an exponential algorithm into a linear one.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Term</th><th>Meaning</th><th>Fibonacci example</th></tr>
+<tr><td><b>State</b></td><td>The information that identifies one subproblem</td><td>the number n in F(n)</td></tr>
+<tr><td><b>Recurrence (transition)</b></td><td>How a state's answer is built from smaller states</td><td>F(n) = F(n−1) + F(n−2)</td></tr>
+<tr><td><b>Base case</b></td><td>States answered directly</td><td>F(0) = 0, F(1) = 1</td></tr>
+<tr><td><b>Memo / table</b></td><td>Storage for finished answers</td><td>an array or dictionary indexed by n</td></tr>
+</table></div>
+
+<h3>The waste in plain recursion</h3>
+<p>Climbing stairs (below) leads to the recursion <code>ways(n) = ways(n−1) + ways(n−2)</code>. Draw the calls for ways(5): ways(3) is computed twice, ways(2) three times. As n grows, the same small subproblems are recomputed an exponential number of times. Hover over any node in the lab to see all its duplicates.</p>
+<div class="lab" data-w="climbtree" data-title="Lab: recursion tree with and without memoization"></div>
+
+<h3>What is dynamic programming?</h3>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><p><b>Dynamic programming (DP)</b> = recursion + <b>remembering answers</b>. Solve each distinct subproblem once, store the result, and reuse it. It works when a problem has two properties:</p>
+<p><b>1. Overlapping subproblems.</b> The same smaller problems appear again and again (unlike divide and conquer, where subproblems are disjoint, like the two halves in merge sort).<br>
+<b>2. Optimal substructure.</b> The best answer to the whole problem is built from best answers to its subproblems.</p></div>
+<p>The time becomes <b>(number of distinct subproblems) × (work per subproblem)</b>. CLRS: rod cutting has O(n) subproblems with O(n) choices each, so O(n²). Matrix chain has O(n²) subproblems × O(n) choices = O(n³).</p>
+
+<h3>Two ways to implement it</h3>
+<div class="tbl-wrap"><table>
+<tr><th></th><th>Memoization (top-down)</th><th>Tabulation (bottom-up)</th></tr>
+<tr><td>Style</td><td>Write the plain recursion, add a cache</td><td>Fill a table from the smallest case upward with loops</td></tr>
+<tr><td>Which subproblems?</td><td>Only those actually needed</td><td>All of them, in order</td></tr>
+<tr><td>Overhead</td><td>Recursive calls, stack depth</td><td>None, easy to optimise memory</td></tr>
+<tr><td>Easiest when</td><td>The recurrence is clear but the order is not</td><td>The order is obvious (small to large)</td></tr>
+</table></div>
+
+<h3>The recipe: five questions</h3>
+<ol>
+<li><b>State.</b> What does <code>dp[i]</code> mean, in one plain sentence? (Be precise: "the number of ways to reach step i", "the best loot using houses 0..i".)</li>
+<li><b>Choices.</b> At the current position, what are the options? Each option leaves a smaller subproblem.</li>
+<li><b>Transition.</b> Combine the options: sum them for "how many ways", take the max/min for "best".</li>
+<li><b>Base cases.</b> The smallest states you can answer directly.</li>
+<li><b>Order and answer.</b> Which order guarantees each dp[i] is computed after what it depends on? Which cell is the final answer?</li>
+</ol>
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><p><b>CLRS's four steps:</b> (1) characterise the structure of an optimal solution, (2) define its value recursively, (3) compute the value (usually bottom-up), (4) construct the actual solution if needed. To argue optimal substructure, use a <i>cut-and-paste</i> argument: if the subsolution inside an optimal solution were not optimal, swap in a better one and the whole would improve, a contradiction.</p></div>
+
+<h3>Classic 1: Climbing Stairs</h3>
+<div class="box tip"><div class="lbl" data-ico="✏️">Worked example</div><p><b>Problem.</b> You climb a staircase of n steps. Each move is 1 or 2 steps. In how many distinct ways can you reach the top? (n = 3 → 3 ways: 1+1+1, 1+2, 2+1.)</p></div>
+
+<p><b>Deriving the recurrence from scratch.</b> Do small cases by hand. With 1 step there is one way: <code>1</code>. With 2 steps: <code>1+1</code> and <code>2</code> (two ways). With 3 steps: <code>1+1+1</code>, <code>1+2</code>, <code>2+1</code> (three ways). With 4 steps: <code>1+1+1+1</code>, <code>1+1+2</code>, <code>1+2+1</code>, <code>2+1+1</code>, <code>2+2</code> (five ways). Look at the 4-step list: the ones ending in a 1-step are the three ways to reach step 3 followed by a 1; the ones ending in a 2-step are the two ways to reach step 2 followed by a 2. So ways(4) = ways(3) + ways(2) = 3 + 2 = 5. In general, <b>the last move decides</b>: ways(n) = ways(n−1) + ways(n−2). Spotting "what was the last choice?" is the key skill for every DP problem.</p>
+
+<ol>
+<li><b>State:</b> dp[i] = number of ways to stand on step i.</li>
+<li><b>Choices:</b> your last move was a 1-step (you came from i−1) or a 2-step (you came from i−2). Those are the only two ways to arrive.</li>
+<li><b>Transition:</b> dp[i] = dp[i−1] + dp[i−2]. (Different last moves give different sequences, so we add.)</li>
+<li><b>Base:</b> dp[0] = 1 (one way to be at the start: do nothing), dp[1] = 1.</li>
+<li><b>Order / answer:</b> i = 2, 3, …, n increasing. Answer = dp[n].</li>
+</ol>
+<p>This is the Fibonacci sequence: 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, … Four implementations of the same idea:</p>
+<script type="text/plain" class="code">
+# 1. Plain recursion: correct but O(2^n) time. Do not use beyond n ~ 35.
+def ways_naive(n):
+    if n <= 1:
+        return 1
+    return ways_naive(n - 1) + ways_naive(n - 2)
+
+# 2. Top-down memoization: O(n) time, O(n) space
+def ways_memo(n, memo=None):
+    if memo is None:
+        memo = {}
+    if n <= 1:
+        return 1
+    if n in memo:                       # already solved: reuse
+        return memo[n]
+    memo[n] = ways_memo(n - 1, memo) + ways_memo(n - 2, memo)
+    return memo[n]
+
+# 3. Bottom-up table: O(n) time, O(n) space
+def ways_table(n):
+    dp = [1] * (n + 1)                  # dp[0] = dp[1] = 1
+    for i in range(2, n + 1):
+        dp[i] = dp[i - 1] + dp[i - 2]
+    return dp[n]
+
+# 4. Space optimised: O(n) time, O(1) space (we only ever need the last two)
+def ways_opt(n):
+    prev2, prev1 = 1, 1                 # dp[i-2], dp[i-1]
+    for _ in range(2, n + 1):
+        prev2, prev1 = prev1, prev1 + prev2
+    return prev1
+</script>
+<div class="tbl-wrap"><table>
+<tr><th>Version</th><th>Time</th><th>Space</th></tr>
+<tr><td>Naive recursion</td><td>O(2ⁿ) (really ≈ 1.618ⁿ)</td><td>O(n) stack</td></tr>
+<tr><td>Memoization</td><td>O(n)</td><td>O(n)</td></tr>
+<tr><td>Tabulation</td><td>O(n)</td><td>O(n)</td></tr>
+<tr><td>Two variables</td><td>O(n)</td><td><b>O(1)</b></td></tr>
+</table></div>
+<div class="lab" data-w="climbdp" data-title="Lab: fill the Climbing Stairs table"></div>
+
+<h3>Classic 2: House Robber</h3>
+<div class="box tip"><div class="lbl" data-ico="✏️">Worked example</div><p><b>Problem.</b> Houses in a row hold nums[i] money. Robbing two <b>adjacent</b> houses triggers the alarm. What is the most you can steal? Example: [2, 7, 9, 3, 1] → 12 (houses 0, 2 and 4: 2 + 9 + 1).</p></div>
+<ol>
+<li><b>State:</b> dp[i] = the maximum money you can get considering only houses 0..i.</li>
+<li><b>Choices at house i:</b> <b>skip it</b> (then the best is whatever you had through house i−1), or <b>rob it</b> (then you could not have robbed i−1, so you get nums[i] plus the best through house i−2).</li>
+<li><b>Transition:</b> dp[i] = max( dp[i−1], dp[i−2] + nums[i] ).</li>
+<li><b>Base:</b> dp[0] = nums[0]; dp[1] = max(nums[0], nums[1]). (Equivalently treat dp[−1] = dp[−2] = 0.)</li>
+<li><b>Answer:</b> dp[n−1].</li>
+</ol>
+<script type="text/plain" class="code">
+def rob(nums):
+    n = len(nums)
+    if n == 0: return 0
+    if n == 1: return nums[0]
+    dp = [0] * n
+    dp[0] = nums[0]
+    dp[1] = max(nums[0], nums[1])
+    for i in range(2, n):
+        dp[i] = max(dp[i - 1],              # skip house i
+                    dp[i - 2] + nums[i])    # rob house i
+    return dp[-1]
+
+def rob_opt(nums):                           # O(1) space
+    prev2 = prev1 = 0                        # best through i-2, best through i-1
+    for x in nums:
+        prev2, prev1 = prev1, max(prev1, prev2 + x)
+    return prev1
+</script>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p><b>Greedy fails here.</b> For [2, 1, 1, 2], "always take the biggest available house" or "alternate houses" can give 3, but the true answer is 4 (houses 0 and 3). DP considers both options at every house; greedy commits too early. Run [2,1,1,2] in the lab.</p></div>
+<div class="lab" data-w="rob" data-title="Lab: House Robber table and reconstruction"></div>
+
+<h3>Variations and next problems</h3>
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><ul>
+<li><b>Min cost climbing stairs:</b> dp[i] = cost[i] + min(dp[i−1], dp[i−2]); the answer is min of the last two.</li>
+<li><b>House Robber II (houses in a circle):</b> house 0 and the last are adjacent. Answer = max( rob(nums[0..n−2]), rob(nums[1..n−1]) ).</li>
+<li><b>Climbing stairs with steps from a set {1,3,5}:</b> dp[i] = Σ dp[i − s] over allowed s ≤ i.</li>
+<li><b>Rod cutting (CLRS):</b> r[n] = max over i of (p[i] + r[n−i]). O(n²).</li>
+<li><b>Longest common subsequence (CLRS; worked in full in chapter 10):</b> if xᵢ = yⱼ then c[i,j] = c[i−1,j−1] + 1 else max(c[i−1,j], c[i,j−1]). O(mn).</li>
+<li><b>Matrix chain (CLRS):</b> m[i,j] = min over k of m[i,k] + m[k+1,j] + pᵢ₋₁·pₖ·pⱼ. O(n³).</li>
+</ul></div>
+<h3>Common mistakes</h3>
+<ul>
+<li>A vague state definition. If you cannot say what dp[i] means in one sentence, the transition will be wrong.</li>
+<li>Wrong or missing base cases (especially n = 0, n = 1, empty input).</li>
+<li>Computing a cell before the cells it depends on.</li>
+<li>Memoizing with a key that leaves out a parameter that affects the answer.</li>
+<li>Python recursion limit (about 1000 frames): memoized recursion on n = 10⁵ needs the bottom-up form.</li>
+</ul>
+<table style="display:none"></table>
+<div class="tbl-wrap"><table>
+<tr><th>Technique</th><th>Subproblems</th><th>Decision rule</th><th>Typical clue</th></tr>
+<tr><td>Divide and conquer</td><td>Disjoint</td><td>Combine halves</td><td>Sorting, searching</td></tr>
+<tr><td>Greedy</td><td>One remaining subproblem</td><td>Take the locally best, never reconsider</td><td>Needs a proof that it works</td></tr>
+<tr><td>Backtracking</td><td>Explores all</td><td>Try all, undo</td><td>List every solution</td></tr>
+<tr><td>Dynamic programming</td><td>Overlapping</td><td>Try all choices, but cache</td><td>Best value or count of ways</td></tr>
+</table></div>
+
+<div class="quiz" data-quiz="s9"></div>
+</section>

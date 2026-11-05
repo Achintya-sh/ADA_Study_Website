@@ -1,0 +1,760 @@
+<section class="topic" id="ch12" data-group="graph" data-num="12" data-title="Graphs II: order, cycles, weights">
+<div class="topic-head"><div class="badge">12</div><div><div class="meta">Graphs line · week 11</div><h2>Graphs II: order, cycles, weights</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>Week 11 of the course: shortest paths and spanning trees. Every tool below is BFS or DFS with one thing changed. <b>Topological order</b> (Kahn or DFS) puts a DAG’s vertices in an order where every edge points forward, and it detects cycles. <b>Dijkstra</b> is BFS with a heap, for non-negative weights. <b>0-1 BFS</b> swaps the heap for a deque. <b>Bellman–Ford</b> survives negative edges and finds negative cycles. <b>Floyd–Warshall</b> does all pairs when V is small. <b>Union-find</b> answers “already connected?” as edges arrive, which is all Kruskal’s <b>minimum spanning tree</b> needs. Your syllabus marks the MST optional; the learning outcomes still list it, so it is covered in full here.</p></div>
+<div class="tbl-wrap"><table>
+<tr><th>Situation</th><th>Tool</th><th>Time</th></tr>
+<tr><td>unweighted</td><td>BFS</td><td>O(V + E)</td></tr>
+<tr><td>weights are only 0 or 1</td><td>0-1 BFS (deque)</td><td>O(V + E)</td></tr>
+<tr><td>weights ≥ 0</td><td>Dijkstra (heap)</td><td>O((V + E) log V)</td></tr>
+<tr><td>some weights negative</td><td>Bellman–Ford</td><td>O(V·E)</td></tr>
+<tr><td>“at most k edges” / “at most k stops”</td><td>Bellman–Ford, k rounds</td><td>O(k·E)</td></tr>
+<tr><td>all pairs, V ≤ 400</td><td>Floyd–Warshall</td><td>O(V³)</td></tr>
+<tr><td>acyclic graph, any weights</td><td>topological order + DP</td><td>O(V + E)</td></tr>
+<tr><td>an extra rule (k free passes)</td><td>Dijkstra on states (node, passes used)</td><td>O(k·(V + E) log)</td></tr>
+<tr><td>connect everything as cheaply as possible</td><td>MST: Kruskal or Prim</td><td>O(E log V)</td></tr>
+</table></div>
+<p>Not sure which row you are in? Section 8 is a decision page with the questions in the order to ask them.</p>
+
+<h3>1. Order without cycles: topological sort</h3>
+<p>If a graph has no directed cycle (a <b>DAG</b>), its vertices can be listed so that every edge goes from earlier to later. “Course b before course a”, “build step 1 before step 2”, and “this cell leads to a bigger cell” are all DAGs. There are two standard ways to get the order, and both detect a cycle for free.</p>
+<p><b>Kahn’s algorithm (peeling).</b> A vertex that nothing points to can safely go first. Remove it, lower the in-degree of everything it points to, repeat. If some vertices never reach in-degree 0, they lie on or behind a cycle.</p>
+<script type="text/plain" class="code">
+from collections import deque
+
+def topo_order(n, edges):                 # Kahn: edges (u, v) mean u before v
+    adj = [[] for _ in range(n)]
+    indeg = [0] * n
+    for u, v in edges:
+        adj[u].append(v)
+        indeg[v] += 1
+    q = deque(u for u in range(n) if indeg[u] == 0)
+    order = []
+    while q:
+        u = q.popleft()
+        order.append(u)
+        for v in adj[u]:
+            indeg[v] -= 1
+            if indeg[v] == 0:             # its last prerequisite is done
+                q.append(v)
+    return order if len(order) == n else None     # None: a cycle
+
+def longest_path_dag(n, edges):           # most edges on any path
+    adj = [[] for _ in range(n)]
+    for u, v in edges:
+        adj[u].append(v)
+    best = [0] * n
+    for u in topo_order(n, edges):        # u is final before its out-edges are used
+        for v in adj[u]:
+            best[v] = max(best[v], best[u] + 1)
+    return max(best)
+</script>
+<p>Hand trace on the graph 5→2, 5→0, 4→0, 4→1, 2→3, 3→1 (queue shown after each pop; ties by index):</p>
+<div class="tbl-wrap"><table>
+<tr><th>Pop</th><th>In-degrees of 0 1 2 3 4 5 afterwards</th><th>Queue</th><th>Order so far</th></tr>
+<tr><td>start</td><td>2 2 1 1 0 0</td><td>4, 5</td><td></td></tr>
+<tr><td>4</td><td>1 1 1 1 0 0</td><td>5</td><td>4</td></tr>
+<tr><td>5</td><td>0 1 0 1 0 0</td><td>2, 0</td><td>4 5</td></tr>
+<tr><td>2</td><td>0 1 0 0 0 0</td><td>0, 3</td><td>4 5 2</td></tr>
+<tr><td>0</td><td>0 1 0 0 0 0</td><td>3</td><td>4 5 2 0</td></tr>
+<tr><td>3</td><td>0 0 0 0 0 0</td><td>1</td><td>4 5 2 0 3</td></tr>
+<tr><td>1</td><td>0 0 0 0 0 0</td><td></td><td>4 5 2 0 3 1</td></tr>
+</table></div>
+<p><b>DFS version.</b> Run DFS and list vertices in <i>reverse finishing order</i>: a vertex finishes only after everything it points to has finished, so it ends up before them in the reversed list. Three colours (unseen, on the current path, finished) detect cycles: meeting a vertex that is <i>on the current path</i> means a back edge, which means a cycle. This version is iterative, so a 200,000-long chain cannot hit Python’s recursion limit.</p>
+<script type="text/plain" class="code">
+def topo_dfs(n, adj):                     # iterative DFS (no recursion limit); order, or None if there is a cycle
+    WHITE, GREY, BLACK = 0, 1, 2
+    color = [WHITE] * n
+    post = []
+    for s in range(n):
+        if color[s] != WHITE:
+            continue
+        color[s] = GREY
+        stack = [(s, 0)]                  # (node, index of the next neighbour to try)
+        while stack:
+            u, i = stack.pop()
+            if i < len(adj[u]):
+                stack.append((u, i + 1))
+                v = adj[u][i]
+                if color[v] == GREY:      # v is still on the current path: a back edge, so a cycle
+                    return None
+                if color[v] == WHITE:
+                    color[v] = GREY
+                    stack.append((v, 0))
+            else:
+                color[u] = BLACK          # everything reachable from u is finished
+                post.append(u)
+    return post[::-1]                     # reverse finishing order is a topological order
+</script>
+<p><b>Course Schedule.</b> LC 207 only asks whether an order exists; LC 210 asks for one. Note the direction: <code>[a, b]</code> means b comes <i>before</i> a, so the edge is b → a.</p>
+<script type="text/plain" class="code">
+from collections import deque
+
+def find_order(num_courses, prerequisites):   # LC 210: [a, b] means take b before a; [] if impossible
+    adj = [[] for _ in range(num_courses)]
+    indeg = [0] * num_courses
+    for a, b in prerequisites:
+        adj[b].append(a)
+        indeg[a] += 1
+    q = deque(i for i in range(num_courses) if indeg[i] == 0)
+    order = []
+    while q:
+        u = q.popleft()
+        order.append(u)
+        for v in adj[u]:
+            indeg[v] -= 1
+            if indeg[v] == 0:
+                q.append(v)
+    return order if len(order) == num_courses else []
+
+def can_finish(num_courses, prerequisites):   # LC 207: the same peel, only the count matters
+    return len(find_order(num_courses, prerequisites)) == num_courses
+</script>
+<h4>DP over a DAG</h4>
+<p>In a DAG the topological order is a valid order to fill a DP table: by the time you reach u, every path into u has already been accounted for. So shortest <i>and longest</i> paths, even with negative weights, need no heap: process vertices in topological order and relax their out-edges once. Longest path is NP-hard on general graphs but easy here, because there are no cycles to loop around. Counting paths is the same loop with <code>+</code> in place of <code>min</code>.</p>
+<script type="text/plain" class="code">
+from collections import deque
+
+def dag_shortest_longest(n, edges, s):    # weighted DAG, negative weights allowed; None if there is a cycle
+    adj = [[] for _ in range(n)]
+    indeg = [0] * n
+    for u, v, w in edges:
+        adj[u].append((v, w))
+        indeg[v] += 1
+    q = deque(i for i in range(n) if indeg[i] == 0)
+    order = []
+    while q:
+        u = q.popleft()
+        order.append(u)
+        for v, w in adj[u]:
+            indeg[v] -= 1
+            if indeg[v] == 0:
+                q.append(v)
+    if len(order) < n:
+        return None
+    INF = float('inf')
+    short, long_ = [INF] * n, [-INF] * n
+    short[s] = long_[s] = 0
+    for u in order:                       # u is final before its out-edges are used: no heap needed
+        if short[u] == INF:
+            continue                      # not reachable from s
+        for v, w in adj[u]:
+            short[v] = min(short[v], short[u] + w)
+            long_[v] = max(long_[v], long_[u] + w)
+    return short, long_
+</script>
+<h4>Contest problems that are secretly DAGs</h4>
+<p><b>LC 329 Longest Increasing Path in a Matrix.</b> Draw an edge from each cell to every bigger neighbour: a DAG, because values strictly increase. The longest path is the number of Kahn layers. The usual memoised DFS recurses up to 40,000 levels on a 200×200 grid, which exceeds Python’s default recursion limit of 1,000; peeling avoids recursion entirely.</p>
+<script type="text/plain" class="code">
+from collections import deque
+
+def longest_increasing_path(matrix):      # LC 329: peel the DAG "step to a bigger neighbour" layer by layer
+    R, C = len(matrix), len(matrix[0])
+    D = ((1, 0), (-1, 0), (0, 1), (0, -1))
+    indeg = [[0] * C for _ in range(R)]   # how many smaller neighbours can step INTO this cell
+    for r in range(R):
+        for c in range(C):
+            for dr, dc in D:
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < R and 0 <= nc < C and matrix[nr][nc] < matrix[r][c]:
+                    indeg[r][c] += 1
+    q = deque((r, c) for r in range(R) for c in range(C) if indeg[r][c] == 0)
+    layers = 0
+    while q:
+        layers += 1                       # one BFS layer = one more cell on the longest path
+        for _ in range(len(q)):
+            r, c = q.popleft()
+            for dr, dc in D:
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < R and 0 <= nc < C and matrix[nr][nc] > matrix[r][c]:
+                    indeg[nr][nc] -= 1
+                    if indeg[nr][nc] == 0:
+                        q.append((nr, nc))
+    return layers
+</script>
+<p><b>LC 1857 Largest Color Value in a Directed Graph.</b> Keep, for every vertex, the best count of each of the 26 colours on any path ending there, and push it forward in topological order. If Kahn does not reach every vertex there is a cycle and the answer is −1. A self-loop never reaches in-degree 0, so it is caught the same way.</p>
+<script type="text/plain" class="code">
+from collections import deque
+
+def largest_path_value(colors, edges):    # LC 1857: most frequent colour on some path; -1 if there is a cycle
+    n = len(colors)
+    adj = [[] for _ in range(n)]
+    indeg = [0] * n
+    for u, v in edges:
+        adj[u].append(v)
+        indeg[v] += 1                     # a self-loop gives indeg[u] >= 1 forever: caught as a cycle
+    cnt = [[0] * 26 for _ in range(n)]    # cnt[u][c]: best count of colour c on a path that ENDS at u
+    q = deque(i for i in range(n) if indeg[i] == 0)
+    seen = best = 0
+    while q:
+        u = q.popleft()
+        seen += 1
+        cnt[u][ord(colors[u]) - 97] += 1  # add u itself
+        best = max(best, max(cnt[u]))
+        for v in adj[u]:
+            for c in range(26):           # push the best counts forward
+                if cnt[u][c] > cnt[v][c]:
+                    cnt[v][c] = cnt[u][c]
+            indeg[v] -= 1
+            if indeg[v] == 0:
+                q.append(v)
+    return best if seen == n else -1
+</script>
+<div class="box tip"><div class="lbl" data-ico="🎯">Practice</div><p>LC 207, LC 210, LC 802 (peel the reversed graph), LC 329, LC 1857, CSES Course Schedule, CSES Longest Flight Route. All the code above was checked against brute force on random graphs, including cyclic ones.</p></div>
+
+<h3>2. Dijkstra: BFS with a heap</h3>
+<p>BFS finds the fewest <i>edges</i>. With weights a longer route can be lighter: in the lab graph, 0 → 1 directly costs 4, but 0 → 2 → 1 costs 1 + 2 = 3. Dijkstra’s rule: always finish the closest unfinished vertex next. Python’s <code>heapq</code> is a min-heap of tuples, so a heap of <code>(distance, vertex)</code> pops the closest first.</p>
+<script type="text/plain" class="code">
+import heapq
+
+def dijkstra(n, edges, src):              # edges (u, v, w), w >= 0, directed; returns dist and parent
+    adj = [[] for _ in range(n)]
+    for u, v, w in edges:
+        adj[u].append((v, w))
+    INF = float('inf')
+    dist, par = [INF] * n, [-1] * n
+    dist[src] = 0
+    heap = [(0, src)]
+    while heap:
+        d, u = heapq.heappop(heap)
+        if d > dist[u]:                   # stale pair: u was already finished with a smaller d
+            continue
+        for v, w in adj[u]:
+            if d + w < dist[v]:           # relax
+                dist[v], par[v] = d + w, u
+                heapq.heappush(heap, (dist[v], v))
+    return dist, par
+
+def path_to(par, t):                      # follow parents backwards
+    out = []
+    while t != -1:
+        out.append(t); t = par[t]
+    return out[::-1]
+</script>
+<div class="lab" data-w="dijk" data-title="Lab: Dijkstra, one pop and one relaxation at a time"></div>
+<p>Hand trace on 0→1 (4), 0→2 (1), 2→1 (2), 1→3 (1), 2→3 (5), 3→4 (3). Entries are (distance, vertex); notice the two <b>stale</b> pops, which the <code>d &gt; dist[u]</code> check skips:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Pop</th><th>dist for 0 1 2 3 4 afterwards</th><th>Heap contents</th></tr>
+<tr><td>(0, 0)</td><td>0 4 1 ∞ ∞</td><td>(1,2) (4,1)</td></tr>
+<tr><td>(1, 2)</td><td>0 3 1 6 ∞</td><td>(3,1) (4,1) (6,3)</td></tr>
+<tr><td>(3, 1)</td><td>0 3 1 4 ∞</td><td>(4,1) (4,3) (6,3)</td></tr>
+<tr><td>(4, 1)</td><td colspan="2">stale: dist[1] is already 3, skip</td></tr>
+<tr><td>(4, 3)</td><td>0 3 1 4 7</td><td>(6,3) (7,4)</td></tr>
+<tr><td>(6, 3)</td><td colspan="2">stale, skip</td></tr>
+<tr><td>(7, 4)</td><td>0 3 1 4 7</td><td>empty</td></tr>
+</table></div>
+<p>The “from” array ends as −, 2, 0, 1, 3, so the path to vertex 4 is 0 → 2 → 1 → 3 → 4 with cost 7.</p>
+<p><b>Cost.</b> Each vertex is expanded once and each edge pushes at most one entry, so there are at most E pushes and pops, each O(log E) = O(log V): <b>O((V + E) log V)</b>. For an undirected graph add each edge in both directions.</p>
+<h4>Why it is correct, and why negative edges break it</h4>
+<p>Claim: when (d, u) is popped and is not stale, d is the true shortest distance to u. Any other route to u must leave the set of finished vertices through some edge into an unfinished vertex x. That x is still in the heap with a value of at least d (u was the smallest), and the rest of the route can only add non-negative weight, so it cannot come in below d. The proof uses exactly one assumption: <b>extending a path never makes it cheaper</b>.</p>
+<p>A negative edge breaks that assumption. On 0→1 (2), 0→2 (3), 2→1 (−2) the textbook version below finalises vertex 1 at distance 2 and never looks again, although 0 → 2 → 1 costs 1. It returns 2, which is wrong:</p>
+<script type="text/plain" class="code">
+import heapq
+
+def dijkstra_done(n, edges, s):           # the textbook version: a vertex is FINAL the first time it is popped
+    adj = [[] for _ in range(n)]
+    for u, v, w in edges:
+        adj[u].append((v, w))
+    INF = float('inf')
+    dist = [INF] * n
+    dist[s] = 0
+    done = [False] * n
+    heap = [(0, s)]
+    while heap:
+        d, u = heapq.heappop(heap)
+        if done[u]:
+            continue
+        done[u] = True                    # from here on, dist[u] is never touched again
+        for v, w in adj[u]:
+            if not done[v] and d + w < dist[v]:
+                dist[v] = d + w
+                heapq.heappush(heap, (dist[v], v))
+    return dist
+</script>
+<p>The stale-check template above would, on this tiny graph, expand vertex 1 a second time and recover the answer 1. Do not rely on that: re-expanding vertices voids the O((V + E) log V) bound (on adversarial graphs it can take exponential time), and a negative <i>cycle</i> makes it loop forever. With negative edges use Bellman–Ford.</p>
+<h4>Dijkstra on grids, and “minimise the maximum”</h4>
+<p>A grid is a graph whose vertices are cells and whose edges join neighbours (stop 6.5). Dijkstra works whenever the cost of a path is built so that extending it never lowers it, and that includes more than sums. In <b>LC 1631 Path With Minimum Effort</b> the cost of a path is its <i>largest</i> height difference, so replace <code>d + w</code> by <code>max(d, w)</code>. <b>LC 778 Swim in Rising Water</b> is the same with the cell height as the cost. <b>LC 1514 Path With Maximum Probability</b> maximises a product of numbers at most 1: store negated probabilities in the min-heap.</p>
+<script type="text/plain" class="code">
+import heapq
+
+def min_effort(heights):                  # LC 1631: minimise the LARGEST height difference on the path
+    R, C = len(heights), len(heights[0])
+    INF = float('inf')
+    best = [[INF] * C for _ in range(R)]
+    best[0][0] = 0
+    heap = [(0, 0, 0)]
+    while heap:
+        d, r, c = heapq.heappop(heap)
+        if d > best[r][c]:
+            continue
+        if (r, c) == (R - 1, C - 1):
+            return d
+        for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < R and 0 <= nc < C:
+                nd = max(d, abs(heights[nr][nc] - heights[r][c]))     # "sum" becomes "max"
+                if nd < best[nr][nc]:
+                    best[nr][nc] = nd
+                    heapq.heappush(heap, (nd, nr, nc))
+    return 0
+
+def swim_in_water(grid):                  # LC 778: the cost of a path is the tallest cell on it
+    n = len(grid)
+    INF = float('inf')
+    best = [[INF] * n for _ in range(n)]
+    best[0][0] = grid[0][0]
+    heap = [(grid[0][0], 0, 0)]
+    while heap:
+        d, r, c = heapq.heappop(heap)
+        if d > best[r][c]:
+            continue
+        if (r, c) == (n - 1, n - 1):
+            return d
+        for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < n and 0 <= nc < n:
+                nd = max(d, grid[nr][nc])
+                if nd < best[nr][nc]:
+                    best[nr][nc] = nd
+                    heapq.heappush(heap, (nd, nr, nc))
+    return -1
+</script>
+<script type="text/plain" class="code">
+import heapq
+
+def max_probability(n, edges, succ_prob, start, end):    # LC 1514: maximise a product, so pop the LARGEST
+    adj = [[] for _ in range(n)]
+    for (a, b), p in zip(edges, succ_prob):
+        adj[a].append((b, p))
+        adj[b].append((a, p))
+    best = [0.0] * n
+    best[start] = 1.0
+    heap = [(-1.0, start)]                # heapq is a min-heap: store the negative
+    while heap:
+        p, u = heapq.heappop(heap)
+        p = -p
+        if p < best[u]:                   # stale
+            continue
+        if u == end:
+            return p
+        for v, w in adj[u]:
+            if p * w > best[v]:           # probabilities are <= 1, so a path never improves by getting longer
+                best[v] = p * w
+                heapq.heappush(heap, (-best[v], v))
+    return 0.0
+</script>
+<script type="text/plain" class="code">
+import heapq
+
+def network_delay(times, n, k):           # LC 743: nodes 1..n, edges (u, v, w); -1 if someone is never reached
+    adj = [[] for _ in range(n + 1)]
+    for u, v, w in times:
+        adj[u].append((v, w))
+    INF = float('inf')
+    dist = [INF] * (n + 1)
+    dist[k] = 0
+    heap = [(0, k)]
+    while heap:
+        d, u = heapq.heappop(heap)
+        if d > dist[u]:                   # stale entry
+            continue
+        for v, w in adj[u]:
+            if d + w < dist[v]:
+                dist[v] = d + w
+                heapq.heappush(heap, (dist[v], v))
+    worst = max(dist[1:])
+    return -1 if worst == INF else worst
+</script>
+<p>For “minimise the maximum” there is a second solution that is often shorter to write: <b>binary search the answer</b>, with a plain BFS answering “can I get there if no step may exceed x?”. It costs O(cells · log(range)).</p>
+<script type="text/plain" class="code">
+from collections import deque
+
+def min_effort_bs(heights):               # LC 1631 again: binary search the answer, BFS answers "can we do it with limit x?"
+    R, C = len(heights), len(heights[0])
+    def reachable(limit):
+        seen = [[False] * C for _ in range(R)]
+        seen[0][0] = True
+        q = deque([(0, 0)])
+        while q:
+            r, c = q.popleft()
+            if (r, c) == (R - 1, C - 1):
+                return True
+            for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < R and 0 <= nc < C and not seen[nr][nc] and abs(heights[nr][nc] - heights[r][c]) <= limit:
+                    seen[nr][nc] = True
+                    q.append((nr, nc))
+        return False
+    lo, hi = 0, max(max(row) for row in heights) - min(min(row) for row in heights)
+    while lo < hi:                        # smallest limit for which reachable() is True
+        mid = (lo + hi) // 2
+        if reachable(mid):
+            hi = mid
+        else:
+            lo = mid + 1
+    return lo
+</script>
+<div class="box tip"><div class="lbl" data-ico="🎯">Practice</div><p>LC 743, LC 1631 (both ways), LC 1514, LC 778, LC 1976, CSES Shortest Routes I. The grid and probability versions were checked against an exhaustive relaxation on random inputs.</p></div>
+
+<h3>3. When the weights are 0 or 1</h3>
+<script type="text/plain" class="code">
+from collections import deque
+
+def zero_one_bfs(n, edges, s):            # every weight is 0 or 1: a deque replaces the heap, O(V + E)
+    adj = [[] for _ in range(n)]
+    for u, v, w in edges:
+        adj[u].append((v, w))
+    INF = float('inf')
+    dist = [INF] * n
+    dist[s] = 0
+    dq = deque([s])
+    while dq:
+        u = dq.popleft()
+        for v, w in adj[u]:
+            if dist[u] + w < dist[v]:
+                dist[v] = dist[u] + w
+                if w == 0:
+                    dq.appendleft(v)      # free edge: same level, go first
+                else:
+                    dq.append(v)
+    return dist
+</script>
+<p>A free edge keeps you on the same level, so its end goes to the <i>front</i> of the deque; a cost-1 edge goes to the back. The deque always holds at most two distance values, in order, so no heap is needed: O(V + E).</p>
+
+<h3>4. An extra rule: free passes</h3>
+<p>“Up to k edges on your path cost nothing” is the node-is-a-state idea with weights: the node is (vertex, passes used), and each edge can be taken normally or with a pass.</p>
+<script type="text/plain" class="code">
+import heapq
+
+def min_cost_k_free(n, edges, s, t, k):   # up to k edges on the path cost nothing (CSES Flight Discount)
+    adj = [[] for _ in range(n)]
+    for u, v, w in edges:
+        adj[u].append((v, w))
+    INF = float('inf')
+    dist = [[INF] * (k + 1) for _ in range(n)]     # state = (node, free edges used)
+    dist[s][0] = 0
+    heap = [(0, s, 0)]
+    while heap:
+        d, u, j = heapq.heappop(heap)
+        if d > dist[u][j]:
+            continue
+        for v, w in adj[u]:
+            if d + w < dist[v][j]:
+                dist[v][j] = d + w
+                heapq.heappush(heap, (d + w, v, j))
+            if j < k and d < dist[v][j + 1]:       # use a free pass on this edge
+                dist[v][j + 1] = d
+                heapq.heappush(heap, (d, v, j + 1))
+    return min(dist[t])
+</script>
+
+<h3>5. Negative edges: Bellman–Ford, and all pairs: Floyd–Warshall</h3>
+<p><b>Why V − 1 rounds are enough.</b> If there is no negative cycle, some shortest path to every vertex is <i>simple</i> (a repeated vertex would mean a cycle of weight ≥ 0 that can be cut out), so it has at most V − 1 edges. One round relaxes every edge once. After round r, the distance of every vertex is at most the cost of its best path with at most r edges, because the last edge of such a path is relaxed in round r. So after V − 1 rounds all distances are final. <b>Negative cycle:</b> run one more round; if anything still improves, a reachable negative cycle exists and shortest distances are undefined.</p>
+<script type="text/plain" class="code">
+def bellman_ford(n, edges, s):            # handles negative edges; None if a negative cycle is reachable
+    INF = float('inf')
+    dist = [INF] * n
+    dist[s] = 0
+    for _ in range(n - 1):
+        changed = False
+        for u, v, w in edges:
+            if dist[u] + w < dist[v]:
+                dist[v] = dist[u] + w
+                changed = True
+        if not changed:
+            break
+    for u, v, w in edges:                 # one more pass: any improvement means a negative cycle
+        if dist[u] + w < dist[v]:
+            return None
+    return dist
+
+def floyd_warshall(n, edges):             # all pairs, O(n^3): only for n up to a few hundred
+    INF = float('inf')
+    d = [[0 if i == j else INF for j in range(n)] for i in range(n)]
+    for u, v, w in edges:
+        d[u][v] = min(d[u][v], w)
+    for k in range(n):                    # allow k as an intermediate stop, one k at a time
+        for i in range(n):
+            for j in range(n):
+                if d[i][k] + d[k][j] < d[i][j]:
+                    d[i][j] = d[i][k] + d[k][j]
+    return d
+</script>
+<p>Hand trace on the textbook graph (CLRS), source 0, edges relaxed in the order 0→1 (6), 0→2 (7), 1→2 (8), 1→3 (5), 1→4 (−4), 2→3 (−3), 2→4 (9), 3→1 (−2), 4→3 (7), 4→0 (2). Because the code updates <code>dist</code> in place, later edges in a round can already use values improved earlier in the same round, so it may settle in fewer rounds than the worst case:</p>
+<div class="tbl-wrap"><table>
+<tr><th>After</th><th>dist for 0 1 2 3 4</th></tr>
+<tr><td>start</td><td>0 ∞ ∞ ∞ ∞</td></tr>
+<tr><td>round 1</td><td>0 2 7 4 2</td></tr>
+<tr><td>round 2</td><td>0 2 7 4 −2</td></tr>
+<tr><td>rounds 3 and 4</td><td>no change; the extra check pass finds no improvement, so no negative cycle</td></tr>
+</table></div>
+<h4>“At most k edges”: LC 787</h4>
+<p>“At most k stops” means at most k + 1 edges, so run exactly k + 1 rounds. Here the in-place shortcut is a <i>bug</i>: it could let a round use two edges. Read from the old row and write to a copy, so each round adds exactly one edge:</p>
+<script type="text/plain" class="code">
+def cheapest_flights(n, flights, src, dst, k):   # LC 787: at most k stops = at most k + 1 edges
+    INF = float('inf')
+    dist = [INF] * n
+    dist[src] = 0
+    for _ in range(k + 1):                # round r: best cost using at most r edges
+        nxt = dist[:]                     # read OLD values, write NEW: each round adds exactly one edge
+        for u, v, w in flights:
+            if dist[u] + w < nxt[v]:
+                nxt[v] = dist[u] + w
+        dist = nxt
+    return -1 if dist[dst] == INF else dist[dst]
+</script>
+<h4>Floyd–Warshall: all pairs</h4>
+<p>Let d<sub>k</sub>[i][j] be the shortest i → j distance using only vertices 0..k−1 as intermediate stops. Either the best route avoids k, or it goes i → k → j: d<sub>k+1</sub>[i][j] = min(d<sub>k</sub>[i][j], d<sub>k</sub>[i][k] + d<sub>k</sub>[k][j]). The <code>k</code> loop must be <b>outermost</b> because the table must be complete for k − 1 before k is allowed. Time O(V³), space O(V²), so only for V up to a few hundred. <b>LC 1334</b> is the standard use: count the cities within the threshold from every city.</p>
+<script type="text/plain" class="code">
+def find_the_city(n, edges, distance_threshold):  # LC 1334: fewest cities within the threshold; ties: the larger number
+    INF = float('inf')
+    d = [[0 if i == j else INF for j in range(n)] for i in range(n)]
+    for u, v, w in edges:
+        d[u][v] = d[v][u] = min(d[u][v], w)
+    for k in range(n):                    # k outermost: "allow k as a stop"
+        for i in range(n):
+            for j in range(n):
+                if d[i][k] + d[k][j] < d[i][j]:
+                    d[i][j] = d[i][k] + d[k][j]
+    best_city, best_cnt = -1, n + 1
+    for i in range(n):
+        cnt = sum(1 for j in range(n) if j != i and d[i][j] <= distance_threshold)
+        if cnt <= best_cnt:               # <= so that a later (larger) city wins ties
+            best_cnt, best_city = cnt, i
+    return best_city
+</script>
+<div class="box tip"><div class="lbl" data-ico="🎯">Practice</div><p>LC 787, LC 1334, LC 2290 and LC 1368 (0-1 BFS), CSES Shortest Routes II, CSES High Score (positive cycle). Both functions were checked against exhaustive path enumeration.</p></div>
+
+<h3>6. Minimum spanning trees</h3>
+<p>A <b>spanning tree</b> of a connected graph uses V − 1 edges and connects every vertex with no cycle. A <b>minimum spanning tree</b> (MST) is one of least total weight. Think of laying cable to connect every town for the lowest cost.</p>
+<p>Two facts justify every MST algorithm:</p>
+<ul>
+<li><b>Cut property.</b> Split the vertices into two non-empty groups. A lightest edge crossing between the groups belongs to some MST (to <i>every</i> MST if it is the unique lightest crossing edge).</li>
+<li><b>Cycle property.</b> On any cycle, an edge that is strictly heavier than all the others on that cycle belongs to no MST.</li>
+</ul>
+<p><i>Why the cut property holds:</i> take any MST without that edge e. Adding e creates a cycle, which must cross the cut a second time through some edge f. Swapping f for e keeps a spanning tree and its weight does not go up, because e was a lightest crossing edge.</p>
+<h4>Kruskal: sort the edges, keep the ones that join two pieces</h4>
+<p>Process edges from lightest to heaviest. An edge is kept if its endpoints are in different components (union-find answers this), and skipped if it would close a cycle. When Kruskal keeps edge e joining components A and B, e is the lightest edge leaving A (anything lighter was processed earlier and either joined things or lay inside a component), so the cut property says keeping it is safe. The union-find below uses path halving and union by size, which together make each operation almost constant (inverse Ackermann; see <a href="#ch17">the appendix stop</a>). Cost: sorting dominates, <b>O(E log E) = O(E log V)</b>.</p>
+<script type="text/plain" class="code">
+class DSU:
+    def __init__(self, n):
+        self.parent = list(range(n))
+        self.size = [1] * n
+    def find(self, x):
+        while self.parent[x] != x:
+            self.parent[x] = self.parent[self.parent[x]]   # path halving
+            x = self.parent[x]
+        return x
+    def union(self, a, b):
+        a, b = self.find(a), self.find(b)
+        if a == b:
+            return False                  # already connected: this edge would close a cycle
+        if self.size[a] < self.size[b]:
+            a, b = b, a
+        self.parent[b] = a
+        self.size[a] += self.size[b]
+        return True
+
+def kruskal(n, edges):                    # edges (w, u, v), undirected
+    dsu, total, used = DSU(n), 0, 0
+    for w, u, v in sorted(edges):         # lightest first
+        if dsu.union(u, v):
+            total += w
+            used += 1
+    return total if used == n - 1 else None       # None: disconnected
+</script>
+<p>Hand trace: edges 0–1 (4), 0–2 (3), 1–2 (1), 1–3 (2), 2–3 (4), 3–4 (2), 4–5 (6), 3–5 (7); vertices 0..5.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Edge (sorted)</th><th>Decision</th><th>Total</th></tr>
+<tr><td>1–2 (1)</td><td>keep</td><td>1</td></tr>
+<tr><td>1–3 (2)</td><td>keep</td><td>3</td></tr>
+<tr><td>3–4 (2)</td><td>keep</td><td>5</td></tr>
+<tr><td>0–2 (3)</td><td>keep</td><td>8</td></tr>
+<tr><td>0–1 (4)</td><td>skip: 0 and 1 already connected</td><td>8</td></tr>
+<tr><td>2–3 (4)</td><td>skip: cycle</td><td>8</td></tr>
+<tr><td>4–5 (6)</td><td>keep</td><td>14</td></tr>
+<tr><td>3–5 (7)</td><td>skip: cycle</td><td>14</td></tr>
+</table></div>
+<p>Five edges kept = V − 1, total 14. If fewer than V − 1 edges are kept, the graph is disconnected and there is no spanning tree.</p>
+<h4>Prim: grow one tree, always take the cheapest edge leaving it</h4>
+<p>Start anywhere. Repeatedly add the lightest edge from the tree to a vertex outside it; the tree versus the rest is a cut, so the cut property applies every time. It is Dijkstra with one change: the heap key is the single edge entering the tree, not the distance from the source. Entries for vertices already in the tree are stale and skipped, as in Dijkstra.</p>
+<script type="text/plain" class="code">
+import heapq
+
+def prim(n, edges):                       # edges (u, v, w), undirected; returns (total, tree edges) or None if disconnected
+    adj = [[] for _ in range(n)]
+    for u, v, w in edges:
+        adj[u].append((v, w))
+        adj[v].append((u, w))
+    seen = [False] * n
+    heap = [(0, 0, -1)]                   # (weight of the edge that enters the tree, vertex, parent)
+    total, used = 0, []
+    while heap:
+        w, u, p = heapq.heappop(heap)
+        if seen[u]:                       # already in the tree: stale
+            continue
+        seen[u] = True
+        total += w
+        if p != -1:
+            used.append((p, u, w))
+        for v, x in adj[u]:
+            if not seen[v]:
+                heapq.heappush(heap, (x, v, u))
+    return (total, used) if len(used) == n - 1 else None
+</script>
+<div class="tbl-wrap"><table>
+<tr><th></th><th>Kruskal</th><th>Prim (heap)</th><th>Prim (no heap, adjacency matrix)</th></tr>
+<tr><td>Time</td><td>O(E log V)</td><td>O(E log V)</td><td>O(V²)</td></tr>
+<tr><td>Needs</td><td>edge list, union-find</td><td>adjacency list, heap</td><td>distance array only</td></tr>
+<tr><td>Prefer when</td><td>graph is sparse; edges arrive as a list; you also want to know which edges merge components</td><td>graph is sparse and you already have adjacency lists</td><td>graph is dense or complete, such as points in a plane (V² ≈ E)</td></tr>
+</table></div>
+<p>Both give a tree of the same total weight (the tree itself can differ when weights tie). With all distinct weights the MST is unique. Checked on random graphs against every spanning tree.</p>
+<h4>MST problems in contests</h4>
+<p><b>LC 1584 Min Cost to Connect All Points</b> is a complete graph with Manhattan distances, so use heap-free Prim, O(n²). <b>LC 684 Redundant Connection</b>: add edges in input order; the first one whose endpoints are already connected closes the cycle. <b>LC 1135 Connecting Cities</b> is plain Kruskal with a −1 answer if fewer than V − 1 edges are kept.</p>
+<script type="text/plain" class="code">
+def min_cost_connect_points(points):      # LC 1584: complete graph, so Prim WITHOUT a heap, O(n^2)
+    n = len(points)
+    INF = float('inf')
+    dist = [INF] * n                      # cheapest edge from the tree to each outside point
+    in_tree = [False] * n
+    dist[0] = 0
+    total = 0
+    for _ in range(n):
+        u = min((i for i in range(n) if not in_tree[i]), key=dist.__getitem__)
+        in_tree[u] = True
+        total += dist[u]
+        for v in range(n):
+            if not in_tree[v]:
+                d = abs(points[u][0] - points[v][0]) + abs(points[u][1] - points[v][1])
+                if d < dist[v]:
+                    dist[v] = d
+    return total
+
+def _find(parent, x):
+    while parent[x] != x:
+        parent[x] = parent[parent[x]]     # path halving
+        x = parent[x]
+    return x
+
+def find_redundant_connection(edges):     # LC 684: nodes 1..n, one extra edge; the edge that closes the cycle
+    parent = list(range(len(edges) + 1))
+    for a, b in edges:
+        ra, rb = _find(parent, a), _find(parent, b)
+        if ra == rb:
+            return [a, b]                 # already connected: this edge is the extra one
+        parent[ra] = rb
+    return []
+
+def minimum_cost(n, connections):         # LC 1135: cities 1..n, edges (a, b, cost); -1 if not connectable
+    parent = list(range(n + 1))
+    size = [1] * (n + 1)
+    total = used = 0
+    for a, b, w in sorted(connections, key=lambda e: e[2]):
+        ra, rb = _find(parent, a), _find(parent, b)
+        if ra != rb:
+            if size[ra] < size[rb]:
+                ra, rb = rb, ra
+            parent[rb] = ra
+            size[ra] += size[rb]
+            total += w
+            used += 1
+    return total if used == n - 1 else -1
+</script>
+<p><b>LC 1489 Critical and Pseudo-Critical Edges</b> (harder). An edge is <i>critical</i> if every MST uses it: banning it makes the best tree heavier or impossible. It is <i>pseudo-critical</i> if some MST uses it but not all: forcing it in still gives the optimal weight. With n ≤ 100 and m ≤ 200, running Kruskal about 2m times is fast enough.</p>
+<script type="text/plain" class="code">
+def _find(parent, x):
+    while parent[x] != x:
+        parent[x] = parent[parent[x]]
+        x = parent[x]
+    return x
+
+def find_critical_and_pseudo(n, edges):   # LC 1489: edges (a, b, w) on nodes 0..n-1; returns [critical ids, pseudo ids]
+    m = len(edges)
+    order = sorted(range(m), key=lambda i: edges[i][2])
+    INF = float('inf')
+    def mst(skip=-1, force=-1):           # MST weight with edge `force` required and edge `skip` banned
+        parent = list(range(n))
+        total = used = 0
+        if force != -1:
+            a, b, w = edges[force]
+            parent[_find(parent, a)] = _find(parent, b)
+            total, used = w, 1
+        for i in order:
+            if i == skip:
+                continue
+            a, b, w = edges[i]
+            ra, rb = _find(parent, a), _find(parent, b)
+            if ra != rb:
+                parent[ra] = rb
+                total += w
+                used += 1
+        return total if used == n - 1 else INF
+    base = mst()
+    critical, pseudo = [], []
+    for i in range(m):
+        if mst(skip=i) > base:            # without it the best tree gets heavier (or disconnects): in EVERY MST
+            critical.append(i)
+        elif mst(force=i) == base:        # forcing it still gives an MST: in SOME MST
+            pseudo.append(i)
+    return [critical, pseudo]
+</script>
+<div class="box tip"><div class="lbl" data-ico="🎯">Practice</div><p>LC 1584, LC 684, LC 1135, LC 1489, CSES Road Reparation, LC 1202 and LC 721 (union-find). A useful side fact: the path between two vertices in an MST also minimises the <i>largest</i> edge on any route between them, which is why “minimise the maximum” problems (section 2) can also be solved with Kruskal.</p></div>
+
+<h3>7. Union-find, and running time backwards</h3>
+<p><b>Reverse-time trick (CF 722C).</b> DSU can merge but not split. When a problem <i>removes</i> things one by one and asks for something after each removal, run time backwards: start empty and <i>add</i> them in reverse order.</p>
+<script type="text/plain" class="code">
+def best_after_removals(a, order):        # CF 722C: remove a[order[0]], a[order[1]], ...; best block sum after each
+    n = len(a)
+    dsu = DSU(n)
+    tot, alive = a[:], [False] * n        # tot[root]: sum of its block
+    ans, best = [0] * n, 0
+    for step in range(n - 1, -1, -1):     # run time backwards: removals become additions
+        ans[step] = best                  # the answer AFTER removal `step` is the state before adding it back
+        i = order[step]
+        alive[i] = True
+        for j in (i - 1, i + 1):
+            if 0 <= j < n and alive[j]:
+                ri, rj = dsu.find(i), dsu.find(j)
+                if ri != rj:
+                    dsu.union(ri, rj)
+                    r = dsu.find(ri)
+                    tot[r] = tot[ri] + tot[rj]
+        best = max(best, tot[dsu.find(i)])
+    return ans
+</script>
+
+<h3>8. Choosing the right graph algorithm</h3>
+<p>Ask these in order and stop at the first yes.</p>
+<div class="tbl-wrap"><table>
+<tr><th>#</th><th>Question about the problem</th><th>Use</th></tr>
+<tr><td>1</td><td>Is there an order or dependency (“before”, “prerequisite”, “builds on”)?</td><td>Topological sort (Kahn); DP in that order if you need a best value. A cycle means no answer.</td></tr>
+<tr><td>2</td><td>Do you need to connect <i>everything</i> at least total cost, rather than reach one target?</td><td>MST: Kruskal, or heap-free Prim if the graph is dense.</td></tr>
+<tr><td>3</td><td>Do you only ask “are these connected?” as edges arrive, or merge groups?</td><td>Union-find.</td></tr>
+<tr><td>4</td><td>Is the cost the <i>largest</i> edge on the path, or a “minimise the maximum”?</td><td>Dijkstra with <code>max</code>, binary search plus BFS, or Kruskal.</td></tr>
+<tr><td>5</td><td>All edges cost the same (or you count edges)?</td><td>BFS (multi-source if there are several starts).</td></tr>
+<tr><td>6</td><td>All weights are 0 or 1?</td><td>0-1 BFS.</td></tr>
+<tr><td>7</td><td>Are some weights negative?</td><td>DAG: topological DP. Otherwise Bellman–Ford (and it spots negative cycles).</td></tr>
+<tr><td>8</td><td>“At most k edges / stops”?</td><td>Bellman–Ford for exactly k rounds, or Dijkstra on (node, steps used).</td></tr>
+<tr><td>9</td><td>An extra rule (passes, parity, keys, time)?</td><td>Make the state (node, extra), then BFS or Dijkstra on states.</td></tr>
+<tr><td>10</td><td>Shortest paths between <i>all</i> pairs and V ≤ about 400?</td><td>Floyd–Warshall.</td></tr>
+<tr><td>11</td><td>Weights are non-negative and you want from one source?</td><td>Dijkstra.</td></tr>
+</table></div>
+<p>The constraints help too: V ≤ 400 allows O(V³); V, E ≤ 10⁵ needs O(E log V) or better; V ≤ 20 points to a bitmask over the vertices.</p>
+
+<h3>9. Try these by hand</h3>
+<p>Do each on paper before opening the answer. They are the dry-run shapes the written part of an exam and the mock interview ask for.</p>
+<ol>
+<li><b>Kahn.</b> Edges 0→2, 1→2, 2→3, 1→3, 3→4 on vertices 0..4. Write the in-degrees, then the queue and order after each pop. <details><summary>Answer</summary>In-degrees 0 0 2 2 1. Queue 0, 1; pop 0 (vertex 2 drops to 1); pop 1 (vertex 2 reaches 0 and joins the queue, vertex 3 drops to 1); pop 2 (vertex 3 reaches 0); pop 3; pop 4. Order 0 1 2 3 4.</details></li>
+<li><b>Dijkstra table.</b> Edges 0→1 (2), 0→2 (5), 1→2 (1), 1→3 (7), 2→3 (2), source 0. List every heap pop. <details><summary>Answer</summary>Pops: (0,0), (2,1), (3,2), (5,2) stale, (5,3), (9,3) stale. Final distances 0 2 3 5; the predecessor of 3 is 2.</details></li>
+<li><b>Bellman–Ford.</b> Edges in this order: 2→3 (−2), 1→2 (3), 0→1 (4), 0→3 (9); source 0, four vertices. Show dist after each round. <details><summary>Answer</summary>Round 1: 0 4 ∞ 9. Round 2: 0 4 7 9. Round 3: 0 4 7 5 (the edge 2→3 finally fires). The check pass finds no improvement. This order is deliberately the worst case: it needs all V − 1 = 3 rounds.</details></li>
+<li><b>Kruskal.</b> Edges 0–1 (5), 1–2 (3), 0–2 (4), 2–3 (1), 1–3 (6). Which are kept, and what is the total? <details><summary>Answer</summary>Sorted: 2–3 keep, 1–2 keep, 0–2 keep, 0–1 skip (cycle), 1–3 skip (cycle). Total 1 + 3 + 4 = 8.</details></li>
+</ol>
+
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p>In BFS you mark a vertex when you push it; in Dijkstra a vertex is final only when <i>popped</i>, because a cheaper route can still arrive (see the spot-the-bug drill). Dijkstra needs “extending a path never makes it cheaper”: negative edges violate it. Undirected graphs need both directions in the adjacency list. Kahn returning fewer than n vertices means a cycle, not a bug. Course prerequisites <code>[a, b]</code> point b → a. A recursive DFS on 10⁵ levels will crash in Python. Floyd–Warshall needs the <code>k</code> loop outermost. For “at most k edges” read the <i>old</i> row. Prim and Kruskal can return different trees of equal weight when weights tie.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Kahn: queue every in-degree-0 vertex, peel, repeat. Fewer than n out → cycle. DFS: reverse finishing order; an edge into a vertex on the current path → cycle.</p>
+<p>Dijkstra: pop smallest, skip stale, relax; final on pop. No negative edges. “Max of the path” → <code>max(d, w)</code>.</p>
+<p>Weights 0/1 → deque. Negative → Bellman–Ford (V − 1 rounds, one more to detect a cycle). At most k edges → k + 1 rounds on a copy. Extra rule → states. All pairs, small V → Floyd, k outermost.</p>
+<p>MST: cut property (lightest crossing edge is safe), cycle property (heaviest on a cycle is out). Kruskal: sort edges, keep what union() accepts, V − 1 kept or disconnected. Prim: grow a tree with a heap, or O(V²) on dense graphs.</p>
+<p>Removals asked? Run time backwards. Practice: the Ladder, tab Graphs II.</p></div>
+<div class="quiz" data-quiz="e3"></div>
+</section>

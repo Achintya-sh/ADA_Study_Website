@@ -1,0 +1,225 @@
+<section class="topic" id="ch14" data-group="found" data-num="14" data-title="Contest toolkit">
+<div class="topic-head"><div class="badge">14</div><div><div class="meta">Foundations line · Python, limits, routine, tricks</div><h2>Contest toolkit</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>Contests reward the same small set of habits: read the limits first, write a brute force, trust nothing you haven’t stress-tested, and know your standard library so no minute is lost to typing. This stop collects them, plus the Python tools and tricks that sit just outside the lecture notes but pay off on every topic.</p></div>
+
+<h3>Ratings: Codeforces and LeetCode, side by side</h3>
+<p>The Ladder shows both. <b>CF</b> ratings come from Codeforces contests (a problem rated 1600 is solved by about half of the contestants rated 1600). <b>LC</b> ratings are the community estimates for LeetCode contest problems; classics that never appeared in a contest have none. The two scales aren’t officially linked and LeetCode’s run higher. This notebook uses a rough rule, <b>LC rating − 400 ≈ CF rating</b>, and marks every converted number with ≈. Your teacher’s hardest end-sem rung is a typical Div. 2 C (CF 1600): an easy pattern behind one real observation.</p>
+
+<h3>Constraints tell you the algorithm</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Constraint</th><th>Aim for</th><th>Usually means</th></tr>
+<tr><td>n ≤ 10</td><td>O(n!)</td><td>try every ordering</td></tr>
+<tr><td>n ≤ 20</td><td>O(2ⁿ)</td><td>every subset, backtracking, bitmask</td></tr>
+<tr><td>n ≤ 40</td><td>O(2^(n/2))</td><td>meet in the middle</td></tr>
+<tr><td>n ≤ 500</td><td>O(n³)</td><td>Floyd–Warshall, DP over triples</td></tr>
+<tr><td>n ≤ 5,000</td><td>O(n²)</td><td>DP over pairs, a walk from every node</td></tr>
+<tr><td>n ≤ 2·10⁵</td><td>O(n log n)</td><td>sort, heap, binary search, BFS/DFS, monotonic stack</td></tr>
+<tr><td>n ≤ 10¹⁸</td><td>O(log n)</td><td>binary lifting, fast power, a formula</td></tr>
+<tr><td>“modulo 10⁹ + 7”</td><td>—</td><td>a counting DP; take the modulo after every addition</td></tr>
+</table></div>
+<p>Python manages about 10⁷ simple operations per second, so the useful budget is smaller than in C++: an O(n²) with n = 5,000 (2.5·10⁷) is borderline, and 10⁵ squared is hopeless.</p>
+
+<h3>The routine for every problem</h3>
+<ol>
+<li><b>Read the constraints and the subtasks before the story.</b> Write down what each limit allows.</li>
+<li><b>Work one example by hand</b> and restate the problem in one line using graph, DP or sorting words.</li>
+<li><b>Write the most obvious correct solution</b> (simulate, try everything). Aim for about 10 minutes.</li>
+<li><b>Submit it.</b> Marks are in the bank before you start thinking hard.</li>
+<li><b>Use it as a microscope:</b> print its answers for tiny inputs and look for what repeats or stays fixed.</li>
+<li><b>Write the fast version, stress-test it against the brute force, then submit.</b></li>
+</ol>
+<p>On the unseen hard problems of the end-sem, steps 3 and 4 are worth more than any single clever idea: Chakravyuh’s first subtask needed only an eight-line brute force.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Topic</th><th>Edge cases to try in your head</th></tr>
+<tr><td>Graph</td><td>n = 1; no edges; several components; unreachable target (return −1?); start equals target; self-loops, repeated edges</td></tr>
+<tr><td>Grid</td><td>one row or column; everything blocked; start blocked; the answer is 0</td></tr>
+<tr><td>DP</td><td>smallest n (0, 1, 2); all values equal; impossible states (−1 or ∞, never 0); modulo after every addition</td></tr>
+<tr><td>Greedy</td><td>ties in the sort key; touching intervals; negative values; an empty selection</td></tr>
+<tr><td>Arrays</td><td>length 1; all equal; already sorted; sorted backwards; maximum values (overflow is not a Python problem, speed is)</td></tr>
+</table></div>
+
+<h3>Stress testing: let the brute force check you</h3>
+<p>Run both versions on thousands of tiny random inputs and stop at the first disagreement. Tiny inputs matter: the failing case is small enough to trace by hand. This one catches the “at most two coins” trap from Contest 2 Q1 when values can be negative:</p>
+<script type="text/plain" class="code">
+import random
+from itertools import combinations
+
+def brute(c):                             # "at most two coins": try every choice of 0, 1 or 2 coins
+    best = 0
+    for k in range(3):
+        for pick in combinations(c, k):
+            best = max(best, sum(pick))
+    return best
+
+def fast(c):                              # the quick idea you want to trust
+    return sum(sorted(c)[-2:])            # top two... but what if a value is negative?
+
+for it in range(2000):                    # tiny random inputs find bugs fastest
+    c = [random.randint(-5, 5) for _ in range(random.randint(1, 5))]
+    if brute(c) != fast(c):
+        print("MISMATCH on", c, "brute", brute(c), "fast", fast(c))
+        break
+else:
+    print("all 2000 tests agree")
+</script>
+<p>It prints a mismatch such as <code>MISMATCH on [-1] brute 0 fast -1</code> (the exact case varies): with only a negative coin, taking none beats taking one. The fix is to ignore negative values, <code>sum(x for x in sorted(c)[-2:] if x &gt; 0)</code>; rerun, and silence means you can submit.</p>
+
+<h3>Python for contests</h3>
+<p><b>Input and output.</b> Calling <code>input()</code> hundreds of thousands of times is slow on its own; read everything once and print once. Unseen Codeforces problems use standard input and usually several test cases:</p>
+<script type="text/plain" class="code">
+import sys
+
+def main():
+    data = sys.stdin.buffer.read().split()     # read everything once
+    pos = 0
+    def nxt():
+        nonlocal pos
+        pos += 1
+        return int(data[pos - 1])
+    t = nxt()
+    out = []
+    for _ in range(t):
+        n = nxt()
+        a = [nxt() for _ in range(n)]
+        out.append(str(sum(a)))                # your answer for this test
+    sys.stdout.write("\n".join(out) + "\n")    # print once at the end
+
+main()
+</script>
+<p>“The sum of n over all test cases is at most 2·10⁵” means you size arrays per test, never at the maximum for every test.</p>
+<p><b>The standard library you should have in your fingers.</b></p>
+<script type="text/plain" class="code">
+from bisect import bisect_left, bisect_right, insort
+from collections import Counter, defaultdict, deque
+from functools import cache, reduce
+from itertools import accumulate, combinations, groupby, pairwise, permutations, product
+from math import comb, gcd, inf, isqrt, lcm
+
+a = [1, 3, 3, 7]
+print(bisect_left(a, 3), bisect_right(a, 3))       # 1 3: first and one-past-last position of 3
+print(list(accumulate([1, 2, 3, 4])))              # [1, 3, 6, 10]: prefix sums
+print(list(pairwise([1, 4, 9])))                   # [(1, 4), (4, 9)]: neighbours
+print(comb(5, 2), gcd(12, 18), lcm(4, 6), isqrt(99))   # 10 6 12 9
+print(pow(3, -1, 7))                               # 5: modular inverse (Python 3.8+)
+print((13).bit_count(), 13 & -13)                  # 3 1: ones in 13, lowest set bit (Python 3.10+)
+print(sorted(["bb", "a", "ccc"], key=lambda s: (-len(s), s)))   # longest first, ties alphabetical
+print(Counter("abracadabra").most_common(2))       # [('a', 5), ('b', 2)]
+</script>
+<div class="tbl-wrap"><table>
+<tr><th>Tool</th><th>Use it for</th></tr>
+<tr><td><code>bisect_left / bisect_right / insort</code></td><td>binary search on a sorted list; floor, ceiling, count of values below x; LIS</td></tr>
+<tr><td><code>heapq</code> (<code>heappush, heappop, heapreplace, nsmallest, merge</code>)</td><td>priority queues, Dijkstra, k-way merge, top-k</td></tr>
+<tr><td><code>collections.deque</code></td><td>BFS queue, 0-1 BFS, monotonic deque</td></tr>
+<tr><td><code>collections.Counter</code></td><td>frequencies, “most common”, comparing multisets</td></tr>
+<tr><td><code>itertools</code> (<code>permutations, combinations, product, accumulate, groupby, pairwise</code>)</td><td>brute force over small n, prefix sums, run-length grouping</td></tr>
+<tr><td><code>functools.cache</code>, <code>cmp_to_key</code></td><td>memoisation (watch recursion depth); custom sort order</td></tr>
+<tr><td><code>math</code> (<code>gcd, lcm, isqrt, comb, inf</code>)</td><td>number tricks; <code>isqrt</code> is exact, <code>sqrt</code> is not</td></tr>
+<tr><td><code>pow(x, -1, m)</code>, <code>pow(x, e, m)</code></td><td>modular inverse and power</td></tr>
+<tr><td>list comprehension over <code>[[0] * m for _ in range(n)]</code></td><td>grids; never <code>[[0] * m] * n</code></td></tr>
+<tr><td><code>sorted(key=lambda x: (-x[0], x[1]))</code></td><td>sort by several rules in one go</td></tr>
+</table></div>
+<p><b>Speed.</b> Local variables are faster than globals, so put the work inside a function. List comprehensions beat explicit loops. Lists of lists beat <code>defaultdict(list)</code> when keys are 0 to n − 1. Appending to a string with <code>+=</code> in a loop is fine in CPython, but join a list when in doubt. Some judges run PyPy, which is much faster on plain loops but slower at some built-ins: use whichever interpreter the judge uses and test with it.</p>
+<p><b>Hash-map attacks.</b> On Codeforces some tests are built to make Python’s <code>dict</code> and <code>set</code> collide and slow to a crawl. If a hash-heavy solution times out for no visible reason, sort instead (<code>bisect</code> on a sorted list) or XOR the keys with a random 32-bit number before inserting.</p>
+<p><b>Deep recursion.</b> The default limit is about 1,000 calls. Prefer an explicit stack or queue for graphs and write DP bottom-up. When you must recurse deeply, raise the limit <i>and</i> run in a thread with a big stack:</p>
+<script type="text/plain" class="code">
+import sys, threading
+
+def solve():
+    def depth(n):                         # recursion 10^5 deep: crashes without the two lines below
+        return 0 if n == 0 else 1 + depth(n - 1)
+    print(depth(100000))
+
+sys.setrecursionlimit(1 << 20)            # allow deep calls...
+threading.stack_size(1 << 27)             # ...and give the thread a stack big enough for them
+t = threading.Thread(target=solve)
+t.start()
+t.join()
+</script>
+<p><b>Floats.</b> Compare with a tolerance, or avoid floats: ratios as fractions of integers, square roots with <code>isqrt</code>.</p>
+
+<h3>Array tricks that appear everywhere</h3>
+<p><b>Binary search on the answer.</b> “Minimise the maximum”, “smallest x such that …”: if “can it be done with value x?” goes False, False, …, True, True as x grows, search for the first True. You only write the yes/no check, often a greedy or a BFS.</p>
+<script type="text/plain" class="code">
+def first_true(lo, hi, ok):               # smallest x in [lo, hi] with ok(x) True; ok must be False..False True..True
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if ok(mid):
+            hi = mid
+        else:
+            lo = mid + 1
+    return lo
+
+def ship_days(weights, days):             # LC 1011: smallest capacity that ships everything in `days`
+    def ok(cap):
+        need, load = 1, 0
+        for x in weights:
+            if load + x > cap:
+                need += 1; load = 0
+            load += x
+        return need <= days
+    return first_true(max(weights), sum(weights), ok)
+</script>
+<p><b>Prefix sums, difference arrays and a sliding window.</b> Prefix sums turn “sum of a range” into a subtraction, and with a dictionary they count subarrays with a given sum even with negatives. A difference array applies many range additions in O(n + ops). A window whose left end never moves back finds the shortest subarray with a large enough sum in O(n).</p>
+<script type="text/plain" class="code">
+def count_sum_k(a, k):                    # LC 560: subarrays with sum k, negatives allowed
+    seen, s, cnt = {0: 1}, 0, 0           # seen[p]: how many prefixes had sum p
+    for x in a:
+        s += x
+        cnt += seen.get(s - k, 0)         # a prefix k less than now closes a subarray of sum k
+        seen[s] = seen.get(s, 0) + 1
+    return cnt
+
+def apply_ranges(n, ops):                 # difference array: add v to a[l..r] for each op, O(n + ops)
+    diff = [0] * (n + 1)
+    for l, r, v in ops:
+        diff[l] += v
+        diff[r + 1] -= v
+    out, run = [], 0
+    for i in range(n):
+        run += diff[i]
+        out.append(run)
+    return out
+
+def shortest_at_least(a, S):              # LC 209: shortest subarray with sum >= S, positives only
+    best, lo, run = float('inf'), 0, 0
+    for hi, x in enumerate(a):
+        run += x
+        while run >= S:                   # shrink while still valid: lo never moves back
+            best = min(best, hi - lo + 1)
+            run -= a[lo]; lo += 1
+    return 0 if best == float('inf') else best
+</script>
+<p><b>Fenwick tree.</b> Prefix sums with point updates in O(log n): the first step beyond the course when a problem mixes “change one value” with “sum of a range”.</p>
+<script type="text/plain" class="code">
+class Fenwick:                            # prefix sums with point updates, O(log n) each
+    def __init__(self, n):
+        self.t = [0] * (n + 1)
+    def add(self, i, v):                  # a[i] += v (0-based)
+        i += 1
+        while i < len(self.t):
+            self.t[i] += v
+            i += i & -i                   # jump to the next block that covers i
+    def prefix(self, i):                  # sum of a[0 .. i-1]
+        s = 0
+        while i > 0:
+            s += self.t[i]
+            i -= i & -i                   # drop the lowest set bit
+        return s
+</script>
+
+<h3>The map beyond the course</h3>
+<p>Everything in the first group has a page or code in this notebook. The second group is the natural next layer for these topics; the third is deliberately left out of this exam’s prep.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Group</th><th>Tools</th></tr>
+<tr><td>In this notebook</td><td>bisect and heapq tricks; binary search on the answer; prefix sums, difference arrays, sliding window; monotonic stack and deque; union-find; binary lifting; Floyd cycle detection; 0-1 BFS; Bellman–Ford, Floyd–Warshall; bitmask DP; meet in the middle; lazy-deletion heaps; Fenwick tree</td></tr>
+<tr><td>Next layer (say if you want full pages)</td><td>strongly connected components (Kosaraju or Tarjan); bridges and articulation points; LCA with binary lifting; tree DP and rerooting; digit DP; matrix exponentiation for linear recurrences</td></tr>
+<tr><td>Skipped on purpose</td><td>lazy segment trees, max-flow, geometry, suffix structures, FFT</td></tr>
+</table></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Limits tell you the complexity. Brute force first, submit, then think. Stress test before trusting a fast idea.</p>
+<p>Read once, print once. Iterative traversals. Hash attacks exist.</p>
+<p>Minimise the maximum → binary search the answer. Range sums → prefix sums. Windows → two pointers.</p>
+<p>15 minutes with no new idea: bank what you have and move.</p></div>
+<div class="quiz" data-quiz="c1"></div>
+<div class="quiz" data-quiz="e1"></div>
+</section>

@@ -1,0 +1,624 @@
+<section class="topic" id="ch8" data-group="graph" data-num="8" data-title="DFS and BFS">
+<div class="topic-head"><div class="badge">8</div><div><div class="meta">Graphs line</div><h2>Graph traversal: DFS and BFS</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>Two ways to visit every vertex reachable from a start. DFS dives deep and backs out; BFS spreads outward one layer at a time. They differ in exactly one data structure.</p></div>
+
+<h3>The problem: visit everything, once</h3>
+<p>In a tree, recursing into children just works. In a graph, a <b>cycle</b> would send you round forever. The cure: keep a <code>visited[]</code> array and <b>never enter a vertex twice</b>. Everything else is detail.</p>
+
+
+<h3>Traversal in plain words</h3>
+<p>A <b>graph traversal</b> is a systematic way of visiting every vertex reachable from a starting vertex, exactly once. Both algorithms below follow the same four-line idea; they differ only in <i>which discovered vertex they continue from</i>.</p>
+<ol>
+<li>Mark the start vertex as <b>visited</b> and put it in a "to do" container.</li>
+<li>Take one vertex out of the container.</li>
+<li>For each neighbour of it that is <b>not visited yet</b>, mark it visited and put it in the container.</li>
+<li>Repeat steps 2 and 3 until the container is empty.</li>
+</ol>
+<div class="tbl-wrap"><table>
+<tr><th>If the container is a…</th><th>The next vertex taken is…</th><th>You get</th></tr>
+<tr><td><b>Stack</b> (last in, first out)</td><td>the most recently discovered</td><td><b>DFS</b>: dives deep before backtracking</td></tr>
+<tr><td><b>Queue</b> (first in, first out)</td><td>the earliest discovered</td><td><b>BFS</b>: widens one level at a time</td></tr>
+</table></div>
+<p>If you need a refresher on stacks and queues, see chapter 0; the lab there lets you push, pop, enqueue and dequeue.</p>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><p><b>Three states of a vertex.</b> <i>Undiscovered</i> (never seen), <i>discovered</i> (seen, waiting or in progress), <i>finished</i> (all its neighbours dealt with). CLRS names them white, gray and black; the lab uses the same colours.</p></div>
+
+<h2 style="font-size:1.6rem;margin-top:40px">Part A: Depth-First Search (DFS)</h2>
+<div class="box analogy"><div class="lbl" data-ico="🧑‍🏫">Teacher's note</div><p><b>Delivery-boy analogy.</b> You enter a lane, deliver to a house, and immediately go down the next lane you can see, and the next, as deep as it goes. When you are stuck (nothing new reachable), you return to the last junction that still has an unexplored lane and go down that one. When nothing is left anywhere, you are done. "Go deep, then backtrack" is exactly the backtracking from chapter 6.</p></div>
+<script type="text/plain" class="code">
+def dfs(node, visited, adj):
+    visited[node] = True                 # mark on entry
+    print(node)                          # process the node
+    for nb in adj[node]:
+        if not visited[nb]:
+            dfs(nb, visited, adj)
+
+def dfs_all(n, adj):                     # handles disconnected graphs
+    visited = [False] * n
+    components = 0
+    for i in range(n):
+        if not visited[i]:               # a brand new component starts here
+            components += 1
+            dfs(i, visited, adj)
+    return components
+</script>
+<p>The recursion <i>is</i> the stack: each active call is a vertex you came through, and returning is backtracking. You can also use an explicit stack:</p>
+<script type="text/plain" class="code">
+def dfs_iterative(start, adj):
+    visited = [False] * len(adj)
+    stack, order = [start], []
+    while stack:
+        u = stack.pop()                       # LIFO: last in, first out
+        if visited[u]:
+            continue
+        visited[u] = True
+        order.append(u)
+        for nb in reversed(adj[u]):           # reversed: same order as recursion
+            if not visited[nb]:
+                stack.append(nb)
+    return order
+</script>
+<h4>Dry run (the directed graph from your notes)</h4>
+<p>Edges: 0→1, 1→5, 5→0, 0→2, 3→4, 4→3. Adjacency: 0:[1,2], 1:[5], 2:[], 3:[4], 4:[3], 5:[0]. We also record CLRS timestamps: <b>d</b> = discovery time, <b>f</b> = finish time (one clock ticks at every discovery and every finish).</p>
+<div class="tbl-wrap"><table>
+<tr><th>Event</th><th>Call stack</th><th>visited</th><th>Note</th></tr>
+<tr><td>dfs(0)</td><td class="n">0</td><td class="n">{0}</td><td>d(0)=1. Neighbours 1, 2.</td></tr>
+<tr><td>dfs(1)</td><td class="n">0 1</td><td class="n">{0,1}</td><td>d(1)=2</td></tr>
+<tr><td>dfs(5)</td><td class="n">0 1 5</td><td class="n">{0,1,5}</td><td>d(5)=3. Neighbour 0 already visited, and still on the stack: a <b>back edge</b> (a cycle 0→1→5→0).</td></tr>
+<tr><td>5 finishes</td><td class="n">0 1</td><td class="n">{0,1,5}</td><td>f(5)=4. Backtrack to 1.</td></tr>
+<tr><td>1 finishes</td><td class="n">0</td><td class="n">{0,1,5}</td><td>f(1)=5. Backtrack to 0.</td></tr>
+<tr><td>dfs(2)</td><td class="n">0 2</td><td class="n">{0,1,2,5}</td><td>d(2)=6, no neighbours, f(2)=7</td></tr>
+<tr><td>0 finishes</td><td class="n">(empty)</td><td class="n">{0,1,2,5}</td><td>f(0)=8. Vertices 3, 4 were unreachable from 0.</td></tr>
+<tr><td>dfs(3), dfs(4)</td><td class="n">3 4</td><td class="n">all</td><td>d(3)=9, d(4)=10, 4→3 is a back edge, f(4)=11, f(3)=12</td></tr>
+</table></div>
+<p><b>Visit order: 0, 1, 5, 2, 3, 4.</b> Notice the intervals [d, f]: 0 → [1,8], 1 → [2,5], 5 → [3,4], 2 → [6,7], 3 → [9,12], 4 → [10,11]. They either nest perfectly or do not overlap at all: the <b>parenthesis theorem</b>. Nesting means "descendant".</p>
+
+<h4>Complexity</h4>
+<p><b>Time O(V + E)</b>: each vertex is entered once (because of visited), and each vertex's adjacency list is scanned once, so every edge is examined once (directed) or twice (undirected). <b>Space O(V)</b>: the visited array plus a recursion stack up to V deep (a long path).</p>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p>With an adjacency <b>matrix</b>, finding a vertex's neighbours costs O(V), so DFS/BFS cost <b>O(V²)</b>. "O(V+E)" assumes adjacency lists.</p></div>
+
+<h4>Connected components</h4>
+<p>On an undirected graph, <code>dfs(0)</code> visits exactly the component containing 0. Starting a new DFS from each still-unvisited vertex finds every component; the number of fresh starts is the <b>number of components</b> (see <code>dfs_all</code>). On a directed graph, <code>dfs(0)</code> only reaches what is <i>reachable from</i> 0.</p>
+
+<h4>What DFS can tell you (CLRS 22.3)</h4>
+<p>Colour each vertex <b>white</b> (undiscovered), <b>gray</b> (discovered, still on the stack) or <b>black</b> (finished). When DFS looks at edge u→v, the colour of v classifies the edge:</p>
+<div class="tbl-wrap"><table>
+<tr><th>Edge type</th><th>When v is…</th><th>Meaning</th></tr>
+<tr><td><b>Tree edge</b></td><td>white</td><td>DFS goes along it; it forms the DFS tree.</td></tr>
+<tr><td><b>Back edge</b></td><td>gray</td><td>Points to an ancestor still on the stack. <b>Signals a cycle.</b></td></tr>
+<tr><td><b>Forward edge</b></td><td>black, and d(u) &lt; d(v)</td><td>Points to a descendant already finished (directed graphs only).</td></tr>
+<tr><td><b>Cross edge</b></td><td>black, and d(u) &gt; d(v)</td><td>Points to a vertex in another branch (directed graphs only).</td></tr>
+</table></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><p><b>Facts to remember.</b> In an <i>undirected</i> graph DFS produces only tree edges and back edges. A <i>directed</i> graph has a cycle <b>if and only if</b> DFS finds a back edge. Run the lab below and watch edges change colour as they are classified.</p></div>
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><p><b>Topological sort (a famous DFS application).</b> For a DAG, list vertices so that every edge u→v has u before v (think: course prerequisites). Run DFS, and as each vertex <i>finishes</i>, put it at the front of a list. Reason: with no back edges, v always finishes before u for an edge u→v, so u ends up ahead of v. Time Θ(V+E).</p></div>
+<script type="text/plain" class="code">
+def num_islands(grid):                        # DFS on an implicit graph (grid)
+    R, C = len(grid), len(grid[0])
+    def dfs(r, c):
+        if r < 0 or c < 0 or r >= R or c >= C or grid[r][c] != '1':
+            return                            # out of bounds, water, or visited
+        grid[r][c] = '0'                      # mark visited (sink the land)
+        dfs(r + 1, c); dfs(r - 1, c); dfs(r, c + 1); dfs(r, c - 1)
+    count = 0
+    for r in range(R):
+        for c in range(C):
+            if grid[r][c] == '1':
+                count += 1                    # a new island begins
+                dfs(r, c)
+    return count
+</script>
+
+<h2 style="font-size:1.6rem;margin-top:48px">Part B: Breadth-First Search (BFS)</h2>
+<div class="box analogy"><div class="lbl" data-ico="🧑‍🏫">Teacher's note</div><p><b>Ripple analogy.</b> Drop a stone in a pond: the ripple reaches everything at distance 1, then everything at distance 2, and so on. BFS visits the start, then all its neighbours, then all of <i>their</i> new neighbours: <b>level by level</b>. Level-order traversal of a tree is BFS.</p></div>
+<p>The tool is a <b>queue</b> (first in, first out). Vertices are processed in the order they were discovered, which is exactly what produces the level-by-level pattern.</p>
+<script type="text/plain" class="code">
+from collections import deque
+
+def bfs(start, n, adj):
+    visited = [False] * n
+    queue = deque([start])
+    visited[start] = True               # mark when you ENQUEUE
+    order = []
+    while queue:
+        node = queue.popleft()          # take the oldest discovered vertex
+        order.append(node)
+        for nb in adj[node]:
+            if not visited[nb]:
+                visited[nb] = True      # mark NOW so it is never queued twice
+                queue.append(nb)
+    return order
+</script>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p>Mark a vertex visited when you <b>add it to the queue</b>, not when you remove it. If you wait until removal, a vertex reachable by two different neighbours is queued twice, which wastes time and (in distance computation) can corrupt answers.</p></div>
+<h4>Dry run (the directed graph from your notes)</h4>
+<p>Edges: 0→1, 0→2, 0→3, 1→2, 2→4, 4→3. Adjacency: 0:[1,2,3], 1:[2], 2:[4], 3:[], 4:[3].</p>
+<div class="tbl-wrap"><table>
+<tr><th>Step</th><th>Dequeue</th><th>Actions</th><th>Queue after</th><th>Distance</th></tr>
+<tr><td>start</td><td>-</td><td>mark 0, enqueue</td><td class="n">[0]</td><td class="n">d0=0</td></tr>
+<tr><td>1</td><td>0</td><td>1, 2, 3 unvisited: mark and enqueue</td><td class="n">[1, 2, 3]</td><td class="n">d1=d2=d3=1</td></tr>
+<tr><td>2</td><td>1</td><td>2 already visited: skip</td><td class="n">[2, 3]</td><td></td></tr>
+<tr><td>3</td><td>2</td><td>4 unvisited: mark, enqueue</td><td class="n">[3, 4]</td><td class="n">d4=2</td></tr>
+<tr><td>4</td><td>3</td><td>no neighbours</td><td class="n">[4]</td><td></td></tr>
+<tr><td>5</td><td>4</td><td>3 already visited: skip</td><td class="n">[ ]</td><td></td></tr>
+</table></div>
+<p><b>Visit order: 0, 1, 2, 3, 4.</b> Distances: 0 is at 0, vertices 1, 2, 3 at 1, vertex 4 at 2.</p>
+
+<h4>BFS finds shortest paths (unweighted graphs)</h4>
+<p>BFS reaches vertices in non-decreasing order of distance. The first time it discovers v, it did so through some u at distance d, so v is at distance d + 1, and no shorter route exists (otherwise v would have been discovered earlier). CLRS proves <code>v.d = δ(s, v)</code>, the true shortest number of edges. Record the distance when enqueuing; record the parent to rebuild the path.</p>
+<script type="text/plain" class="code">
+def shortest_paths(start, n, adj):
+    dist = [-1] * n                     # -1 means "not reached"
+    parent = [-1] * n
+    dist[start] = 0
+    queue = deque([start])
+    while queue:
+        u = queue.popleft()
+        for v in adj[u]:
+            if dist[v] == -1:           # doubles as the visited check
+                dist[v] = dist[u] + 1
+                parent[v] = u
+                queue.append(v)
+    return dist, parent
+
+def path_to(v, parent):                 # walk parents back to the start
+    out = []
+    while v != -1:
+        out.append(v); v = parent[v]
+    return out[::-1]
+</script>
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><p><b>Weighted graphs:</b> BFS counts edges, not weights, so it is wrong for weighted shortest paths. Those use Dijkstra's algorithm, which is BFS with the queue replaced by a priority queue (a heap, chapter 5). A neat bridge between chapters.</p></div>
+
+<h4>Classic: Rotting oranges (multi-source BFS)</h4>
+<p>Grid: 0 empty, 1 fresh, 2 rotten. Each minute, every fresh orange next to a rotten one becomes rotten. Find the minutes until no fresh remain, or −1 if impossible. Idea: put <b>all</b> rotten oranges in the queue at time 0 (several starting points at once), then each BFS <i>level</i> is one minute.</p>
+<script type="text/plain" class="code">
+def oranges_rotting(grid):
+    R, C = len(grid), len(grid[0])
+    q, fresh = deque(), 0
+    for r in range(R):
+        for c in range(C):
+            if grid[r][c] == 2: q.append((r, c))
+            elif grid[r][c] == 1: fresh += 1
+    minutes = 0
+    while q and fresh:
+        for _ in range(len(q)):                     # exactly one level = one minute
+            r, c = q.popleft()
+            for dr, dc in ((1,0), (-1,0), (0,1), (0,-1)):
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < R and 0 <= nc < C and grid[nr][nc] == 1:
+                    grid[nr][nc] = 2                # rot it (also marks visited)
+                    fresh -= 1
+                    q.append((nr, nc))
+        minutes += 1
+    return minutes if fresh == 0 else -1
+</script>
+
+<h3>Run both on any graph</h3>
+<p>Choose DFS or BFS, pick a start vertex, and step through. Watch the <b>stack</b> (DFS) or <b>queue</b> (BFS), the colours (white = undiscovered, amber = discovered, filled = finished), and DFS timestamps. Load the example graphs from your notes. Edit edges by clicking two vertices.</p>
+<div class="lab" data-w="graph" data-mode="trav" data-title="Lab: DFS and BFS stepper"></div>
+
+
+<h3>Common mistakes with traversals</h3>
+<ul>
+<li><b>No visited array on a graph</b> that has a cycle: infinite loop or stack overflow.</li>
+<li><b>BFS: marking visited at dequeue time</b> instead of at enqueue time: duplicates in the queue.</li>
+<li><b>Forgetting disconnected graphs</b>: starting once misses other components. Loop over all vertices and start from each unvisited one.</li>
+<li><b>Using DFS for shortest paths</b>: DFS finds <i>a</i> path, not the shortest one. Use BFS (unweighted) or Dijkstra (weighted).</li>
+<li><b>Treating undirected edges as directed</b>: when you build the adjacency list from an undirected edge (u, v), add v to u's list <b>and</b> u to v's list.</li>
+<li><b>Wrong complexity</b>: O(V + E) holds for adjacency lists; with a matrix it is O(V²).</li>
+<li><b>Grid problems</b>: forgetting the bounds check <code>0 &lt;= r &lt; R</code> before reading <code>grid[r][c]</code>.</li>
+</ul>
+
+<h3>BFS or DFS?</h3>
+<div class="tbl-wrap"><table>
+<tr><th></th><th>BFS</th><th>DFS</th></tr>
+<tr><td>Data structure</td><td>Queue (FIFO)</td><td>Stack (LIFO), or the recursion stack</td></tr>
+<tr><td>Order</td><td>Level by level</td><td>Deep first, then backtrack</td></tr>
+<tr><td>Shortest path (unweighted)?</td><td><b>Yes</b></td><td>No</td></tr>
+<tr><td>Time</td><td>O(V + E)</td><td>O(V + E)</td></tr>
+<tr><td>Space</td><td>O(V): the queue can hold a whole level</td><td>O(V): stack as deep as the longest path</td></tr>
+<tr><td>Natural for</td><td>Fewest steps, spreading over time, level problems</td><td>Cycle detection, components, topological sort, backtracking, "does a path exist"</td></tr>
+</table></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><p>They are the <b>same algorithm with a different container</b>. Replace the queue in BFS with a stack and you get (a form of) DFS.</p></div>
+
+<h3 class="pat-head">Patterns for contests: graphs</h3>
+<div class="box tip"><div class="lbl" data-ico="🎯">Seen in your contests</div><p><b>Mid-sem:</b> Q2 adjacency matrix to edge list (two loops) and Q6 Signal Propagation, the hard one you solved in time: multi-source BFS counting nodes at distance exactly k. <b>Contest 2:</b> Q3 Count Components (template 1 below) and <b>Q5 Chakravyuh</b>, the one scored 0/120. You hadn’t studied functional graphs yet; they’re the first pattern after the seven below.</p></div>
+<h3>The seven patterns</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Pattern</th><th>Words in the statement</th><th>Tool</th><th>Practice (rating)</th></tr>
+<tr><td>1. Reachability</td><td>"can you reach", "visit all rooms", "is there a path"</td><td>DFS from the start</td><td>841 (1412), 2368 (1477)</td></tr>
+<tr><td>2. Components</td><td>"groups", "provinces", "networks", "unreachable pairs"</td><td>DFS from every unvisited node</td><td>2316 (1604), 1319 (1633)</td></tr>
+<tr><td>3. Grid flood fill</td><td>"island", "region", "4-directionally connected"</td><td>DFS over cells</td><td>2658 (1490), 1905 (1679)</td></tr>
+<tr><td>4. Border flood</td><td>"can't walk off the grid", "closed", "enclave", "surrounded"</td><td>flood from the border first</td><td>1020 (1615), 1254 (1659)</td></tr>
+<tr><td>5. Shortest path, unweighted</td><td>"minimum number of steps / moves"</td><td>BFS with a distance array</td><td>1926 (1638), 1091 (1658)</td></tr>
+<tr><td>6. Multi-source BFS</td><td>"every minute … spreads", "distance to the nearest …"</td><td>start BFS from all sources at once</td><td>994 (classic), 1162 (1666)</td></tr>
+<tr><td>7. Direction tricks</td><td>directed edges plus "minimum vertices", "reorder", "reverse"</td><td>in-degrees, or a cost per edge direction</td><td>1557 (1512), 1466 (1634)</td></tr>
+</table></div>
+
+<h3>Template 1: edges to adjacency list, iterative DFS</h3>
+<p>LeetCode almost always gives <code>n</code> and <code>edges</code>. Build the list (Graph 1), then traverse with an explicit stack (Graph 2). Marking a node <b>when you push it</b> means it is never pushed twice.</p>
+<script type="text/plain" class="code">
+def components(n, edges):                 # returns the size of every component
+    adj = [[] for _ in range(n)]
+    for u, v in edges:
+        adj[u].append(v)
+        adj[v].append(u)
+    seen = [False] * n
+    sizes = []
+    for s in range(n):                    # start a DFS from every unvisited node
+        if seen[s]:
+            continue
+        seen[s] = True
+        stack, size = [s], 0
+        while stack:
+            u = stack.pop()
+            size += 1
+            for v in adj[u]:
+                if not seen[v]:
+                    seen[v] = True        # mark on push
+                    stack.append(v)
+        sizes.append(size)
+    return sizes                          # len(sizes) = number of components
+</script>
+<details><summary>Solution: 2316 Count Unreachable Pairs of Nodes (1604). Try it first.</summary>
+<p>Two nodes are unreachable exactly when they're in different components. Walk through the component sizes and pair each component with everything counted before it, so no pair is counted twice.</p>
+<script type="text/plain" class="code">
+def countPairs(self, n, edges):
+    total, before = 0, 0
+    for s in components(n, edges):
+        total += s * before               # every node here x every node in earlier components
+        before += s
+    return total                          # O(V + E)
+</script>
+</details>
+
+<h3>Template 2: grid flood fill</h3>
+<p>A grid is a graph: each cell is a node, joined to its 4 neighbours (bridge 6.5). The neighbour loop with a bounds check is the whole trick.</p>
+<script type="text/plain" class="code">
+def num_islands(grid):                    # LC 200, cells are "1" (land) or "0"
+    R, C = len(grid), len(grid[0])
+    seen = [[False] * C for _ in range(R)]
+    count = 0
+    for r in range(R):
+        for c in range(C):
+            if grid[r][c] == "1" and not seen[r][c]:
+                count += 1                # a new island starts here
+                seen[r][c] = True
+                stack = [(r, c)]
+                while stack:
+                    x, y = stack.pop()
+                    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                        nx, ny = x + dx, y + dy
+                        if 0 <= nx < R and 0 <= ny < C and grid[nx][ny] == "1" and not seen[nx][ny]:
+                            seen[nx][ny] = True
+                            stack.append((nx, ny))
+    return count
+</script>
+<details><summary>Solution: 1020 Number of Enclaves (1615). Try it first.</summary>
+<p>Counting cells that <i>can't</i> escape is awkward. Flip it: everything connected to the border <i>can</i> escape, so sink all of those first, then count the land that's left.</p>
+<script type="text/plain" class="code">
+def numEnclaves(self, grid):
+    R, C = len(grid), len(grid[0])
+    stack = [(r, c) for r in range(R) for c in range(C)
+             if (r in (0, R - 1) or c in (0, C - 1)) and grid[r][c] == 1]
+    for r, c in stack:
+        grid[r][c] = 0                    # sink border land
+    while stack:
+        x, y = stack.pop()
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < R and 0 <= ny < C and grid[nx][ny] == 1:
+                grid[nx][ny] = 0
+                stack.append((nx, ny))
+    return sum(map(sum, grid))            # land that never touched the border
+</script>
+</details>
+
+<h3>Template 3: BFS shortest path</h3>
+<p>From Graph 3: in an unweighted graph BFS reaches every node by the fewest edges. Keep a <code>dist</code> array instead of <code>visited</code>: −1 means "not reached yet", and it stores the answer at the same time.</p>
+<script type="text/plain" class="code">
+from collections import deque
+
+def bfs_dist(start, adj):
+    dist = [-1] * len(adj)
+    dist[start] = 0
+    q = deque([start])
+    while q:
+        u = q.popleft()
+        for v in adj[u]:
+            if dist[v] == -1:             # first time reached = shortest
+                dist[v] = dist[u] + 1
+                q.append(v)
+    return dist                           # -1 left over = unreachable
+</script>
+<details><summary>Solution: 1926 Nearest Exit from Entrance in Maze (1638). Try it first.</summary>
+<p>BFS from the entrance over open cells. The first border cell you reach (other than the entrance itself) is the nearest exit.</p>
+<script type="text/plain" class="code">
+def nearestExit(self, maze, entrance):
+    R, C = len(maze), len(maze[0])
+    sr, sc = entrance
+    dist = [[-1] * C for _ in range(R)]
+    dist[sr][sc] = 0
+    q = deque([(sr, sc)])
+    while q:
+        x, y = q.popleft()
+        for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < R and 0 <= ny < C and maze[nx][ny] == "." and dist[nx][ny] == -1:
+                dist[nx][ny] = dist[x][y] + 1
+                if nx in (0, R - 1) or ny in (0, C - 1):
+                    return dist[nx][ny]   # never the entrance: it was marked first
+                q.append((nx, ny))
+    return -1
+</script>
+</details>
+
+<h3>Template 4: multi-source BFS</h3>
+<p>Your Graph 3 lecture's rotting oranges is the model. When something spreads from <b>many</b> starting points at once, put <b>all</b> of them in the queue before the loop. Processing the queue one whole level at a time counts minutes (or distance) correctly.</p>
+<script type="text/plain" class="code">
+def oranges_rotting(grid):                # LC 994
+    R, C = len(grid), len(grid[0])
+    q = deque((r, c) for r in range(R) for c in range(C) if grid[r][c] == 2)
+    fresh = sum(row.count(1) for row in grid)
+    minutes = 0
+    while q and fresh:
+        for _ in range(len(q)):           # exactly the oranges that rotted last minute
+            x, y = q.popleft()
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < R and 0 <= ny < C and grid[nx][ny] == 1:
+                    grid[nx][ny] = 2      # rot it now = mark visited on push
+                    fresh -= 1
+                    q.append((nx, ny))
+        minutes += 1
+    return -1 if fresh else minutes       # some orange was never reached
+</script>
+<div class="lab" data-w="rot" data-title="Lab: multi-source BFS (rotting oranges)"></div>
+
+<details><summary>Your mid-sem Q6: Signal Propagation at Time K</summary>
+<p>Several devices have the signal at t = 0; each second it spreads to every neighbour that doesn't have it yet. Count the devices first reached at exactly time k. That is multi-source BFS: put every source in the queue at distance 0, then count distances equal to k.</p>
+<script type="text/plain" class="code">
+def signal_at_k(n, edges, sources, k):
+    adj = [[] for _ in range(n)]
+    for u, v in edges:
+        adj[u].append(v)
+        adj[v].append(u)
+    dist = [-1] * n
+    q = deque()
+    for s in sources:                     # every source starts at t = 0
+        if dist[s] == -1:
+            dist[s] = 0
+            q.append(s)
+    while q:
+        u = q.popleft()
+        for v in adj[u]:
+            if dist[v] == -1:             # first time reached = the time it gets the signal
+                dist[v] = dist[u] + 1
+                q.append(v)
+    return sum(1 for d in dist if d == k) # 0 if nobody is reached at exactly k
+</script>
+</details>
+
+<h3>Template 5: direction tricks</h3>
+<details><summary>Solution: 1466 Reorder Routes to Make All Paths Lead to the City Zero (1634). Try it first.</summary>
+<p>Treat the roads as undirected so you can walk the whole tree from city 0, but remember each road's real direction. Every road you walk <i>away</i> from 0 in its original direction must be flipped.</p>
+<script type="text/plain" class="code">
+def minReorder(self, n, connections):
+    adj = [[] for _ in range(n)]
+    for a, b in connections:
+        adj[a].append((b, 1))             # walking a -> b uses the road as given: flip it
+        adj[b].append((a, 0))             # walking b -> a goes against it: already points to 0
+    seen = [False] * n
+    seen[0] = True
+    stack, flips = [0], 0
+    while stack:
+        u = stack.pop()
+        for v, cost in adj[u]:
+            if not seen[v]:
+                seen[v] = True
+                flips += cost
+                stack.append(v)
+    return flips
+</script>
+</details>
+<p>And the shortest one on the ladder: in <b>1557 Minimum Number of Vertices to Reach All Nodes</b> (1512) the graph has no cycles, so the answer is just every node with in-degree 0, because nothing else can reach them and they reach everything else. No traversal at all: read the statement for structure before reaching for BFS.</p>
+
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p>Marking visited when you <i>pop</i> instead of when you <i>push</i> lets a node enter the queue several times: correct answers, but time limits on big grids. Forgetting to return −1 when something is unreachable. Counting one minute too many in multi-source BFS (count a minute only while fresh oranges remain). Using recursion on a large grid.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><ul>
+<li>Decide what a node is and what an edge is; the rest is a template.</li>
+<li>Components: DFS from every unvisited node. Border flood: sink the border first.</li>
+<li>Fewest steps, equal costs: BFS with a <code>dist</code> array. Many sources: put all of them in the queue first.</li>
+<li>Mark on push. Use a stack or deque, not recursion, on big inputs. O(V + E), or O(R · C) on a grid.</li>
+</ul></div>
+<h3>Pattern 8: functional graphs (Chakravyuh)</h3>
+<p>The statement: <code>a[i]</code> is the node that <code>i</code> points to, or −1 for no edge. From each start <code>v</code>, follow edges as long as you can and count the distinct nodes you see, including <code>v</code>.</p>
+<p><b>The observation.</b> One way out of every node means the walk never branches. It runs in a straight line until it hits a dead end, or reaches a node it has already seen and would then loop forever. Draw it and you get a tail feeding into a cycle: the Greek letter ρ. Every piece of such a graph is one cycle (or a dead end) with tails hanging off it. Three cases give the whole answer:</p>
+<ul>
+<li>a node <b>on a cycle</b> of length L reaches exactly the L cycle nodes: answer L;</li>
+<li>a node with <code>a[v] = −1</code> reaches only itself: answer 1;</li>
+<li>any <b>other</b> node reaches itself plus everything its successor reaches: answer 1 + ans[a[v]].</li>
+</ul>
+<div class="lab" data-w="chak" data-title="Lab: walk the ρ shapes"></div>
+<h4>Subtask 1 (n ≤ 10³): the eight lines worth about half the marks</h4>
+<p>Walk from every node with a set of seen nodes. Each walk is at most n steps, so the total is n² = 10⁶. For n = 10⁵ it is 10¹⁰ and subtask 2 times out, but the points from subtask 1 are banked, and you now own a checker for the fast version.</p>
+<script type="text/plain" class="code">
+def chak_brute(a):                        # subtask 1 (n <= 10^3): walk from every node
+    ans = []
+    for v in range(len(a)):
+        seen, u = set(), v
+        while u != -1 and u not in seen:
+            seen.add(u)
+            u = a[u]
+        ans.append(len(seen))
+    return ans
+
+def chak_solve(a):                        # O(n), no recursion
+    n = len(a)
+    ans = [0] * n
+    state = [0] * n                       # 0 new, 1 on the current walk, 2 finished
+    for s in range(n):
+        if state[s]:
+            continue
+        path, u = [], s
+        while u != -1 and state[u] == 0:
+            state[u] = 1
+            path.append(u)
+            u = a[u]
+        if u != -1 and state[u] == 1:     # walked into our own path: a new cycle
+            k = path.index(u)
+            for x in path[k:]:
+                ans[x] = len(path) - k
+                state[x] = 2
+            path = path[:k]               # what is left is the tail
+        nxt = 0 if u == -1 else ans[u]    # what the end of the tail already knows
+        for x in reversed(path):          # unwind the tail backwards
+            nxt += 1
+            ans[x] = nxt
+            state[x] = 2
+    return ans
+</script>
+<p>Both versions were checked against each other on thousands of random graphs. <code>chak_solve</code> handles a 10⁵-long tail or cycle in a few hundredths of a second.</p>
+<p><b>A second route: peel.</b> Peel off every node with in-degree 0 (Kahn’s algorithm, stop 12). The survivors are exactly the cycle nodes; measure each cycle once, then go through the peeled nodes in reverse order, because each node’s successor was peeled after it.</p>
+<script type="text/plain" class="code">
+from collections import deque
+
+def chak_peel(a):                         # the same answer by peeling in-degree-0 nodes
+    n = len(a)
+    indeg = [0] * n
+    for x in a:
+        if x != -1:
+            indeg[x] += 1
+    q = deque(u for u in range(n) if indeg[u] == 0)
+    peeled = []
+    while q:
+        u = q.popleft()
+        peeled.append(u)
+        if a[u] != -1:
+            indeg[a[u]] -= 1
+            if indeg[a[u]] == 0:
+                q.append(a[u])
+    ans = [0] * n
+    for s in range(n):                    # survivors lie on cycles: measure each cycle once
+        if indeg[s] > 0 and ans[s] == 0:
+            cyc, u = [s], a[s]
+            while u != s:
+                cyc.append(u)
+                u = a[u]
+            for x in cyc:
+                ans[x] = len(cyc)
+    for u in reversed(peeled):            # a[u] was peeled after u, so its answer is known
+        ans[u] = 1 if a[u] == -1 else 1 + ans[a[u]]
+    return ans
+</script>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p>The natural <code>ans(v) = 1 + ans(a[v])</code> fails twice: on a cycle it never reaches a base case, and on a 10⁵-long tail it passes Python’s recursion limit. Keep the walk in a list. A self-loop (<code>a[v] = v</code>) is a cycle of length 1. Check −1 before indexing, because <code>a[-1]</code> silently reads the last element.</p></div>
+<h4>Relatives you should be able to write</h4>
+<p><b>Where does the cycle start?</b> Floyd’s tortoise and hare finds the tail length and cycle length in O(n) time and O(1) extra memory, without a visited array.</p>
+<script type="text/plain" class="code">
+def rho(a, s):                            # Floyd: (tail length, cycle length) from s; every node has a[i] != -1
+    slow, fast = a[s], a[a[s]]
+    while slow != fast:                   # the hare laps the tortoise inside the cycle
+        slow, fast = a[slow], a[a[fast]]
+    lam, fast = 1, a[slow]                # measure the cycle
+    while fast != slow:
+        fast = a[fast]; lam += 1
+    mu, slow, fast = 0, s, s              # find where the cycle starts
+    for _ in range(lam):
+        fast = a[fast]
+    while slow != fast:
+        slow, fast = a[slow], a[fast]; mu += 1
+    return mu, lam
+</script>
+<p><b>Where am I after 10¹⁸ steps?</b> Precompute the node reached after 1, 2, 4, 8, … steps and combine the bits of k (binary lifting): O(log k) per query. This is CSES Planets Queries I.</p>
+<script type="text/plain" class="code">
+def build_jump(a, LOG=20):                # a[i]: the single successor of i
+    up = [a[:]]
+    for _ in range(LOG - 1):
+        prev = up[-1]
+        up.append([prev[x] for x in prev])    # 2^b steps = two jumps of 2^(b-1)
+    return up
+
+def kth_successor(up, v, k):              # k < 2^LOG: O(log k) per query
+    for b in range(len(up)):
+        if k >> b & 1:
+            v = up[b][v]
+    return v
+</script>
+<p><b>The mirror image.</b> Given c[i], the number of nodes reachable from i, build any valid graph or say −1. A node with value 1 is a dead end. A node with value v ≥ 2 either hangs off a node of value v − 1 (a tail), or, if no such node exists, belongs to a cycle of length v, so the count of such nodes must be a multiple of v. Checked against every possible graph for n ≤ 5.</p>
+<script type="text/plain" class="code">
+def reverse_chak(c):                      # given c[i] = nodes reachable from i, build a (or None)
+    n = len(c)
+    first = {}                            # a node holding each value, for tails to attach to
+    members = {}
+    for i, v in enumerate(c):
+        members.setdefault(v, []).append(i)
+        first.setdefault(v, i)
+    a = [-1] * n
+    for v, idx in members.items():
+        if v == 1:
+            continue                      # dead ends: a[i] = -1
+        if v - 1 in first:
+            for i in idx:
+                a[i] = first[v - 1]       # a tail: one step before a node that reaches v - 1
+        elif len(idx) % v == 0:
+            for g in range(0, len(idx), v):   # no v-1 anywhere: they must form cycles of length v
+                grp = idx[g:g + v]
+                for t in range(v):
+                    a[grp[t]] = grp[(t + 1) % v]
+        else:
+            return None
+    return a
+</script>
+<p>Two more functional-graph facts that decide problems: every connected component has exactly one cycle, and “fix the graph so it is a tree” (CF 698B, Ladder) means exactly one edge change per cycle.</p>
+
+<h3>Pattern 9: bipartite and two-colouring</h3>
+<p>“Split into two groups so no pair in a group is connected”, “no odd cycle”, “teams”: BFS with colours 0 and 1. If an edge joins two nodes of the same colour, an odd cycle exists and the answer is no.</p>
+<script type="text/plain" class="code">
+from collections import deque
+
+def two_colour(n, edges):                 # None if an odd cycle exists
+    adj = [[] for _ in range(n)]
+    for u, v in edges:
+        adj[u].append(v); adj[v].append(u)
+    colour = [-1] * n
+    for s in range(n):
+        if colour[s] != -1:
+            continue
+        colour[s] = 0
+        q = deque([s])
+        while q:
+            u = q.popleft()
+            for v in adj[u]:
+                if colour[v] == -1:
+                    colour[v] = colour[u] ^ 1; q.append(v)
+                elif colour[v] == colour[u]:
+                    return None           # an edge inside one colour: odd cycle
+    return colour
+</script>
+
+<h3>Pattern 10: the node is a state</h3>
+<p>When the rule depends on more than where you are (parity of steps so far, how many passes you have used), make the pair the node. “Shortest odd-length walk”: nodes (vertex, parity), and each edge flips the parity. The BFS is unchanged; only the visited array is twice as big. Checked against listing every walk length up to 2n + 2.</p>
+<script type="text/plain" class="code">
+from collections import deque
+
+def shortest_odd_walk(n, edges, s, t):    # fewest edges in a walk (repeats allowed) of odd length
+    adj = [[] for _ in range(n)]
+    for u, v in edges:
+        adj[u].append(v); adj[v].append(u)
+    dist = [[-1, -1] for _ in range(n)]   # dist[v][p]: fewest edges to reach v with parity p
+    dist[s][0] = 0
+    q = deque([(s, 0)])
+    while q:
+        u, p = q.popleft()
+        for v in adj[u]:
+            if dist[v][p ^ 1] == -1:
+                dist[v][p ^ 1] = dist[u][p] + 1
+                q.append((v, p ^ 1))
+    return dist[t][1]                     # -1 if no odd walk exists
+</script>
+<p>The same idea with weights is in stop 12 (free passes: node = (vertex, passes used)).</p>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Out-degree ≤ 1 → ρ shapes: cycle nodes get L, dead ends 1, everything else 1 + ans[next].</p>
+<p>Read the subtasks: n ≤ 10³ allows a walk from every node. Submit it first.</p>
+<p>Extra condition (parity, passes used, colour) → make it part of the node.</p>
+<p>Practice: the Ladder, tabs Graphs and Graphs II.</p></div>
+<div class="quiz" data-quiz="s8"></div>
+<div class="quiz" data-quiz="c2"></div>
+<div class="quiz" data-quiz="e0"></div>
+</section>

@@ -1,0 +1,39 @@
+<section class="topic half" id="b9" data-group="dp" data-num="9.5" data-title="Prefixes and 2D tables">
+<div class="topic-head"><div class="badge">9.5</div><div><div class="meta">Bridge to stop 10</div><h2>Prefixes, subsequences and reading a 2D table</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>Two-dimensional DP is mostly bookkeeping: what <code>dp[i][j]</code> means, which earlier cells it reads, and what order to fill the table in so those cells are ready. Most marks lost in stop 10 are off-by-one errors between <b>string positions</b> and <b>table positions</b>.</p></div>
+
+<h3>Substring, subsequence, subset</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Word</th><th>Rule</th><th>From "ABCDE"</th><th>How many (length n)</th></tr>
+<tr><td>Substring</td><td>contiguous, in order</td><td>"BCD" yes, "ACE" no</td><td>n(n + 1)/2 non-empty</td></tr>
+<tr><td>Subsequence</td><td>in order, may skip</td><td>"ACE" yes, "EA" no</td><td>2ⁿ (counting the empty one)</td></tr>
+<tr><td>Subset</td><td>any selection, order ignored</td><td>{E, A} = {A, E}</td><td>2ⁿ</td></tr>
+</table></div>
+<p>LCS is about <b>subsequences</b>, so there are 2ⁿ candidates in each string: brute force is hopeless and DP is the only sensible approach.</p>
+
+<h3>Prefixes and the extra row</h3>
+<p><code>x[:i]</code> is the first i characters of x. i can be anything from 0 (the empty prefix "") to m, so a table indexed by prefix length needs <b>m + 1 rows</b> and <b>n + 1 columns</b>.</p>
+<ul>
+<li><code>dp[i][j]</code> answers the question for <code>x[:i]</code> and <code>y[:j]</code>.</li>
+<li>The newest characters in those prefixes are <code>x[i − 1]</code> and <code>y[j − 1]</code>: table index i, string index i − 1.</li>
+<li>Row 0 and column 0 mean "one string is empty": these are the base cases, filled before the loops.</li>
+</ul>
+
+<h3>Dependency arrows decide the fill order</h3>
+<p>Draw an arrow from each cell to the cells its rule reads. Any fill order works as long as every arrow points to a cell already filled.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Problem (stop 10)</th><th>dp[i][j] reads</th><th>Safe orders</th></tr>
+<tr><td>Grid min-cost path</td><td>up, left</td><td>row by row, left to right (or column by column)</td></tr>
+<tr><td>LCS, edit distance</td><td>up, left, diagonal up-left</td><td>row by row, left to right</td></tr>
+<tr><td>0/1 Knapsack</td><td>only the row above</td><td>row by row; one rolling row works if capacity goes <b>downward</b></td></tr>
+</table></div>
+<p>The answer is usually in the bottom-right cell <code>dp[m][n]</code>, because that cell describes the full strings. Some variants (longest common <i>substring</i>) take the maximum over the whole table instead, so read the definition of the state before you read off an answer.</p>
+<div class="lab" data-w="prefix" data-title="Lab: click a cell, see what it means"></div>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p>Comparing <code>x[i]</code> with <code>y[j]</code> inside a table loop that runs i from 1 to m reads one character too far (and crashes at i = m). A table of size m × n has no room for the empty prefixes. "Subsequence" in a question is not "substring".</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><ul>
+<li>Substring = contiguous; subsequence = in order with gaps; subset = order ignored.</li>
+<li>Table (m + 1) × (n + 1). dp[i][j] is about x[:i] and y[:j] and compares x[i − 1] with y[j − 1].</li>
+<li>Fill so every cell's sources are already filled.</li>
+</ul></div>
+<div class="quiz" data-quiz="b9"></div>
+</section>

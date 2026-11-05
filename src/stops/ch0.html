@@ -1,0 +1,123 @@
+<section class="topic" id="ch0" data-group="found" data-num="0" data-title="Prerequisites primer">
+<div class="topic-head"><div class="badge">0</div><div><div class="meta">Foundations line</div><h2>Prerequisites primer</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>Everything the later chapters quietly assume: how to read the code, how arrays, linked lists, stacks and queues behave, the three bits of maths that appear everywhere (logarithms, sums, powers), and the Python you need. Skim what you know; do the two small labs.</p></div>
+
+<h3>How to read the code in this notebook</h3>
+<p>All code is Python, chosen because it reads almost like pseudocode. If you have never programmed, these are the only constructs you need.</p>
+<div class="tbl-wrap"><table>
+<tr><th>You see</th><th>It means</th></tr>
+<tr><td><code>a = [5, 2, 9]</code></td><td>A <b>list</b> (array) of three numbers. <code>a[0]</code> is 5, <code>a[2]</code> is 9. <b>Indexing starts at 0.</b> <code>len(a)</code> is 3.</td></tr>
+<tr><td><code>a[-1]</code></td><td>The last element (counting from the end).</td></tr>
+<tr><td><code>for x in a:</code></td><td>Repeat the indented lines once for each element x of a.</td></tr>
+<tr><td><code>for i in range(n):</code></td><td>Repeat with i = 0, 1, …, n−1. <b><code>range(a, b)</code> stops <i>before</i> b.</b> <code>range(n-1, -1, -1)</code> counts down from n−1 to 0.</td></tr>
+<tr><td><code>while cond:</code></td><td>Repeat while the condition stays true.</td></tr>
+<tr><td><code>if / elif / else</code></td><td>Choose one branch.</td></tr>
+<tr><td><code>def f(x):  return y</code></td><td>Define a function f that gives back y. A function calling itself is <b>recursion</b>.</td></tr>
+<tr><td><code>a, b = b, a</code></td><td>Swap two values in one line.</td></tr>
+<tr><td><code>7 // 2</code> and <code>7 % 2</code></td><td>Integer division (3) and remainder (1). <code>(i - 1) // 2</code> is how we find a heap parent.</td></tr>
+<tr><td><code>None</code></td><td>"Nothing here". An empty child pointer in a tree, or "no value yet".</td></tr>
+<tr><td><code>x ≤ y</code> written as <code>x &lt;= y</code></td><td>Comparison operators: <code>&lt; &lt;= &gt; &gt;= == !=</code>. Note <code>==</code> compares, <code>=</code> assigns.</td></tr>
+<tr><td><code>arr[:]</code></td><td>A <b>copy</b> of the list. Plain <code>b = a</code> does NOT copy; both names point to the same list.</td></tr>
+</table></div>
+<p>Indentation (the spaces at the start of a line) shows which lines belong inside a loop, an <code>if</code> or a function. Indentation is the "brackets" of Python.</p>
+
+<h3>Memory in one page: variables, arrays, linked lists</h3>
+<p>Think of computer memory as a very long row of numbered boxes. A <b>variable</b> is a labelled box. Two ways of storing a collection of items:</p>
+<div class="cols">
+<div class="card"><h4>Array (Python list)</h4><p>Items sit in <b>consecutive boxes</b>. Because the boxes are side by side, the computer finds item number i by simple arithmetic: <b>O(1) access by index</b>. Inserting or deleting in the <i>middle</i> forces everything after it to shift: <b>O(n)</b>. Appending to the end is O(1) (amortised).</p></div>
+<div class="card"><h4>Linked list</h4><p>Each item is a small <b>node</b> holding a value and a <b>pointer</b> (the address) of the next node. Nodes can be anywhere in memory. Reaching item i means following i pointers: <b>O(n)</b>. But inserting right after a node you already hold is <b>O(1)</b>: just rewire two pointers.</p></div>
+</div>
+<script type="text/plain" class="code">
+class ListNode:
+    def __init__(self, value):
+        self.value = value      # the data
+        self.next = None        # pointer to the next node (None = end of list)
+
+a = ListNode(10); b = ListNode(20); c = ListNode(30)
+a.next = b                      # 10 -> 20 -> 30
+b.next = c
+# Trees and graphs are the same idea: nodes holding pointers to other nodes.
+</script>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><p><b>A pointer (reference) is just "where to find another node".</b> A tree node holds two pointers (left and right); a graph vertex holds a list of them. <code>None</code> means "no node there". This idea powers chapters 4 to 8.</p></div>
+
+<h3>Stack: last in, first out (LIFO)</h3>
+<p>A stack of plates: you put a plate on top and take the top one off. The <b>last</b> plate added is the <b>first</b> removed. Three operations, all O(1): <b>push</b> (add to top), <b>pop</b> (remove and return top), <b>peek</b> (look at top).</p>
+<p><b>Where you will meet it:</b> the recursion <b>call stack</b> (each active function call is a plate), DFS, undo buttons, matching brackets.</p>
+<h3>Queue: first in, first out (FIFO)</h3>
+<p>A line at a ticket counter: people join at the <b>back</b> and leave from the <b>front</b>. The <b>first</b> to arrive is the <b>first</b> served. Operations: <b>enqueue</b> (join at back), <b>dequeue</b> (leave from front), both O(1).</p>
+<p><b>Where you will meet it:</b> BFS, level-order tree traversal, scheduling.</p>
+<script type="text/plain" class="code">
+stack = []                  # a Python list works as a stack
+stack.append(5)             # push
+stack.append(8)
+top = stack.pop()           # pop -> 8 (last in, first out)
+
+from collections import deque
+queue = deque()             # use deque, NOT a list, for queues
+queue.append(5)             # enqueue at the back
+queue.append(8)
+front = queue.popleft()     # dequeue -> 5 (first in, first out), O(1)
+# list.pop(0) also works but is O(n): every item must shift left!
+</script>
+<div class="lab" data-w="stackq" data-title="Lab: stack and queue"></div>
+
+<h3>Sets and dictionaries (hashing)</h3>
+<p>A <b>set</b> remembers which items it has seen. A <b>dictionary</b> maps a key to a value (name → phone number). Both answer "is this key present?" in about <b>O(1)</b> time on average, thanks to hashing (the key is turned into a position in a table). You will use a set or boolean array for <code>visited</code> and a dictionary for <code>memo</code>.</p>
+
+<h3>Trees at a glance</h3>
+<p>A <b>tree</b> stores hierarchical data: a folder containing folders, a family tree, a company chart. There is one top node, the <b>root</b>; every other node hangs below exactly one <b>parent</b>; nodes with nothing below are <b>leaves</b>. Chapter 4 builds this up carefully, from the rules to every operation.</p>
+
+<h3>Maths you need: powers, logarithms, sums</h3>
+<h4>Powers of 2</h4>
+<p>Computing uses 2 constantly. Learn these: 2¹⁰ = 1,024 ≈ 10³ (a thousand), 2²⁰ ≈ 10⁶ (a million), 2³⁰ ≈ 10⁹ (a billion).</p>
+<h4>The logarithm: "how many times can I halve it?"</h4>
+<p><b>log₂ n</b> (written <b>lg n</b>, or just log n in this course) is the answer to: <i>how many times can I cut n in half before I reach 1?</i> Equivalently, it is the power you raise 2 to in order to get n: 2<sup>10</sup> = 1024, so log₂ 1024 = 10.</p>
+<div class="tbl-wrap"><table>
+<tr><th>n</th><th>8</th><th>16</th><th>1,000</th><th>1,000,000</th><th>1,000,000,000</th></tr>
+<tr><td>log₂ n (about)</td><td class="n">3</td><td class="n">4</td><td class="n">10</td><td class="n">20</td><td class="n">30</td></tr>
+</table></div>
+<p>This is why log n algorithms are astonishingly fast: a billion items need only about 30 steps. Binary search, balanced trees and heaps all get their speed from <b>halving</b> the problem each step, or from a tree whose height is log n.</p>
+<div class="lab" data-w="halve" data-title="Lab: how many halvings?"></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><p><b>Log rules you will use:</b> log(a·b) = log a + log b. log(n²) = 2·log n. Changing the base only changes a constant: log₂n = log₁₀n / log₁₀2, so in Big-O we never write the base. And log_b(a) in the Master theorem means "the power of b that gives a"; for example log₃ 27 = 3 because 3³ = 27.</p></div>
+<h4>Floor and ceiling</h4>
+<p>⌊x⌋ rounds down (⌊3.7⌋ = 3). ⌈x⌉ rounds up (⌈3.2⌉ = 4). Heap parents use ⌊(i−1)/2⌋; a tree with n nodes needs a height of at least ⌈log₂(n+1)⌉ − 1.</p>
+<h4>Factorial</h4>
+<p>n! = n × (n−1) × … × 2 × 1, with 0! = 1. It counts the ways to arrange n distinct items: 3! = 6, 5! = 120, 10! = 3,628,800.</p>
+<h4>Sums you need to recognise</h4>
+<div class="tbl-wrap"><table>
+<tr><th>Sum</th><th>Value</th><th>Why it matters</th></tr>
+<tr><td>1 + 2 + 3 + … + n</td><td><b>n(n+1)/2</b></td><td>Triangular loops, Quick Sort worst case: O(n²)</td></tr>
+<tr><td>1 + 2 + 4 + … + 2<sup>k</sup></td><td><b>2<sup>k+1</sup> − 1</b></td><td>Levels of a tree: the last level is about half of all nodes</td></tr>
+<tr><td>1 + ½ + ¼ + ⅛ + …</td><td>never reaches 2 (&lt; 2)</td><td>A shrinking series: the first term dominates</td></tr>
+<tr><td>1 + ½ + ⅓ + … + 1/n</td><td>about ln n</td><td>Quick Sort average-case analysis</td></tr>
+</table></div>
+<div class="box analogy"><div class="lbl" data-ico="🧑‍🏫">Teacher's note</div><p><b>Why n(n+1)/2?</b> Write the numbers forwards and backwards and add column by column: (1+n) + (2+(n−1)) + … Each of the n columns sums to n+1, and we counted everything twice, so the total is n(n+1)/2. Pair the first with the last, the second with the second-to-last, and so on.</p></div>
+<h4>Symbols</h4>
+<div class="tbl-wrap"><table>
+<tr><th>Symbol</th><th>Read as</th><th>Symbol</th><th>Read as</th></tr>
+<tr><td>Σ</td><td>"sum of"</td><td>∈</td><td>"is an element of"</td></tr>
+<tr><td>∃</td><td>"there exists"</td><td>∀</td><td>"for all"</td></tr>
+<tr><td>≈</td><td>"approximately"</td><td>→</td><td>"tends to" / "leads to" / edge direction</td></tr>
+<tr><td>lg</td><td>log base 2</td><td>ε</td><td>a tiny positive number</td></tr>
+<tr><td>V, E</td><td>number of vertices / edges</td><td>h</td><td>height of a tree</td></tr>
+</table></div>
+
+<h3>Python cost cheat sheet</h3>
+<p>Complexity analysis only works if you know what each built-in operation costs.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Structure</th><th>Operation</th><th>Cost</th></tr>
+<tr><td rowspan="5">list</td><td><code>a[i]</code>, <code>len(a)</code>, <code>a.append(x)</code>, <code>a.pop()</code></td><td>O(1) (append amortised)</td></tr>
+<tr><td><code>a.pop(0)</code>, <code>a.insert(0, x)</code>, <code>a.insert(i, x)</code></td><td>O(n)</td></tr>
+<tr><td><code>x in a</code>, <code>a.index(x)</code></td><td>O(n)</td></tr>
+<tr><td><code>a.sort()</code>, <code>sorted(a)</code></td><td>O(n log n)</td></tr>
+<tr><td><code>a[l:r]</code> (slice, makes a copy)</td><td>O(r − l)</td></tr>
+<tr><td>set / dict</td><td><code>x in s</code>, <code>s.add(x)</code>, <code>d[k]</code>, <code>d[k] = v</code></td><td>O(1) average</td></tr>
+<tr><td>deque</td><td><code>append</code>, <code>appendleft</code>, <code>pop</code>, <code>popleft</code></td><td>O(1)</td></tr>
+<tr><td rowspan="3">heapq (min-heap in a list)</td><td><code>heappush</code>, <code>heappop</code></td><td>O(log n)</td></tr>
+<tr><td><code>h[0]</code> (peek smallest)</td><td>O(1)</td></tr>
+<tr><td><code>heapify(a)</code></td><td>O(n)</td></tr>
+</table></div>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p>Creating a 2D grid: <code>[[0]*n]*n</code> is a classic bug. It makes n references to the <i>same</i> row. Use <code>[[0]*n for _ in range(n)]</code> to get n separate rows.</p></div>
+
+<div class="quiz" data-quiz="s0"></div>
+</section>

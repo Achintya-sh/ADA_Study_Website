@@ -1,0 +1,82 @@
+<section class="topic half" id="b3" data-group="trees" data-num="3.5" data-title="Names, references, linked lists">
+<div class="topic-head"><div class="badge">3.5</div><div><div class="meta">Bridge to stop 4</div><h2>Names, references and linked structures</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>In Python a variable is a <b>name tag tied to an object</b>, not a box holding it. Trees are objects pointing at objects. Every BST operation in stop 4 relies on one habit: a function that might replace a subtree <b>returns</b> the new subtree, and the caller <b>re-attaches</b> it.</p></div>
+
+<h3>Names are tags, not boxes</h3>
+<script type="text/plain" class="code">
+a = [1, 2]
+b = a            # b is a second tag on the SAME list
+b.append(3)      # mutate the list through b ...
+print(a)         # [1, 2, 3]   ... a sees it, because it is the same list
+
+b = b + [4]      # + builds a NEW list; b now tags that one
+print(a)         # [1, 2, 3]   a still tags the old list
+print(a is b)    # False
+</script>
+<div class="tbl-wrap"><table>
+<tr><th>Kind of statement</th><th>Example</th><th>Effect on other names for the same object</th></tr>
+<tr><td><b>Mutate</b> the object</td><td><code>b.append(3)</code>, <code>b[0] = 9</code>, <code>node.left = x</code></td><td>Visible through every name</td></tr>
+<tr><td><b>Rebind</b> the name</td><td><code>b = [0]</code>, <code>b = b + [4]</code>, <code>node = Node(5)</code></td><td>Only this name moves; others are untouched</td></tr>
+</table></div>
+<p>Studies of students learning Python keep finding that a shaky picture of references causes later confusion, so it is worth getting this exactly right now.</p>
+
+<h3>Passing to a function works the same way</h3>
+<p>A parameter is just a new name for the caller's object. Mutating it is visible to the caller; rebinding it is not.</p>
+<script type="text/plain" class="code">
+def grow(lst):
+    lst.append(99)        # mutates the caller's list: visible outside
+
+def replace(lst):
+    lst = [0]             # rebinds the local name only: invisible outside
+
+def bad_insert(node, value):     # why stop 4's insert RETURNS the node
+    if node is None:
+        node = Node(value)       # only the local name moves; nothing is attached
+        return
+    ...
+</script>
+<p>When <code>node</code> is <code>None</code> there is no object to mutate, so the new node can only reach the tree if the function <b>returns it</b> and the caller writes <code>parent.left = insert(parent.left, value)</code>.</p>
+
+<h3>Linked lists: the training ground for trees</h3>
+<p>A linked-list node has one pointer (<code>next</code>); a tree node has two (<code>left</code>, <code>right</code>). Every pattern you need for trees appears first on lists.</p>
+<script type="text/plain" class="code">
+class ListNode:
+    def __init__(self, value, next=None):
+        self.value = value
+        self.next = next
+
+def push_front(head, value):              # O(1): the new node becomes the head
+    return ListNode(value, head)
+
+def delete(head, target):                 # the same shape as BST delete
+    if head is None:
+        return None
+    if head.value == target:
+        return head.next                  # skip this node
+    head.next = delete(head.next, target) # re-attach whatever comes back
+    return head
+
+def reverse(head):                        # iterative, O(n) time, O(1) space
+    prev, cur = None, head
+    while cur:
+        nxt = cur.next                    # 1. remember the rest of the list
+        cur.next = prev                   # 2. turn this arrow around
+        prev = cur                        # 3. step both pointers forward
+        cur = nxt
+    return prev                           # the old tail is the new head
+</script>
+<div class="tbl-wrap"><table>
+<tr><th>Question</th><th>On a list</th><th>On a binary tree (stop 4)</th></tr>
+<tr><td>How many nodes?</td><td><code>0 if h is None else 1 + length(h.next)</code></td><td><code>0 if n is None else 1 + size(n.left) + size(n.right)</code></td></tr>
+<tr><td>Find a value</td><td>walk <code>next</code> until found: O(n)</td><td>go left or right each step: O(h)</td></tr>
+<tr><td>Delete a node</td><td>return <code>head.next</code> to skip it</td><td>return a child (or a successor) to replace it</td></tr>
+</table></div>
+<div class="lab" data-w="linked" data-title="Lab: linked list workbench"></div>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p><code>b = a</code> does not copy a list; use <code>a[:]</code> or <code>list(a)</code>. In <code>reverse</code>, overwriting <code>cur.next</code> before saving it loses the rest of the list. In any recursive structure, calling <code>delete(head.next, x)</code> without assigning the result back silently changes nothing.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><ul>
+<li>Mutating an object is seen through every name; rebinding a name is not.</li>
+<li>A function that may replace the head or a subtree must return it, and the caller re-attaches it.</li>
+<li>Lists are trees with one child: recursion on them has the same shape.</li>
+</ul></div>
+<div class="quiz" data-quiz="b3"></div>
+</section>

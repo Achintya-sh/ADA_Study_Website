@@ -1,0 +1,2668 @@
+{
+  "s1": [
+    {
+      "q": "A problem says n can be up to 100,000 and your time limit is about one second. Which running time is realistic?",
+      "o": [
+        "O(n²)",
+        "O(n log n)",
+        "O(2ⁿ)",
+        "O(n!)"
+      ],
+      "a": 1,
+      "why": "n² = 10¹⁰ operations is far above the ~10⁸ budget. n log n ≈ 1.7 million is comfortable."
+    },
+    {
+      "q": "Which clue most strongly suggests backtracking?",
+      "o": [
+        "\"Find the shortest path in an unweighted graph\"",
+        "\"List every valid way to place 8 queens\"",
+        "\"Find the 5 largest values in a stream\"",
+        "\"Keep keys sorted while inserting\""
+      ],
+      "a": 1,
+      "why": "\"List every valid arrangement\" means complete search with constraints. Shortest path is BFS, top-k is a heap, sorted insertion is a BST."
+    },
+    {
+      "q": "Is the recursive factorial function a divide-and-conquer algorithm?",
+      "o": [
+        "Yes, it has a base case",
+        "Yes, it splits n into n−1 and 1",
+        "No, it shrinks by a constant (n−1), not by a fraction of the input",
+        "No, because it is not recursive"
+      ],
+      "a": 2,
+      "why": "Divide and conquer splits the input into fractions (like n/2). Factorial just peels off one element at a time."
+    },
+    {
+      "q": "What is the space complexity of recursive factorial(n)?",
+      "o": [
+        "O(1)",
+        "O(log n)",
+        "O(n)",
+        "O(n²)"
+      ],
+      "a": 2,
+      "why": "n frames are on the call stack at the deepest point."
+    },
+    {
+      "q": "You wrote a solution and want to catch off-by-one errors. What is the most effective step?",
+      "o": [
+        "Re-read the code once more",
+        "Dry run on edge cases: empty, one element, duplicates",
+        "Add more variables",
+        "Rewrite it recursively"
+      ],
+      "a": 1,
+      "why": "Tracing small and extreme inputs by hand exposes boundary mistakes quickly."
+    }
+  ],
+  "s2": [
+    {
+      "q": "For f(n) = 3n² + 10n + 5, which statement is correct?",
+      "o": [
+        "f(n) = Θ(n²)",
+        "f(n) = Θ(n)",
+        "f(n) = Θ(n³)",
+        "f(n) = o(n²)"
+      ],
+      "a": 0,
+      "why": "f is both O(n²) (c=4, n₀=11) and Ω(n²) (c=3, n₀=1), so Θ(n²). It is O(n³) too, but not Θ(n³)."
+    },
+    {
+      "q": "What is the complexity of: i = 1; while i < n: i *= 2 ?",
+      "o": [
+        "O(n)",
+        "O(log n)",
+        "O(√n)",
+        "O(n log n)"
+      ],
+      "a": 1,
+      "why": "i doubles each time, reaching n after log₂n steps."
+    },
+    {
+      "q": "for i in range(n): for j in range(i): work() runs work() how many times?",
+      "o": [
+        "n",
+        "n log n",
+        "n(n−1)/2, which is O(n²)",
+        "2ⁿ"
+      ],
+      "a": 2,
+      "why": "0 + 1 + … + (n−1) = n(n−1)/2."
+    },
+    {
+      "q": "T(n) = 9T(n/3) + n². What does the Master theorem give?",
+      "o": [
+        "Θ(n²)",
+        "Θ(n² log n)",
+        "Θ(n³)",
+        "Θ(n log n)"
+      ],
+      "a": 1,
+      "why": "a=9, b=3, so n^c = n². f(n) = n² equals it: Case 2, giving n² log n."
+    },
+    {
+      "q": "T(n) = 2T(n/2) + n log n. Which is true?",
+      "o": [
+        "Case 1 applies",
+        "Case 2 applies",
+        "Case 3 applies",
+        "The basic Master theorem does not apply (gap case)"
+      ],
+      "a": 3,
+      "why": "n log n is larger than n but not polynomially larger (log n < n^ε). Recursion tree gives Θ(n log² n)."
+    },
+    {
+      "q": "The best-case running time of linear search is:",
+      "o": [
+        "O(n)",
+        "O(1)",
+        "O(log n)",
+        "O(n²)"
+      ],
+      "a": 1,
+      "why": "The target is in the first position: one comparison."
+    },
+    {
+      "q": "Which statement about Big-O and worst case is right?",
+      "o": [
+        "They mean the same thing",
+        "Big-O is a kind of bound on a function; worst case is a choice of input. They are different ideas",
+        "Big-O is only for best case",
+        "Θ can only describe worst case"
+      ],
+      "a": 1,
+      "why": "You can give O, Ω or Θ bounds for the best, average or worst case separately."
+    },
+    {
+      "q": "You loop over array a (n items) and, inside, over array b (m items). The cost is:",
+      "o": [
+        "O(n)",
+        "O(n + m)",
+        "O(n·m)",
+        "O(n²)"
+      ],
+      "a": 2,
+      "why": "Two different inputs stay as two variables: n × m iterations."
+    }
+  ],
+  "s3": [
+    {
+      "q": "With the last element as pivot, which input makes Quick Sort run in O(n²)?",
+      "o": [
+        "Random order",
+        "Already sorted",
+        "Pivot is always the median",
+        "An array of size 1"
+      ],
+      "a": 1,
+      "why": "On sorted input, the last element is the maximum, so partition gives 0 and n−1 each time."
+    },
+    {
+      "q": "After one call to partition, the pivot is:",
+      "o": [
+        "Somewhere in the left half",
+        "At its final sorted position",
+        "Always at index 0",
+        "Swapped to the end"
+      ],
+      "a": 1,
+      "why": "Everything left of it is ≤ it and everything right of it is bigger, so it is exactly where it belongs."
+    },
+    {
+      "q": "A 1:9 split at every level gives:",
+      "o": [
+        "O(n²)",
+        "O(n log n)",
+        "O(n)",
+        "O(2ⁿ)"
+      ],
+      "a": 1,
+      "why": "Any constant-proportion split keeps the depth O(log n) and each level costs O(n)."
+    },
+    {
+      "q": "Average-case extra space of Quick Sort is:",
+      "o": [
+        "O(1)",
+        "O(log n)",
+        "O(n)",
+        "O(n log n)"
+      ],
+      "a": 1,
+      "why": "Partition is in place; only the recursion stack uses memory, about log n deep on average."
+    },
+    {
+      "q": "In Lomuto partition, what does k represent?",
+      "o": [
+        "The pivot value",
+        "The index of the last element in the \"≤ pivot\" zone",
+        "The number of swaps",
+        "The scanner position"
+      ],
+      "a": 1,
+      "why": "k starts at lo−1 and grows each time an element ≤ pivot is found. The pivot ends at k+1."
+    },
+    {
+      "q": "Is Quick Sort stable?",
+      "o": [
+        "Yes, always",
+        "No, swaps can reorder equal elements",
+        "Only for sorted input",
+        "Only when randomized"
+      ],
+      "a": 1,
+      "why": "Merge Sort is stable; the long-distance swaps in partition break stability."
+    },
+    {
+      "q": "An array of n equal values is sorted with Lomuto partition (≤ pivot, last element pivot). The time is:",
+      "o": [
+        "O(n)",
+        "O(n log n)",
+        "O(n²)",
+        "O(1)"
+      ],
+      "a": 2,
+      "why": "Every element is ≤ pivot, so k runs to hi−1 and the split is n−1 : 0 every time."
+    },
+    {
+      "q": "Which sorting facts are correct? Merge sort is ___, Quick Sort is ___.",
+      "o": [
+        "stable and in-place; unstable and not in-place",
+        "stable but needs O(n) extra space; unstable but in place",
+        "unstable; stable",
+        "both stable"
+      ],
+      "a": 1,
+      "why": "Merge sort is stable with an O(n) merge buffer. Quick Sort partitions in place but its swaps can reorder equal keys."
+    },
+    {
+      "q": "No comparison sort can beat what worst-case bound?",
+      "o": [
+        "Ω(n)",
+        "Ω(n log n)",
+        "Ω(n²)",
+        "Ω(log n)"
+      ],
+      "a": 1,
+      "why": "n! orderings need at least log₂(n!) = Θ(n log n) binary comparisons to tell apart."
+    }
+  ],
+  "s4": [
+    {
+      "q": "Which traversal of a BST outputs keys in sorted order?",
+      "o": [
+        "Preorder",
+        "Inorder",
+        "Postorder",
+        "Level order"
+      ],
+      "a": 1,
+      "why": "Inorder visits left, node, right, matching the BST ordering."
+    },
+    {
+      "q": "Inserting 1, 2, 3, 4, 5 (in that order) into an empty plain BST gives a tree of height:",
+      "o": [
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "a": 2,
+      "why": "Every key goes to the right of the previous one: a chain of 5 nodes has height 4 (edges)."
+    },
+    {
+      "q": "To delete a node with two children, replace it with:",
+      "o": [
+        "Its left child",
+        "Its inorder successor (minimum of the right subtree)",
+        "The root",
+        "Its parent"
+      ],
+      "a": 1,
+      "why": "The successor is the smallest key bigger than the deleted one, so the BST rule survives. The predecessor also works."
+    },
+    {
+      "q": "What is wrong with checking only \"left child < node < right child\" to validate a BST?",
+      "o": [
+        "Nothing",
+        "It ignores that every node in a subtree must respect all ancestors",
+        "It is too slow",
+        "It only works for balanced trees"
+      ],
+      "a": 1,
+      "why": "Root 10, left child 5, and 5's right child 15 passes the local check but 15 is in the left subtree of 10."
+    },
+    {
+      "q": "Search in a BST costs:",
+      "o": [
+        "Always O(log n)",
+        "O(h), where h is the height",
+        "Always O(n)",
+        "O(1)"
+      ],
+      "a": 1,
+      "why": "One path from the root. h ≈ log n if balanced and n if skewed."
+    },
+    {
+      "q": "You insert 5, 3, 8, 1, 4. What is the inorder traversal?",
+      "o": [
+        "5 3 1 4 8",
+        "1 3 4 5 8",
+        "1 4 3 8 5",
+        "5 3 8 1 4"
+      ],
+      "a": 1,
+      "why": "Inorder of a BST is sorted: 1 3 4 5 8."
+    },
+    {
+      "q": "Which traversal would you use to copy a tree (create the parent before its children)?",
+      "o": [
+        "Preorder",
+        "Inorder",
+        "Postorder",
+        "None"
+      ],
+      "a": 0,
+      "why": "Preorder visits the node first, so a parent is created before its children."
+    },
+    {
+      "q": "A binary tree with 15 nodes has how many edges?",
+      "o": [
+        "15",
+        "14",
+        "16",
+        "7"
+      ],
+      "a": 1,
+      "why": "Every node except the root has exactly one edge to its parent: n − 1."
+    },
+    {
+      "q": "What is the maximum number of nodes on level 3 of a binary tree (root = level 0)?",
+      "o": [
+        "3",
+        "6",
+        "8",
+        "16"
+      ],
+      "a": 2,
+      "why": "2³ = 8: each level can at most double."
+    },
+    {
+      "q": "A full binary tree has 7 internal nodes. How many leaves does it have?",
+      "o": [
+        "7",
+        "8",
+        "14",
+        "6"
+      ],
+      "a": 1,
+      "why": "In a full binary tree, leaves = internal nodes + 1."
+    },
+    {
+      "q": "\"Everything in the left subtree is smaller, everything in the right subtree is larger\" describes:",
+      "o": [
+        "A max-heap",
+        "A complete binary tree",
+        "A binary search tree",
+        "Any binary tree"
+      ],
+      "a": 2,
+      "why": "That is the BST rule. A max-heap compares only parent with children (parent ≥ child)."
+    }
+  ],
+  "s5": [
+    {
+      "q": "In a 0-indexed array heap, the parent of index 6 is:",
+      "o": [
+        "2",
+        "3",
+        "5",
+        "12"
+      ],
+      "a": 0,
+      "why": "(6 − 1) // 2 = 2."
+    },
+    {
+      "q": "Building a heap from n unsorted values using the bottom-up method takes:",
+      "o": [
+        "O(n)",
+        "O(n log n)",
+        "O(log n)",
+        "O(n²)"
+      ],
+      "a": 0,
+      "why": "Most nodes are near the leaves and sift only a short distance; the sum of heights is O(n)."
+    },
+    {
+      "q": "When deleting the max from a max-heap, you swap the new root with its:",
+      "o": [
+        "Left child always",
+        "Smaller child",
+        "Larger child",
+        "Parent"
+      ],
+      "a": 2,
+      "why": "Swapping with the larger child keeps the new parent ≥ both children."
+    },
+    {
+      "q": "Which operation is slow in a heap?",
+      "o": [
+        "Peek the max",
+        "Insert",
+        "Search for an arbitrary value",
+        "Delete the max"
+      ],
+      "a": 2,
+      "why": "Siblings are unordered, so a search may have to look at every node: O(n)."
+    },
+    {
+      "q": "To find the k-th largest of n numbers in O(n log k), you keep:",
+      "o": [
+        "A max-heap of all n items",
+        "A min-heap of size k",
+        "A sorted array",
+        "A BST of size n"
+      ],
+      "a": 1,
+      "why": "The min-heap holds the k largest seen so far; its top is the k-th largest."
+    },
+    {
+      "q": "Inserting into a heap of n items takes at most how many swaps?",
+      "o": [
+        "1",
+        "About log₂ n",
+        "n",
+        "n log n"
+      ],
+      "a": 1,
+      "why": "The new node climbs one level per swap; the height is about log₂ n."
+    },
+    {
+      "q": "Which of these is a valid max-heap array?",
+      "o": [
+        "[10, 20, 5]",
+        "[20, 10, 5]",
+        "[5, 10, 20]",
+        "[10, 5, 20]"
+      ],
+      "a": 1,
+      "why": "Only [20, 10, 5] has the root ≥ both children."
+    },
+    {
+      "q": "Which array is NOT a valid max-heap?",
+      "o": [
+        "[9, 5, 8, 1, 2, 7, 6]",
+        "[9, 5, 8, 6, 2, 3, 7]",
+        "[10, 10, 10]",
+        "[7]"
+      ],
+      "a": 1,
+      "why": "In [9,5,8,6,2,3,7], index 3 (value 6) is a child of index 1 (value 5), and 6 > 5."
+    },
+    {
+      "q": "A heap has 10 nodes (indices 0 to 9). Which indices are leaves?",
+      "o": [
+        "0 to 4",
+        "5 to 9",
+        "1 to 9",
+        "Only 9"
+      ],
+      "a": 1,
+      "why": "Leaves start at index n//2 = 5. The last parent is index (9−1)//2 = 4."
+    },
+    {
+      "q": "Which statement about a max-heap is TRUE?",
+      "o": [
+        "The left child is always smaller than the right child",
+        "Its array is sorted in decreasing order",
+        "The root is the largest, but siblings are not ordered",
+        "Searching for any value is O(log n)"
+      ],
+      "a": 2,
+      "why": "The heap only orders parents against children; siblings and search are unordered."
+    }
+  ],
+  "s6": [
+    {
+      "q": "What are the three steps repeated at every position in backtracking?",
+      "o": [
+        "Divide, conquer, combine",
+        "Choose, explore, undo",
+        "Sort, search, insert",
+        "Push, pop, peek"
+      ],
+      "a": 1,
+      "why": "Make a choice, recurse, then remove the choice before trying the next one."
+    },
+    {
+      "q": "How many permutations of n distinct items are there?",
+      "o": [
+        "2ⁿ",
+        "n²",
+        "n!",
+        "nⁿ"
+      ],
+      "a": 2,
+      "why": "n choices for the first slot, n−1 for the second, and so on."
+    },
+    {
+      "q": "Pruning means:",
+      "o": [
+        "Deleting the answer",
+        "Skipping a branch as soon as it can no longer lead to a valid solution",
+        "Sorting the choices",
+        "Memoizing results"
+      ],
+      "a": 1,
+      "why": "The whole subtree of a rejected choice is never explored."
+    },
+    {
+      "q": "In N-Queens (row by row), why do we only check rows above the current one?",
+      "o": [
+        "Queens below are not dangerous",
+        "Rows below are still empty at that time",
+        "The board is symmetric",
+        "It is an optimisation that changes the answer"
+      ],
+      "a": 1,
+      "why": "We fill from the top, so only rows 0 .. row−1 can hold queens."
+    },
+    {
+      "q": "How many solutions does the 4-Queens problem have?",
+      "o": [
+        "1",
+        "2",
+        "4",
+        "24"
+      ],
+      "a": 1,
+      "why": "There are exactly two: columns (1,3,0,2) and (2,0,3,1)."
+    },
+    {
+      "q": "You store a result with res.append(cur) and later cur.pop() runs. What happens?",
+      "o": [
+        "Nothing, it is stored safely",
+        "The stored result changes too, because it is the same list",
+        "An error is raised",
+        "The result is sorted"
+      ],
+      "a": 1,
+      "why": "Lists are references. Save a copy: res.append(cur[:])."
+    },
+    {
+      "q": "The number of subsets of an n-element set, which backtracking enumerates, is:",
+      "o": [
+        "n!",
+        "2ⁿ",
+        "n²",
+        "n log n"
+      ],
+      "a": 1,
+      "why": "Each element is either included or excluded."
+    },
+    {
+      "q": "In the \"design recipe\" for backtracking, which question defines the base case?",
+      "o": [
+        "What are the options?",
+        "When am I done (answer complete)?",
+        "How do I undo?",
+        "What is invalid?"
+      ],
+      "a": 1,
+      "why": "The base case is the moment the partial solution is a complete solution."
+    }
+  ],
+  "s7": [
+    {
+      "q": "In an undirected graph with 7 edges, the sum of all vertex degrees is:",
+      "o": [
+        "7",
+        "14",
+        "49",
+        "21"
+      ],
+      "a": 1,
+      "why": "Each edge adds 1 to two vertices: 2E = 14."
+    },
+    {
+      "q": "Space used by an adjacency matrix for V vertices:",
+      "o": [
+        "O(V)",
+        "O(V + E)",
+        "O(V²)",
+        "O(E)"
+      ],
+      "a": 2,
+      "why": "A V × V table, regardless of how many edges exist."
+    },
+    {
+      "q": "Which representation is best for a sparse graph with 100,000 vertices?",
+      "o": [
+        "Adjacency matrix",
+        "Adjacency list",
+        "None",
+        "A 2D array of strings"
+      ],
+      "a": 1,
+      "why": "The list needs O(V + E); the matrix would need 10¹⁰ cells."
+    },
+    {
+      "q": "The adjacency matrix of an undirected graph is:",
+      "o": [
+        "Symmetric",
+        "Always all ones",
+        "Upper triangular",
+        "Diagonal"
+      ],
+      "a": 0,
+      "why": "An undirected edge i–j sets both [i][j] and [j][i]."
+    },
+    {
+      "q": "Time to test whether an edge u–v exists in an adjacency list?",
+      "o": [
+        "O(1)",
+        "O(deg(u))",
+        "O(V²)",
+        "O(log V)"
+      ],
+      "a": 1,
+      "why": "You scan u's neighbour list. A matrix does it in O(1)."
+    },
+    {
+      "q": "In a directed graph, the sum of all in-degrees equals:",
+      "o": [
+        "V",
+        "2E",
+        "E",
+        "V²"
+      ],
+      "a": 2,
+      "why": "Each edge contributes exactly one to some vertex's in-degree (and one to an out-degree)."
+    },
+    {
+      "q": "What makes a tree different from a general graph?",
+      "o": [
+        "A tree is directed",
+        "A tree is connected and has no cycles",
+        "A tree has weights",
+        "A tree has more edges"
+      ],
+      "a": 1,
+      "why": "A tree is a connected acyclic graph, with exactly V − 1 edges."
+    }
+  ],
+  "s8": [
+    {
+      "q": "Which data structure drives BFS?",
+      "o": [
+        "Stack",
+        "Queue",
+        "Heap",
+        "BST"
+      ],
+      "a": 1,
+      "why": "FIFO order discovers vertices level by level."
+    },
+    {
+      "q": "BFS gives the shortest path in which kind of graph?",
+      "o": [
+        "Weighted with positive weights",
+        "Unweighted (each edge counts as 1)",
+        "Only DAGs",
+        "Only trees"
+      ],
+      "a": 1,
+      "why": "BFS minimises the number of edges. Weighted graphs need Dijkstra."
+    },
+    {
+      "q": "When should BFS mark a vertex as visited?",
+      "o": [
+        "When it is dequeued",
+        "When it is enqueued",
+        "After all neighbours are done",
+        "Never"
+      ],
+      "a": 1,
+      "why": "Marking at enqueue prevents the same vertex being queued twice."
+    },
+    {
+      "q": "Time complexity of DFS using adjacency lists:",
+      "o": [
+        "O(V)",
+        "O(E)",
+        "O(V + E)",
+        "O(V²)"
+      ],
+      "a": 2,
+      "why": "Every vertex is entered once and every edge is examined once or twice."
+    },
+    {
+      "q": "In a directed graph, DFS finds a back edge. This means:",
+      "o": [
+        "The graph is a tree",
+        "The graph has a cycle",
+        "The graph is connected",
+        "The graph is bipartite"
+      ],
+      "a": 1,
+      "why": "A back edge points to an ancestor still on the stack, closing a cycle."
+    },
+    {
+      "q": "How do you count connected components in an undirected graph?",
+      "o": [
+        "Run BFS once",
+        "Start a new DFS/BFS from each unvisited vertex and count the starts",
+        "Count the edges",
+        "Sort the vertices"
+      ],
+      "a": 1,
+      "why": "Each fresh start reaches exactly one new component."
+    },
+    {
+      "q": "Rotting oranges uses multi-source BFS because:",
+      "o": [
+        "There is more than one rotten orange at time 0, all spreading simultaneously",
+        "DFS cannot be used on grids",
+        "It needs a heap",
+        "The grid is directed"
+      ],
+      "a": 0,
+      "why": "Putting all rotten oranges in the queue at the start makes each BFS level equal to one minute."
+    },
+    {
+      "q": "DFS on an adjacency matrix has time:",
+      "o": [
+        "O(V + E)",
+        "O(V²)",
+        "O(E)",
+        "O(V log V)"
+      ],
+      "a": 1,
+      "why": "Finding the neighbours of each vertex scans a whole row of length V."
+    }
+  ],
+  "s9": [
+    {
+      "q": "Which pair of properties must a problem have for DP to apply?",
+      "o": [
+        "Sorted input and unique keys",
+        "Overlapping subproblems and optimal substructure",
+        "Greedy choice and a heap",
+        "A graph and a queue"
+      ],
+      "a": 1,
+      "why": "Overlapping subproblems make caching worthwhile; optimal substructure lets us build the answer from sub-answers."
+    },
+    {
+      "q": "Climbing stairs (steps of 1 or 2): the recurrence is",
+      "o": [
+        "dp[i] = dp[i−1] × dp[i−2]",
+        "dp[i] = dp[i−1] + dp[i−2]",
+        "dp[i] = max(dp[i−1], dp[i−2])",
+        "dp[i] = dp[i−2] + 1"
+      ],
+      "a": 1,
+      "why": "The last move is either a 1-step from i−1 or a 2-step from i−2; the ways add."
+    },
+    {
+      "q": "Time complexity of the naive recursive climbing stairs?",
+      "o": [
+        "O(n)",
+        "O(n²)",
+        "O(2ⁿ)",
+        "O(log n)"
+      ],
+      "a": 2,
+      "why": "Each call makes two more calls and subproblems repeat enormously."
+    },
+    {
+      "q": "Memoized climbing stairs has time complexity:",
+      "o": [
+        "O(2ⁿ)",
+        "O(n)",
+        "O(1)",
+        "O(n²)"
+      ],
+      "a": 1,
+      "why": "Each of the n+1 distinct subproblems is computed once, in O(1) work."
+    },
+    {
+      "q": "House Robber recurrence:",
+      "o": [
+        "dp[i] = dp[i−1] + nums[i]",
+        "dp[i] = max(dp[i−1], dp[i−2] + nums[i])",
+        "dp[i] = min(dp[i−1], dp[i−2]) + nums[i]",
+        "dp[i] = dp[i−2] + dp[i−1]"
+      ],
+      "a": 1,
+      "why": "Either skip house i (keep dp[i−1]) or rob it (add to dp[i−2])."
+    },
+    {
+      "q": "For nums = [2, 7, 9, 3, 1] the House Robber answer is:",
+      "o": [
+        "10",
+        "11",
+        "12",
+        "13"
+      ],
+      "a": 2,
+      "why": "Rob houses 0, 2 and 4: 2 + 9 + 1 = 12."
+    },
+    {
+      "q": "To reduce the space of House Robber to O(1) you keep:",
+      "o": [
+        "Only the answer",
+        "The last two dp values",
+        "The whole table",
+        "A heap"
+      ],
+      "a": 1,
+      "why": "dp[i] depends only on dp[i−1] and dp[i−2]."
+    },
+    {
+      "q": "Which is NOT a feature of memoization?",
+      "o": [
+        "Top-down recursion with a cache",
+        "Solves only the subproblems needed",
+        "Fills a table with loops from the smallest case",
+        "Avoids recomputation"
+      ],
+      "a": 2,
+      "why": "Filling a table with loops from small to large is tabulation (bottom-up)."
+    }
+  ],
+  "s0": [
+    {
+      "q": "A stack is used to ...",
+      "o": [
+        "Serve items in the order they arrived",
+        "Remove the most recently added item first",
+        "Keep items sorted",
+        "Look up items by key"
+      ],
+      "a": 1,
+      "why": "LIFO: last in, first out, like a pile of plates."
+    },
+    {
+      "q": "Which structure should BFS use for its to-do list?",
+      "o": [
+        "Stack",
+        "Queue",
+        "Heap",
+        "Array of sorted values"
+      ],
+      "a": 1,
+      "why": "A queue serves vertices in the order they were discovered, giving level-by-level order."
+    },
+    {
+      "q": "About how many times can 1,000,000 be halved before reaching 1?",
+      "o": [
+        "10",
+        "20",
+        "1,000",
+        "500,000"
+      ],
+      "a": 1,
+      "why": "2²⁰ ≈ 10⁶, so log₂(10⁶) ≈ 20."
+    },
+    {
+      "q": "What is 1 + 2 + 3 + … + 100?",
+      "o": [
+        "5,050",
+        "10,000",
+        "500",
+        "5,000"
+      ],
+      "a": 0,
+      "why": "n(n+1)/2 = 100 × 101 / 2 = 5,050."
+    },
+    {
+      "q": "Why use collections.deque instead of a list for a queue?",
+      "o": [
+        "Lists cannot hold numbers",
+        "list.pop(0) is O(n) but deque.popleft() is O(1)",
+        "Deque is sorted",
+        "No difference"
+      ],
+      "a": 1,
+      "why": "Removing from the front of a list shifts every other element."
+    },
+    {
+      "q": "In a linked list, reaching the i-th item costs:",
+      "o": [
+        "O(1)",
+        "O(log n)",
+        "O(i), following pointers one at a time",
+        "O(n²)"
+      ],
+      "a": 2,
+      "why": "There is no index arithmetic; you must follow next pointers."
+    }
+  ],
+  "s10": [
+    {
+      "q": "LCS of strings of length m and n: how big is the DP table?",
+      "o": [
+        "m × n",
+        "(m + 1) × (n + 1)",
+        "m + n",
+        "2^m × 2^n"
+      ],
+      "a": 1,
+      "why": "There is an extra row and column for the empty prefix, which is the base case (all zeros)."
+    },
+    {
+      "q": "In LCS, when the last letters xᵢ and yⱼ are different, c[i][j] equals:",
+      "o": [
+        "c[i−1][j−1] + 1",
+        "max(c[i−1][j], c[i][j−1])",
+        "min(c[i−1][j], c[i][j−1])",
+        "0"
+      ],
+      "a": 1,
+      "why": "They cannot both end the common subsequence, so drop one of them and keep the better result."
+    },
+    {
+      "q": "Running time of the LCS dynamic program:",
+      "o": [
+        "O(m + n)",
+        "O(mn)",
+        "O(2^(m+n))",
+        "O(m log n)"
+      ],
+      "a": 1,
+      "why": "(m+1)(n+1) cells, each filled in O(1)."
+    },
+    {
+      "q": "Which recurrence is the 0/1 knapsack?",
+      "o": [
+        "dp[i][c] = dp[i−1][c] + v[i]",
+        "dp[i][c] = max(dp[i−1][c], dp[i−1][c − w[i]] + v[i]) when w[i] ≤ c",
+        "dp[i][c] = min(dp[i−1][c], dp[i][c−1])",
+        "dp[i][c] = dp[i−1][c−1] + 1"
+      ],
+      "a": 1,
+      "why": "Skip item i, or take it: earn v[i] and use up w[i] of the capacity (only if it fits)."
+    },
+    {
+      "q": "Why is O(nW) for knapsack called pseudo-polynomial?",
+      "o": [
+        "It is exponential in n",
+        "W is a numeric value; the input only needs about log W bits to write it",
+        "It uses recursion",
+        "It only gives approximate answers"
+      ],
+      "a": 1,
+      "why": "The running time grows with the value of W, which can be exponential in the number of bits in the input."
+    },
+    {
+      "q": "In the O(W)-space 1D knapsack, the capacity loop must go:",
+      "o": [
+        "Upward from 0 to W",
+        "Downward from W to w[i]",
+        "In random order",
+        "Either direction works"
+      ],
+      "a": 1,
+      "why": "Downward means dp[c − w] still holds the previous item's row, so each item is used at most once. Upward would allow repeats (unbounded knapsack)."
+    },
+    {
+      "q": "Min-cost grid path (right/down moves). The first column cell dp[i][0] is computed from:",
+      "o": [
+        "Only the cell above, dp[i−1][0]",
+        "min(above, left)",
+        "Only the cell on the left",
+        "It is always 0"
+      ],
+      "a": 0,
+      "why": "There is no column −1, so the only way to arrive is from above."
+    },
+    {
+      "q": "In Python, dp[i-1][j] when i = 0 will:",
+      "o": [
+        "Raise IndexError",
+        "Silently read the last row (index −1)",
+        "Return 0",
+        "Return None"
+      ],
+      "a": 1,
+      "why": "Negative indices wrap around. That is why border cells need separate handling."
+    },
+    {
+      "q": "Which of these is NOT naturally a 2D DP?",
+      "o": [
+        "Edit distance",
+        "Longest common subsequence",
+        "Climbing stairs with steps of 1 or 2",
+        "0/1 knapsack"
+      ],
+      "a": 2,
+      "why": "Climbing stairs needs only one index, the step number."
+    },
+    {
+      "q": "Longest common SUBSTRING differs from LCS because:",
+      "o": [
+        "On a mismatch the cell resets to 0, and the answer is the largest cell in the table",
+        "It needs a heap",
+        "It runs in exponential time",
+        "There is no difference"
+      ],
+      "a": 0,
+      "why": "A substring must be contiguous, so a mismatch breaks the run. The best run can end anywhere."
+    }
+  ],
+  "b0": [
+    {
+      "q": "What does countdown(2) print?",
+      "c": "def countdown(n):\n    if n == 0:\n        return\n    print(\"down\", n)\n    countdown(n - 1)\n    print(\"up\", n)",
+      "o": [
+        "down 2, down 1, up 1, up 2",
+        "down 2, up 2, down 1, up 1",
+        "down 2, down 1, up 2, up 1",
+        "down 2, down 1"
+      ],
+      "a": 0,
+      "why": "The \"up\" lines run on the way back, after the inner call returns. The innermost call (n = 1) returns first, so \"up 1\" prints before \"up 2\"."
+    },
+    {
+      "q": "Which is a correct loop invariant for find_max at the end of each iteration?",
+      "o": [
+        "best == a[i]",
+        "best is the largest value in the whole array",
+        "best is the largest value in a[0..i]",
+        "i == best"
+      ],
+      "a": 2,
+      "why": "It only talks about what has been seen so far. \"Largest in the whole array\" is only true at the end, which is what termination gives you."
+    },
+    {
+      "q": "How many calls to total are made in all by total([2, 7], 0)?",
+      "o": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "a": 2,
+      "why": "i = 0, i = 1 and the base case i = 2. A list of n items makes n + 1 calls."
+    },
+    {
+      "q": "What is the most frames on the call stack at once for total(a, 0) when len(a) = n?",
+      "o": [
+        "1",
+        "log n",
+        "n",
+        "n + 1"
+      ],
+      "a": 3,
+      "why": "Frames for i = 0, 1, …, n are all waiting when the base case runs, so the recursion uses O(n) space."
+    },
+    {
+      "q": "A recursive function never reaches its base case. In Python you get:",
+      "o": [
+        "An infinite loop that runs forever",
+        "RecursionError after about 1,000 nested calls",
+        "The answer 0",
+        "A SyntaxError before it runs"
+      ],
+      "a": 1,
+      "why": "Each call adds a frame. Python caps the depth (about 1,000 by default) and raises RecursionError."
+    }
+  ],
+  "b1": [
+    {
+      "q": "What does (n log n) / n² tend to as n grows, and what does it tell you?",
+      "o": [
+        "0, so n log n = O(n²) but not Θ(n²)",
+        "1, so they are Θ of each other",
+        "∞, so n log n grows faster",
+        "It does not settle"
+      ],
+      "a": 0,
+      "why": "The ratio is log n / n, which goes to 0. A ratio heading to 0 means strictly slower growth."
+    },
+    {
+      "q": "Is 4ⁿ = O(2ⁿ)?",
+      "o": [
+        "Yes, the base of an exponential is just a constant",
+        "No, 4ⁿ / 2ⁿ = 2ⁿ grows without bound",
+        "Yes, because both are exponential",
+        "Only for n < 10"
+      ],
+      "a": 1,
+      "why": "Exponential bases matter; log bases do not. 4ⁿ is 2ⁿ times bigger than 2ⁿ, and 2ⁿ is not a constant."
+    },
+    {
+      "q": "How are log₂ n and log₁₀ n related?",
+      "o": [
+        "log₂ n is exponentially larger",
+        "They differ by a constant factor (about 3.32), so both are Θ(log n)",
+        "log₁₀ n is larger",
+        "They are unrelated"
+      ],
+      "a": 1,
+      "why": "Change of base: log₂ n = log₁₀ n / log₁₀ 2. Constant factors vanish in Θ."
+    },
+    {
+      "q": "In a proof by induction, what does the inductive step show?",
+      "o": [
+        "P(1) is true",
+        "P(n) for one large n",
+        "If P(k) is true then P(k + 1) is true",
+        "P(k + 1) without using P(k)"
+      ],
+      "a": 2,
+      "why": "The step is the domino rule: any true case forces the next one. Together with the base case it covers every n."
+    },
+    {
+      "q": "From which n onwards is n² bigger than 100n?",
+      "o": [
+        "n > 10",
+        "n > 100",
+        "n > 1,000",
+        "Never"
+      ],
+      "a": 1,
+      "why": "n² > 100n exactly when n > 100. The constant 100 delays the crossover but cannot stop it."
+    }
+  ],
+  "b2": [
+    {
+      "q": "What is the array after evens_first([1, 3, 2])?",
+      "o": [
+        "[2, 1, 3]",
+        "[2, 3, 1]",
+        "[1, 3, 2]",
+        "[3, 1, 2]"
+      ],
+      "a": 1,
+      "why": "Only pos = 2 is even: k becomes 0 and a[0] swaps with a[2]. The odd numbers end up as 3, 1: their order changed, so the partition is not stable."
+    },
+    {
+      "q": "In a reader–writer partition, what does k mark?",
+      "o": [
+        "The element being read",
+        "The last index of the kept zone",
+        "The number of comparisons",
+        "The pivot value"
+      ],
+      "a": 1,
+      "why": "a[0..k] holds everything that passed the test. pos is the reader; k only moves when something is kept."
+    },
+    {
+      "q": "pair_sum_sorted uses two pointers from both ends. What does it require?",
+      "o": [
+        "A sorted array",
+        "No duplicates",
+        "An even length",
+        "Positive numbers only"
+      ],
+      "a": 0,
+      "why": "Moving the left pointer up must make the sum bigger, and moving the right pointer down must make it smaller. That is only true when the array is sorted."
+    },
+    {
+      "q": "In three_way, why does mid stay put after swapping with hi?",
+      "o": [
+        "To save a comparison",
+        "The value swapped in from hi has not been examined yet",
+        "Because hi already moved",
+        "It should move; that is a bug"
+      ],
+      "a": 1,
+      "why": "a[hi] came from the unread zone. Moving mid past it would leave an unchecked value in the \"equal\" zone."
+    },
+    {
+      "q": "What is the extra space used by the in-place reverse(a)?",
+      "o": [
+        "O(1)",
+        "O(log n)",
+        "O(n)",
+        "O(n²)"
+      ],
+      "a": 0,
+      "why": "Only two index variables, whatever the size of the array."
+    }
+  ],
+  "b3": [
+    {
+      "q": "a = [1, 2]; b = a; b.append(3); print(a)",
+      "o": [
+        "[1, 2]",
+        "[1, 2, 3]",
+        "[3]",
+        "Error"
+      ],
+      "a": 1,
+      "why": "b = a makes a second name for the same list. append mutates that list, so both names see it."
+    },
+    {
+      "q": "a = [1, 2]; b = a; b = b + [3]; print(a)",
+      "o": [
+        "[1, 2, 3]",
+        "[1, 2]",
+        "[3]",
+        "[1, 2, [3]]"
+      ],
+      "a": 1,
+      "why": "b + [3] builds a new list and b is rebound to it. a still names the original, unchanged list."
+    },
+    {
+      "q": "What does this print?",
+      "c": "def f(x):\n    x = [0]\n\na = [5]\nf(a)\nprint(a)",
+      "o": [
+        "[0]",
+        "[5]",
+        "[5, 0]",
+        "None"
+      ],
+      "a": 1,
+      "why": "Inside f, x = [0] only rebinds the local name. The caller's list is never touched."
+    },
+    {
+      "q": "In reverse(head), why save nxt = cur.next first?",
+      "o": [
+        "To make the loop faster",
+        "Because the next line overwrites cur.next, which would lose the rest of the list",
+        "It is optional",
+        "To count the nodes"
+      ],
+      "a": 1,
+      "why": "cur.next = prev destroys the only link to the remaining nodes. Saving it first is what lets the loop continue."
+    },
+    {
+      "q": "Why does recursive list delete(head, target) return a node?",
+      "o": [
+        "To report success",
+        "The node being removed may be the head itself, so the caller must re-attach whatever comes back",
+        "Python requires every function to return",
+        "To free memory"
+      ],
+      "a": 1,
+      "why": "If the head is deleted, the caller needs the new head. Returning and re-attaching handles every position the same way, exactly like BST delete."
+    }
+  ],
+  "b4": [
+    {
+      "q": "A complete tree has 12 nodes (0-based). What is the index of the last node that has a child?",
+      "o": [
+        "5",
+        "6",
+        "11",
+        "3"
+      ],
+      "a": 0,
+      "why": "n // 2 − 1 = 5. Its left child is 2·5 + 1 = 11, the last node. Index 6 is the first leaf."
+    },
+    {
+      "q": "In a 0-based array heap, where are the children of index 4?",
+      "o": [
+        "8 and 9",
+        "9 and 10",
+        "5 and 6",
+        "2 and 3"
+      ],
+      "a": 1,
+      "why": "2·4 + 1 = 9 and 2·4 + 2 = 10. 8 and 9 would be the 1-based answer."
+    },
+    {
+      "q": "With 1-based numbering (as in CLRS), what is the parent of index 8?",
+      "o": [
+        "3",
+        "4",
+        "7",
+        "3.5"
+      ],
+      "a": 1,
+      "why": "1-based parent is ⌊i/2⌋ = 4. In 0-based numbering the parent of 8 would be (8 − 1) // 2 = 3."
+    },
+    {
+      "q": "What is the height (in edges) of a complete binary tree with 20 nodes?",
+      "o": [
+        "3",
+        "4",
+        "5",
+        "20"
+      ],
+      "a": 1,
+      "why": "⌊log₂ 20⌋ = 4: levels hold 1, 2, 4, 8 and then the last 5 nodes."
+    },
+    {
+      "q": "Which priority queue implementation has O(1) insert but O(n) extract-max?",
+      "o": [
+        "Sorted list",
+        "Unsorted list",
+        "Binary heap",
+        "Balanced BST"
+      ],
+      "a": 1,
+      "why": "Appending is instant, but the maximum must be searched for. A sorted list is the reverse: slow insert, instant extract."
+    }
+  ],
+  "b5": [
+    {
+      "q": "How many subsets does a set of 5 items have (including the empty set)?",
+      "o": [
+        "5",
+        "10",
+        "25",
+        "32"
+      ],
+      "a": 3,
+      "why": "Each item is in or out: 2⁵ = 32."
+    },
+    {
+      "q": "In how many orders can 4 different letters be arranged?",
+      "o": [
+        "16",
+        "24",
+        "4",
+        "256"
+      ],
+      "a": 1,
+      "why": "4! = 4 × 3 × 2 × 1 = 24. 4⁴ = 256 would allow repeats."
+    },
+    {
+      "q": "What is C(6, 2), the number of ways to choose 2 of 6 items?",
+      "o": [
+        "12",
+        "30",
+        "15",
+        "36"
+      ],
+      "a": 2,
+      "why": "6 × 5 / 2! = 15. 30 is the number of ordered picks; dividing by 2! removes the duplicate orders."
+    },
+    {
+      "q": "Generating every 3-digit code from 0–9: what does the search tree look like?",
+      "o": [
+        "Depth 3, 10 branches per node, 1,000 leaves",
+        "Depth 10, 3 branches, 59,049 leaves",
+        "Depth 3, 3 branches, 27 leaves",
+        "Depth 1, 1,000 branches"
+      ],
+      "a": 0,
+      "why": "One level per digit, ten options per digit: 10³ leaves."
+    },
+    {
+      "q": "At about 10⁸ steps per second, up to roughly which n can you list all n! permutations in about a second?",
+      "o": [
+        "11",
+        "20",
+        "30",
+        "100"
+      ],
+      "a": 0,
+      "why": "11! ≈ 4 × 10⁷, 12! ≈ 4.8 × 10⁸. Factorials outrun any budget almost immediately."
+    }
+  ],
+  "b6": [
+    {
+      "q": "At most how many edges does a simple undirected graph with 6 vertices have?",
+      "o": [
+        "36",
+        "30",
+        "15",
+        "6"
+      ],
+      "a": 2,
+      "why": "One edge per unordered pair: C(6, 2) = 6·5/2 = 15."
+    },
+    {
+      "q": "grid = [[0] * 3] * 3; grid[0][0] = 1; what is grid?",
+      "o": [
+        "[[1, 0, 0], [0, 0, 0], [0, 0, 0]]",
+        "[[1, 0, 0], [1, 0, 0], [1, 0, 0]]",
+        "[[1, 1, 1], [0, 0, 0], [0, 0, 0]]",
+        "Error"
+      ],
+      "a": 1,
+      "why": "All three rows are the same list, so changing \"row 0\" changes every row. Use [[0] * 3 for _ in range(3)]."
+    },
+    {
+      "q": "In a grid with 4-direction moves, how many neighbours does an inside cell have, and a corner cell?",
+      "o": [
+        "8 and 3",
+        "4 and 2",
+        "4 and 3",
+        "2 and 1"
+      ],
+      "a": 1,
+      "why": "Up, down, left, right inside. A corner loses two of them to the bounds check."
+    },
+    {
+      "q": "At most how many edges can a simple directed graph with n vertices have?",
+      "o": [
+        "n(n − 1)/2",
+        "n(n − 1)",
+        "n²/4",
+        "2n"
+      ],
+      "a": 1,
+      "why": "Each ordered pair (u, v) with u ≠ v can be an edge, and (u, v) and (v, u) are different."
+    },
+    {
+      "q": "\"A follows B\" on social media is best modelled as:",
+      "o": [
+        "An undirected graph",
+        "A directed graph",
+        "A tree",
+        "A complete graph"
+      ],
+      "a": 1,
+      "why": "Following is not symmetric: A can follow B without B following A."
+    }
+  ],
+  "b7": [
+    {
+      "q": "In the traversal template, which bag gives breadth-first search?",
+      "o": [
+        "A stack",
+        "A queue",
+        "A heap",
+        "A set"
+      ],
+      "a": 1,
+      "why": "First in, first out: the oldest discoveries are handled first, so the search spreads in rings."
+    },
+    {
+      "q": "Why don't tree traversals need a visited set?",
+      "o": [
+        "Trees are always small",
+        "A tree has no cycles and exactly one path to each node",
+        "Trees are stored in arrays",
+        "They do need one"
+      ],
+      "a": 1,
+      "why": "Without cycles or alternative paths, no node can be reached twice."
+    },
+    {
+      "q": "Total time of BFS or DFS with adjacency lists?",
+      "o": [
+        "O(V)",
+        "O(E)",
+        "O(V + E)",
+        "O(V · E)"
+      ],
+      "a": 2,
+      "why": "Each vertex enters the bag once (V) and each adjacency list is scanned once (sum of degrees = 2E)."
+    },
+    {
+      "q": "At any moment, the BFS queue holds vertices from at most how many distance layers?",
+      "o": [
+        "1",
+        "2",
+        "3",
+        "All of them"
+      ],
+      "a": 1,
+      "why": "While processing layer d, only layer d and newly found layer d + 1 can be in the queue."
+    },
+    {
+      "q": "Recursive DFS has no explicit bag. What plays that role?",
+      "o": [
+        "The visited list",
+        "The call stack",
+        "A hidden queue",
+        "The adjacency list"
+      ],
+      "a": 1,
+      "why": "Each pending call is a vertex waiting to resume: a stack, managed by Python."
+    }
+  ],
+  "b8": [
+    {
+      "q": "Why does memoization not speed up merge sort?",
+      "o": [
+        "Merge sort is already O(n)",
+        "Its subproblems are disjoint, so none repeats",
+        "Lists cannot be cached",
+        "It does speed it up a lot"
+      ],
+      "a": 1,
+      "why": "Each half is a different piece of the array, sorted once. A cache only helps when the same question comes back."
+    },
+    {
+      "q": "How many calls does plain recursive fib(5) make in total (fib(0) = 0, fib(1) = 1)?",
+      "o": [
+        "5",
+        "6",
+        "15",
+        "32"
+      ],
+      "a": 2,
+      "why": "C(n) = 1 + C(n − 1) + C(n − 2) with C(0) = C(1) = 1 gives 1, 1, 3, 5, 9, 15. Only 6 of those calls are different questions."
+    },
+    {
+      "q": "Coins 1, 3, 4 and amount 6: how many coins does greedy use?",
+      "o": [
+        "2",
+        "3",
+        "4",
+        "6"
+      ],
+      "a": 1,
+      "why": "Greedy takes 4, then 1 and 1: three coins. The best is 3 + 3, two coins."
+    },
+    {
+      "q": "What must the arguments of an @lru_cache function be?",
+      "o": [
+        "Integers only",
+        "Hashable (numbers, strings, tuples), not lists",
+        "Sorted",
+        "Fewer than three"
+      ],
+      "a": 1,
+      "why": "The cache is a dictionary keyed by the arguments, so they must be hashable."
+    },
+    {
+      "q": "A greedy algorithm gives the right answer on five examples. Is it correct?",
+      "o": [
+        "Yes, five examples are enough",
+        "Not necessarily: greedy needs a proof, and one counterexample disproves it",
+        "Yes, greedy is always optimal",
+        "Only if it is O(n)"
+      ],
+      "a": 1,
+      "why": "Coins 1, 7, 10 work for most amounts and fail at 14. Examples can only disprove."
+    }
+  ],
+  "b9": [
+    {
+      "q": "\"ACE\" and \"ABCDE\": which is true?",
+      "o": [
+        "\"ACE\" is a substring of \"ABCDE\"",
+        "\"ACE\" is a subsequence but not a substring",
+        "Both",
+        "Neither"
+      ],
+      "a": 1,
+      "why": "The letters appear in order with gaps: subsequence. A substring must be contiguous."
+    },
+    {
+      "q": "Strings of length 4 and 6: what size is the LCS table?",
+      "o": [
+        "4 × 6",
+        "5 × 7",
+        "6 × 4",
+        "3 × 5"
+      ],
+      "a": 1,
+      "why": "One extra row and column for the empty prefixes: (m + 1) × (n + 1)."
+    },
+    {
+      "q": "Which characters does dp[i][j] compare?",
+      "o": [
+        "x[i] and y[j]",
+        "x[i − 1] and y[j − 1]",
+        "x[i + 1] and y[j + 1]",
+        "x[j] and y[i]"
+      ],
+      "a": 1,
+      "why": "dp[i][j] is about x[:i] and y[:j]; their last characters are at string index i − 1 and j − 1."
+    },
+    {
+      "q": "Each cell reads the cells above, to the left and diagonally up-left. Which fill order is safe?",
+      "o": [
+        "Bottom row first, right to left",
+        "Row by row from the top, left to right",
+        "Random order",
+        "Diagonal from bottom-right"
+      ],
+      "a": 1,
+      "why": "Every source of a cell is either in an earlier row or earlier in the same row."
+    },
+    {
+      "q": "How many subsequences does a 4-character string with distinct characters have, counting the empty one?",
+      "o": [
+        "10",
+        "16",
+        "24",
+        "4"
+      ],
+      "a": 1,
+      "why": "Each character is kept or dropped: 2⁴ = 16. Ten is the number of non-empty substrings."
+    }
+  ],
+  "b10": [
+    {
+      "q": "Fewest moves for a knight to get from one square to another on a chessboard:",
+      "o": [
+        "DFS",
+        "BFS",
+        "Heap",
+        "Backtracking"
+      ],
+      "a": 1,
+      "why": "Squares are vertices, knight moves are equal-cost edges, and \"fewest moves\" is an unweighted shortest path."
+    },
+    {
+      "q": "Print every way to place 6 non-attacking queens on a 6×6 board:",
+      "o": [
+        "Backtracking",
+        "DP",
+        "BFS",
+        "Greedy"
+      ],
+      "a": 0,
+      "why": "\"Print every way\" means listing arrangements. Backtracking with pruning; there are only 4 solutions."
+    },
+    {
+      "q": "Maximum value of items that fit in a bag of capacity W, each item used at most once:",
+      "o": [
+        "Greedy by value",
+        "DP (0/1 knapsack)",
+        "BFS",
+        "Binary search"
+      ],
+      "a": 1,
+      "why": "A maximum over many overlapping choices. Greedy by value or by value per weight can fail on 0/1 knapsack."
+    },
+    {
+      "q": "A stream of numbers: always be able to report the 10 largest seen so far.",
+      "o": [
+        "Sort after every number",
+        "A min-heap of size 10",
+        "A BFS",
+        "Backtracking"
+      ],
+      "a": 1,
+      "why": "Keep the top 10 in a min-heap; a new number replaces the smallest of them if it is bigger. O(log 10) per number."
+    },
+    {
+      "q": "Count the separate friend groups in a friendship network:",
+      "o": [
+        "Count connected components with DFS (or BFS)",
+        "Heap sort the people",
+        "Knapsack DP",
+        "Binary search"
+      ],
+      "a": 0,
+      "why": "Each new unvisited person starts a new component; one traversal marks the whole group."
+    },
+    {
+      "q": "Sort a million numbers in place, with an O(n log n) worst case:",
+      "o": [
+        "Quick Sort",
+        "Merge sort",
+        "Heap sort",
+        "Insertion sort"
+      ],
+      "a": 2,
+      "why": "Quick Sort is n² in the worst case; merge sort needs O(n) extra space. Heap sort is in place and n log n always."
+    },
+    {
+      "q": "Does the array contain two numbers adding up to T? It must run in O(n).",
+      "o": [
+        "Two nested loops",
+        "A hash set of values seen so far",
+        "Backtracking",
+        "A BST"
+      ],
+      "a": 1,
+      "why": "For each x, check whether T − x was seen: O(1) average per lookup."
+    },
+    {
+      "q": "How many ways are there to climb 40 stairs taking 1 or 2 steps at a time?",
+      "o": [
+        "Backtracking: list them and count",
+        "DP: ways(n) = ways(n − 1) + ways(n − 2)",
+        "BFS",
+        "Greedy"
+      ],
+      "a": 1,
+      "why": "There are 165,580,141 ways; listing them is pointless when you only need the count, which DP gives in 40 steps."
+    }
+  ],
+  "c1": [
+    {
+      "q": "Constraints say n ≤ 10⁵. Which approach is too slow?",
+      "o": [
+        "Sort, then one pass: O(n log n)",
+        "A double loop over all pairs: O(n²)",
+        "BFS over a graph with n nodes and n edges",
+        "A one-dimensional DP: O(n)"
+      ],
+      "a": 1,
+      "why": "10⁵ squared is 10¹⁰ steps, far beyond the roughly 10⁸ simple steps a judge allows per second."
+    },
+    {
+      "q": "The statement says \"return the answer modulo 10⁹ + 7\". What does that almost always signal?",
+      "o": [
+        "A greedy problem",
+        "A counting DP whose answer is huge",
+        "A shortest-path problem",
+        "Binary search"
+      ],
+      "a": 1,
+      "why": "The modulo only matters when the number of ways explodes, which is what counting DPs produce."
+    },
+    {
+      "q": "Why write DFS on a 300 × 300 grid with an explicit stack rather than recursion in Python?",
+      "o": [
+        "A stack is asymptotically faster",
+        "Recursion could go 90,000 calls deep, far past Python's default limit of 1,000",
+        "Recursion cannot use a visited set",
+        "LeetCode bans recursion"
+      ],
+      "a": 1,
+      "why": "Both are O(R · C); the risk is RecursionError (or a crash) on deep inputs."
+    },
+    {
+      "q": "You've spent 15 minutes on Q3 with no new idea and Q4 is unread. Best move?",
+      "o": [
+        "Keep going until it works",
+        "Read Q4; come back to Q3 with fresh eyes",
+        "Submit random guesses",
+        "Rewrite Q1 to be faster"
+      ],
+      "a": 1,
+      "why": "Ranking by confidence beats fixed order. Q4 may be easier for you, and stepping away often unblocks Q3."
+    },
+    {
+      "q": "A Codeforces 1600 problem is best described as:",
+      "o": [
+        "The same as a LeetCode-1600 problem",
+        "A syllabus technique hidden behind one real observation, about 1900–2100 on LeetCode's scale",
+        "Always outside the syllabus",
+        "A trick question with no algorithm"
+      ],
+      "a": 1,
+      "why": "CF ratings run lower than LeetCode's for the same difficulty. Look at the examples: BFS over states, binary search plus BFS, prefix averages."
+    },
+    {
+      "q": "\"Distribute the products so that the largest amount any store gets is as small as possible.\" First idea to try?",
+      "o": [
+        "DP over stores",
+        "Binary search on the answer x, checking whether x is enough with a simple count",
+        "DFS over every distribution",
+        "Sort descending and assign round-robin"
+      ],
+      "a": 1,
+      "why": "\"Minimise the maximum\" plus a cheap yes/no check is the binary-search-on-the-answer shape (2064)."
+    }
+  ],
+  "c2": [
+    {
+      "q": "\"Every minute, every infected cell infects its 4 neighbours. How many minutes until all cells are infected?\"",
+      "o": [
+        "DFS from one infected cell",
+        "Multi-source BFS: queue every infected cell first",
+        "DP over rows",
+        "Greedy by distance"
+      ],
+      "a": 1,
+      "why": "Spreading from many sources at once, counted in levels, is multi-source BFS."
+    },
+    {
+      "q": "\"Count land cells from which you cannot walk off the grid.\"",
+      "o": [
+        "Count islands",
+        "Flood from the border first, then count the land left",
+        "BFS from the top-left cell",
+        "Sort the cells"
+      ],
+      "a": 1,
+      "why": "Removing everything connected to the border leaves exactly the cells that can't escape (1020 Number of Enclaves)."
+    },
+    {
+      "q": "Components of sizes 3, 2 and 2 in a 7-node graph. How many pairs of nodes are unreachable from each other?",
+      "o": [
+        "12",
+        "14",
+        "16",
+        "21"
+      ],
+      "a": 2,
+      "why": "Pairs across components: 3·2 + 3·2 + 2·2 = 16. Equivalently 21 total pairs minus the 3 + 1 + 1 = 5 pairs inside components."
+    },
+    {
+      "q": "Fewest moves through a maze with equal-cost moves. Which tool, and what does it return if the exit is unreachable?",
+      "o": [
+        "DFS, returns the first path found",
+        "BFS with a distance array; return −1 if the target is never reached",
+        "Greedy towards the exit",
+        "DP from the exit only"
+      ],
+      "a": 1,
+      "why": "BFS reaches every cell by the fewest moves first; unreached cells keep distance −1."
+    },
+    {
+      "q": "Directed acyclic graph: find the fewest start nodes from which every node is reachable.",
+      "o": [
+        "Run BFS from every node",
+        "Every node with in-degree 0",
+        "The node with the highest out-degree",
+        "Topological sort, then take the last node"
+      ],
+      "a": 1,
+      "why": "Nothing can reach an in-degree-0 node, so each must be a start; in a DAG they reach everything else (1557)."
+    },
+    {
+      "q": "Why mark a node visited when it is pushed, not when it is popped?",
+      "o": [
+        "It changes the answer",
+        "Otherwise the same node can be pushed many times, wasting time and memory",
+        "Python requires it",
+        "It makes DFS into BFS"
+      ],
+      "a": 1,
+      "why": "Correctness usually survives, but on dense graphs or big grids the duplicates can cause time limits."
+    }
+  ],
+  "c3": [
+    {
+      "q": "Frog Jump on heights [10, 15, 0, 20, 5, 25] with jumps of 1 or 2: minimum cost?",
+      "o": [
+        "15",
+        "20",
+        "25",
+        "35"
+      ],
+      "a": 0,
+      "why": "dp = [0, 5, 10, 10, 15, 15]. The best route is 0 → 1 → 3 → 5, costing 5 + 5 + 5 = 15, the f(5) = 15 from your lecture board."
+    },
+    {
+      "q": "Solving question i forces you to skip the next k questions. Which direction should you fill the DP?",
+      "o": [
+        "Front to back",
+        "Back to front: dp[i] depends on dp[i + 1] and dp[i + k + 1]",
+        "Either; it never matters",
+        "Sort the questions first"
+      ],
+      "a": 1,
+      "why": "The future decides what taking i is worth, so compute the later answers first (2140)."
+    },
+    {
+      "q": "\"Longest subsequence where each element is the previous plus d\", n up to 10⁵, values up to 10⁴ in size. Best state?",
+      "o": [
+        "dp[i][j] over pairs of indices",
+        "A dictionary: best[x] = best[x − d] + 1",
+        "Sort, then greedy",
+        "BFS over values"
+      ],
+      "a": 1,
+      "why": "O(n) with a dictionary keyed by value; O(n²) over pairs is too slow at 10⁵ (1218)."
+    },
+    {
+      "q": "Counting DP with answer modulo 10⁹ + 7. When should you take the modulo?",
+      "o": [
+        "Only at the very end",
+        "After every addition",
+        "Never in Python, integers are unbounded",
+        "Only when the answer is negative"
+      ],
+      "a": 1,
+      "why": "Python would get the right number eventually, but huge integers make every step slower; and in other languages you'd overflow. Mod as you go."
+    },
+    {
+      "q": "You memoize a recursion over n = 10⁵ states with @cache and get RecursionError. Fix?",
+      "o": [
+        "Use a bigger cache",
+        "Rewrite it bottom-up as a loop over a table",
+        "Switch to greedy",
+        "Remove the base case"
+      ],
+      "a": 1,
+      "why": "Memoization doesn't reduce depth: the first call still goes 10⁵ frames deep. A table has no recursion."
+    },
+    {
+      "q": "0/1 subset-sum with a 1D array dp[t]. Which loop direction over t?",
+      "o": [
+        "Upward, so each item can be reused",
+        "Downward, so each item is used at most once",
+        "Either",
+        "Random"
+      ],
+      "a": 1,
+      "why": "Upward would let dp[t − x] already include x (bridge 9.5, stop 10)."
+    }
+  ],
+  "c4": [
+    {
+      "q": "Keep the maximum number of non-overlapping intervals. Sort by:",
+      "o": [
+        "Start time",
+        "End time",
+        "Length",
+        "Input order"
+      ],
+      "a": 1,
+      "why": "Earliest finish leaves the most room for the rest; the exchange argument proves it (CLRS §16.1)."
+    },
+    {
+      "q": "Coins 1, 3, 4 and amount 6. Does \"largest coin first\" give the fewest coins?",
+      "o": [
+        "Yes, 2 coins",
+        "No: greedy gives 3 coins (4+1+1) but 3+3 uses 2",
+        "Yes, 3 coins is optimal",
+        "There is no way to make 6"
+      ],
+      "a": 1,
+      "why": "One counterexample is enough to rule out a greedy. Use DP."
+    },
+    {
+      "q": "People must go into boats holding at most two people and a weight limit. Greedy?",
+      "o": [
+        "Pair the two lightest each time",
+        "Sort; pair the heaviest with the lightest if they fit, else the heaviest goes alone",
+        "Pair neighbours in input order",
+        "Fill each boat with as many as possible"
+      ],
+      "a": 1,
+      "why": "The heaviest must go somewhere; the lightest partner is the safest choice (881)."
+    },
+    {
+      "q": "Each of 2n people goes to city A or B, exactly n each. Sort by:",
+      "o": [
+        "costA",
+        "costB",
+        "costA − costB",
+        "costA + costB"
+      ],
+      "a": 2,
+      "why": "The difference measures how much each person prefers A; send the n with the smallest difference to A (1029)."
+    },
+    {
+      "q": "Which of these is greedy NOT optimal for?",
+      "o": [
+        "Fractional knapsack by value per kg",
+        "0/1 knapsack by value per kg",
+        "Activity selection by earliest finish",
+        "Jump Game reachability"
+      ],
+      "a": 1,
+      "why": "CLRS §16.2: capacity 50, items (10, 60), (20, 100), (30, 120): greedy gets 160, the best is 220."
+    },
+    {
+      "q": "Intervals [1, 2] and [2, 3]: overlapping or not?",
+      "o": [
+        "Always overlapping",
+        "Never overlapping",
+        "Depends on the problem: 435 says no, 452 balloons share an arrow at 2",
+        "Only if sorted"
+      ],
+      "a": 2,
+      "why": "Read the statement: it decides whether the comparison is >= or >."
+    },
+    {
+      "q": "Which sort order makes the greedy for “most non-overlapping intervals” correct?",
+      "o": [
+        "By end time, earliest first",
+        "By start time",
+        "By length, shortest first",
+        "By number of overlaps"
+      ],
+      "a": 0,
+      "why": "The exchange argument swaps the interval that ends first into any optimal schedule without causing a conflict."
+    },
+    {
+      "q": "Greedy by value-per-weight is optimal for…",
+      "o": [
+        "fractional knapsack only",
+        "0/1 knapsack",
+        "both",
+        "neither"
+      ],
+      "a": 0,
+      "why": "With splitting allowed no capacity is ever stranded; in 0/1 knapsack (60,10), (100,20), (120,30), capacity 50 it gives 160 instead of 220."
+    },
+    {
+      "q": "Coins 1, 3, 4 and amount 6: how do greedy and the DP compare?",
+      "o": [
+        "Greedy 3 coins, DP 2 coins",
+        "Both give 2",
+        "Both give 3",
+        "Greedy 2, DP 3"
+      ],
+      "a": 0,
+      "why": "Greedy takes 4 + 1 + 1; the best is 3 + 3."
+    },
+    {
+      "q": "Task Scheduler (LC 621): what fixes the minimum length?",
+      "o": [
+        "The most frequent task, which forces (top − 1) gaps of width n + 1",
+        "The number of distinct tasks",
+        "The cooldown alone",
+        "The alphabetical order"
+      ],
+      "a": 0,
+      "why": "The busiest task needs top − 1 full frames of n + 1 slots plus a last row; with more tasks than slots the answer is just the task count."
+    }
+  ],
+  "e0": [
+    {
+      "q": "Every node has at most one outgoing edge. Starting anywhere and following edges, the walk…",
+      "o": [
+        "can branch, so you need BFS",
+        "either stops at a dead end or runs into exactly one cycle and loops there",
+        "always visits every node",
+        "always ends at node 0"
+      ],
+      "a": 1,
+      "why": "With one way out of each node there is never a choice: a straight tail, then a dead end or a cycle. The ρ shape."
+    },
+    {
+      "q": "a = [1, 2, 0, 2, −1, 4]. How many distinct nodes can you reach from node 3, counting 3?",
+      "o": [
+        "3",
+        "4",
+        "5",
+        "6"
+      ],
+      "a": 1,
+      "why": "3 → 2, and 2 sits on the cycle 2 → 0 → 1 → 2 of length 3. Tail 1 + cycle 3 = 4."
+    },
+    {
+      "q": "Subtask 1 has n ≤ 10³. Walking from every node with a seen-set costs about…",
+      "o": [
+        "10³ steps",
+        "10⁶ steps: comfortably fast",
+        "10⁹ steps: too slow",
+        "It never finishes on a cycle"
+      ],
+      "a": 1,
+      "why": "Each walk is at most n steps and there are n walks: n² = 10⁶. That alone banks the first subtask."
+    },
+    {
+      "q": "0/1/2 knapsack with one dp array. Which way does the capacity loop run?",
+      "o": [
+        "Upward, so a copy can build on the previous copy",
+        "Downward, so dp[c − w] and dp[c − 2w] still describe the items before this one",
+        "Either way gives the same answer",
+        "It needs a 2D table"
+      ],
+      "a": 1,
+      "why": "Upward reads cells this item already improved, allowing unlimited copies. Downward caps it at the copies you try explicitly."
+    },
+    {
+      "q": "The quickest correct way to turn 0/1/2 knapsack into a problem you already know:",
+      "o": [
+        "Sort by value per weight and take greedily",
+        "List every item twice, then run plain 0/1 knapsack",
+        "Run unbounded knapsack",
+        "Use BFS over capacities"
+      ],
+      "a": 1,
+      "why": "Two identical copies are just two items. 2n items, same O(nW) table, nothing new to invent."
+    }
+  ],
+  "e1": [
+    {
+      "q": "The final three end-sem problems are CF 1400, 1500 and 1600. What should you guarantee on the 1600?",
+      "o": [
+        "A full solution or nothing",
+        "At least a correct brute-force submission for the small subtask",
+        "Skip it entirely",
+        "Write the clever idea first and test later"
+      ],
+      "a": 1,
+      "why": "A correct slow solution scores the small tests. Full marks on the 1600 are a bonus; zero is avoidable."
+    },
+    {
+      "q": "A subtask says n ≤ 20. Which brute force fits?",
+      "o": [
+        "Try all 2ⁿ subsets",
+        "Try all n! orders",
+        "Nothing: it needs O(n log n)",
+        "Binary search"
+      ],
+      "a": 0,
+      "why": "2²⁰ ≈ 10⁶. 20! is about 2·10¹⁸: far too many."
+    },
+    {
+      "q": "Stress testing means…",
+      "o": [
+        "Submitting many times",
+        "Running your fast solution and a brute force on many tiny random inputs and comparing",
+        "Testing only the sample input",
+        "Timing your code on the largest input"
+      ],
+      "a": 1,
+      "why": "Tiny random inputs find the edge case you didn’t think of, and the brute force tells you the right answer for it."
+    },
+    {
+      "q": "Reading 2·10⁵ numbers in Python on Codeforces, the safest way is…",
+      "o": [
+        "input() in a loop",
+        "sys.stdin.buffer.read().split() once, then walk an index",
+        "eval(input())",
+        "One print per number"
+      ],
+      "a": 1,
+      "why": "One read and one write. Calling input() hundreds of thousands of times can cost a time limit on its own."
+    },
+    {
+      "q": "Fifteen minutes on one problem, no new idea. What now?",
+      "o": [
+        "Keep going: you’re close",
+        "Submit a brute force if you have one, then move to another problem and come back",
+        "Restart the problem from scratch",
+        "Stop the exam"
+      ],
+      "a": 1,
+      "why": "Bank what you can, then spend time where it buys marks. Coming back fresh often shows the observation."
+    }
+  ],
+  "e2": [
+    {
+      "q": "n gifts, each with a price and a joy value. Budget B. Each gift can be bought once. Maximise joy.",
+      "o": [
+        "Unbounded knapsack",
+        "0/1 knapsack",
+        "Fewest coins",
+        "Greedy by joy per price"
+      ],
+      "a": 1,
+      "why": "Items, capacity, maximise value, each once: 0/1 knapsack with a downward capacity loop."
+    },
+    {
+      "q": "Unlimited coins. How many different collections (order ignored) make the amount?",
+      "o": [
+        "Coins in the outer loop, amount upward inside",
+        "Amount in the outer loop, coins inside",
+        "Downward loop",
+        "max instead of +"
+      ],
+      "a": 0,
+      "why": "Coins outside means each collection is built in one fixed coin order, so it is counted once (LC 518)."
+    },
+    {
+      "q": "Count ordered sequences of steps from {1, 3, 4} that add up to n.",
+      "o": [
+        "Coins outside, amount inside",
+        "Amount outside, steps inside",
+        "Subset sum",
+        "0/1 knapsack"
+      ],
+      "a": 1,
+      "why": "Order matters, so every last step is tried at every total: amount outside (LC 377, Climbing Stairs generalised)."
+    },
+    {
+      "q": "Split stones into two groups with the smallest possible difference of sums.",
+      "o": [
+        "Sort and alternate",
+        "Subset sum: which totals up to sum/2 are reachable?",
+        "Dijkstra",
+        "Unbounded knapsack"
+      ],
+      "a": 1,
+      "why": "The best split puts one group as close to half the total as possible: a True/False table over sums (LC 1049)."
+    },
+    {
+      "q": "Same 0/1 knapsack code, but the capacity loop runs upward. What does it now solve?",
+      "o": [
+        "Still 0/1",
+        "Unbounded knapsack",
+        "It crashes",
+        "Bounded with 2 copies"
+      ],
+      "a": 1,
+      "why": "Upward lets dp[c − w] already contain this item, so it can be reused without limit. Direction is the whole difference."
+    },
+    {
+      "q": "Sum must be exactly T and you maximise the count of items. How do you start the table?",
+      "o": [
+        "All zeros",
+        "dp[0] = 0 and every other cell −1 (or −∞) for “impossible”",
+        "All ones",
+        "dp[T] = 0"
+      ],
+      "a": 1,
+      "why": "Zeros would treat unreachable sums as free. Mark them impossible and skip them in the transition."
+    },
+    {
+      "q": "Memo best(i, c) reads only best(i + 1, ·). To tabulate it, fill i…",
+      "o": [
+        "from 0 up to n − 1",
+        "from n − 1 down to 0 (row n is the base case)",
+        "in any order",
+        "by capacity first"
+      ],
+      "a": 1,
+      "why": "A cell must be filled after the cells it reads. Then one row is enough, swept downward over c."
+    }
+  ],
+  "e3": [
+    {
+      "q": "Kahn’s algorithm outputs fewer than n vertices. What does that tell you?",
+      "o": [
+        "The graph is disconnected",
+        "There is a cycle: those vertices never reach in-degree 0",
+        "The graph is a tree",
+        "Nothing"
+      ],
+      "a": 1,
+      "why": "A vertex on a cycle always has an in-edge from the cycle, so it is never queued."
+    },
+    {
+      "q": "Why is BFS wrong for shortest paths with weights?",
+      "o": [
+        "It is too slow",
+        "It minimises the number of edges, and a longer route can weigh less",
+        "It cannot handle cycles",
+        "It needs a sorted graph"
+      ],
+      "a": 1,
+      "why": "Edge 0–1 of weight 4 versus 0–2–1 of weight 1 + 2 = 3: fewer edges, more weight."
+    },
+    {
+      "q": "In heap-based Dijkstra, when is a node’s distance final?",
+      "o": [
+        "When it is first pushed",
+        "When it is popped with d equal to dist[node]",
+        "When all its neighbours are pushed",
+        "At the very end only"
+      ],
+      "a": 1,
+      "why": "A node can be pushed several times as better routes appear. The first pop is the smallest; later pops are stale."
+    },
+    {
+      "q": "You pop (7, u) but dist[u] is already 5. You should…",
+      "o": [
+        "Set dist[u] = 7",
+        "Skip it: it is a stale entry",
+        "Stop the algorithm",
+        "Push it back"
+      ],
+      "a": 1,
+      "why": "Lazy deletion: old pairs stay in the heap and are ignored when they surface."
+    },
+    {
+      "q": "In the Dijkstra lab graph, what is dist from 0 to 3?",
+      "o": [
+        "5",
+        "4",
+        "6",
+        "3"
+      ],
+      "a": 1,
+      "why": "0 → 2 (1), 2 → 1 (2), 1 → 3 (1): total 4. The direct-looking 0 → 1 → 3 costs 5."
+    },
+    {
+      "q": "Dijkstra on a graph with one negative edge:",
+      "o": [
+        "Always correct",
+        "Can finalise a node too early and give a wrong distance",
+        "Loops forever",
+        "Becomes BFS"
+      ],
+      "a": 1,
+      "why": "The “closest popped node is final” argument needs every edge ≥ 0."
+    },
+    {
+      "q": "In Kruskal, union(u, v) returns False for the next cheapest edge. You…",
+      "o": [
+        "Add it anyway",
+        "Skip it: u and v are already connected, so it would close a cycle",
+        "Stop",
+        "Restart with Prim"
+      ],
+      "a": 1,
+      "why": "An MST has no cycles; union-find answers “already connected?” in near-constant time."
+    },
+    {
+      "q": "Kahn’s algorithm finishes with fewer than n vertices in its output. What does that mean?",
+      "o": [
+        "The graph has a directed cycle",
+        "The graph is disconnected",
+        "The queue was implemented wrongly",
+        "The graph has a negative edge"
+      ],
+      "a": 0,
+      "why": "Vertices on or behind a cycle never reach in-degree 0, so they are never queued. Disconnected pieces are still peeled."
+    },
+    {
+      "q": "Why can topological DP find a longest path in a DAG when longest path is hard on general graphs?",
+      "o": [
+        "A DAG has no cycles, so each vertex is final before its out-edges are used",
+        "Longest path equals shortest path on a DAG",
+        "A DAG has at most V edges",
+        "Heaps work for longest paths"
+      ],
+      "a": 0,
+      "why": "In topological order every path into a vertex is already counted when you reach it, and no cycle can inflate a path."
+    },
+    {
+      "q": "In Dijkstra, what does a popped heap entry (d, u) with d > dist[u] mean?",
+      "o": [
+        "It is stale: u was already improved, so skip it",
+        "u has a negative edge",
+        "u is unreachable",
+        "The heap is corrupt"
+      ],
+      "a": 0,
+      "why": "Heaps cannot lower an existing entry, so improved vertices get a new entry and the old one is skipped when it surfaces."
+    },
+    {
+      "q": "What single assumption does the correctness proof of Dijkstra need?",
+      "o": [
+        "Extending a path never makes it cheaper",
+        "The graph is connected",
+        "Weights are integers",
+        "The graph is undirected"
+      ],
+      "a": 0,
+      "why": "That is why “minimise the largest edge” (max instead of +) still works, and why negative edges break it."
+    },
+    {
+      "q": "Path With Minimum Effort (LC 1631): what changes from plain Dijkstra?",
+      "o": [
+        "The new cost is max(d, step) instead of d + step",
+        "You must use BFS",
+        "You must use Bellman–Ford",
+        "Nothing changes"
+      ],
+      "a": 0,
+      "why": "The cost of a path is its largest height difference, and max never decreases as the path grows, so Dijkstra still applies."
+    },
+    {
+      "q": "Bellman–Ford on 6 vertices with no negative cycle: how many rounds are always enough?",
+      "o": [
+        "5",
+        "6",
+        "36",
+        "3"
+      ],
+      "a": 0,
+      "why": "A shortest simple path has at most V − 1 = 5 edges, and round r settles every path of at most r edges."
+    },
+    {
+      "q": "For “at most k stops” (LC 787) you run Bellman–Ford for k + 1 rounds. Why must each round read the OLD distances?",
+      "o": [
+        "Otherwise one round could use several edges and break the limit",
+        "To save memory",
+        "To detect negative cycles",
+        "Python lists are immutable"
+      ],
+      "a": 0,
+      "why": "Reading values updated earlier in the same round lets a path grow by more than one edge per round."
+    },
+    {
+      "q": "Floyd–Warshall: which loop must be outermost?",
+      "o": [
+        "k, the allowed intermediate vertex",
+        "i, the source",
+        "j, the target",
+        "Any order works"
+      ],
+      "a": 0,
+      "why": "The table must be complete for intermediate vertices 0..k−1 before k is allowed."
+    },
+    {
+      "q": "State the cut property of minimum spanning trees.",
+      "o": [
+        "A lightest edge crossing any cut is in some MST",
+        "The heaviest edge overall is never in an MST",
+        "Every MST has the same edges",
+        "A lightest edge is in every cycle"
+      ],
+      "a": 0,
+      "why": "Swap argument: any MST missing that edge can swap it in for another crossing edge without getting heavier."
+    },
+    {
+      "q": "Kruskal’s running time is dominated by…",
+      "o": [
+        "sorting the edges, O(E log E)",
+        "union-find, O(E²)",
+        "building the adjacency list",
+        "the V − 1 merges"
+      ],
+      "a": 0,
+      "why": "With union by size and path compression each union-find operation is almost constant."
+    },
+    {
+      "q": "Which MST algorithm suits a complete graph on 2,000 points best?",
+      "o": [
+        "Prim without a heap, O(V²)",
+        "Kruskal with all 2 million edges sorted",
+        "Bellman–Ford",
+        "Floyd–Warshall"
+      ],
+      "a": 0,
+      "why": "V² ≈ E, so the heap-free array version has the lowest overhead."
+    },
+    {
+      "q": "In LC 1489, an edge is critical when…",
+      "o": [
+        "removing it makes the MST weight larger (or disconnects)",
+        "forcing it in keeps the MST weight",
+        "it is the heaviest edge",
+        "it is the lightest edge"
+      ],
+      "a": 0,
+      "why": "It then belongs to every MST. If forcing it in keeps the weight but removing it does not hurt, it is pseudo-critical."
+    }
+  ],
+  "m13": [
+    {
+      "q": "Next STRICTLY greater element. Which loop condition is right?",
+      "o": [
+        "while st and a[st[-1]] < x",
+        "while st and a[st[-1]] <= x",
+        "if st and a[st[-1]] < x",
+        "while st and a[st[-1]] > x"
+      ],
+      "a": 0,
+      "why": "Pop everything that x beats, and equal values stay: x is not strictly greater than them. It must be a while loop, because one new value can answer many waiting elements."
+    },
+    {
+      "q": "A monotonic stack handles n elements in…",
+      "o": [
+        "O(n²) in the worst case",
+        "O(n) amortised: each element is pushed once and popped once",
+        "O(n log n) because of the stack",
+        "O(n) only if the array is sorted"
+      ],
+      "a": 1,
+      "why": "The while loop inside the for loop looks quadratic, but every pop removes something pushed earlier: at most n pops in total."
+    },
+    {
+      "q": "Sum of subarray minimums with repeated values. Why is one side strict and the other not?",
+      "o": [
+        "Python’s sort is stable",
+        "So a subarray with equal minimums is credited to exactly one element",
+        "To save memory",
+        "It is arbitrary"
+      ],
+      "a": 1,
+      "why": "If both sides stopped only at strictly smaller values, a subarray with two equal minimums would be counted for both. Making one side stop at equal values assigns it to exactly one."
+    },
+    {
+      "q": "Sliding window maximum with a deque of indices. When do you pop from the front?",
+      "o": [
+        "When the front value is the smallest",
+        "When the front index is at most i − k (it left the window)",
+        "Every iteration",
+        "When the new value is bigger"
+      ],
+      "a": 1,
+      "why": "The back is trimmed by value; the front expires by position. The front is always the maximum of the current window."
+    },
+    {
+      "q": "Daily Temperatures for [73, 74, 75, 71, 69, 72, 76, 73]: days to wait for a warmer day?",
+      "o": [
+        "[1, 1, 4, 2, 1, 1, 0, 0]",
+        "[1, 1, 1, 1, 1, 1, 0, 0]",
+        "[1, 1, 4, 2, 1, 1, 0, 1]",
+        "[2, 2, 4, 2, 1, 1, 0, 0]"
+      ],
+      "a": 0,
+      "why": "75 waits 4 days for 76; 71 waits 2 days for 72; 76 and the last 73 never see a warmer day."
+    }
+  ],
+  "x15": [
+    {
+      "q": "In tree DP, what order must nodes be processed in?",
+      "o": [
+        "Children before their parent",
+        "Parent before children",
+        "Left to right by value",
+        "Random"
+      ],
+      "a": 0,
+      "why": "A node’s answer is built from its children’s answers; reversing a parent-first order gives that order without recursion."
+    },
+    {
+      "q": "Maximum Path Sum (LC 124): why can a path that goes UP to the parent use only one child branch?",
+      "o": [
+        "A path cannot split in two directions when it continues upward",
+        "Child branches are always negative",
+        "The root forbids it",
+        "It can use both"
+      ],
+      "a": 0,
+      "why": "Only the node where the path bends can use both branches; the value passed upward is the node plus its better branch."
+    },
+    {
+      "q": "When does “binary search the answer” work?",
+      "o": [
+        "When “is x enough?” flips from no to yes exactly once as x grows",
+        "When the array is sorted",
+        "When the answer is an integer",
+        "When the graph is a tree"
+      ],
+      "a": 0,
+      "why": "A monotone yes/no check is the whole requirement; sortedness of the input is irrelevant."
+    },
+    {
+      "q": "Evaluate Division (LC 399) uses a weighted union-find. What does each node store?",
+      "o": [
+        "The ratio of the node to its parent",
+        "The size of its set",
+        "Its depth",
+        "The edge weight to its neighbour"
+      ],
+      "a": 0,
+      "why": "A query is then the ratio of the two nodes to the common root, if they share one."
+    },
+    {
+      "q": "Running median with two heaps: which half goes in the max-heap?",
+      "o": [
+        "The smaller half",
+        "The larger half",
+        "The odd values",
+        "The newest values"
+      ],
+      "a": 0,
+      "why": "The max-heap’s top is the largest of the small half and the min-heap’s top the smallest of the large half; the median sits between them."
+    },
+    {
+      "q": "Why does Word Search II (LC 212) use a trie?",
+      "o": [
+        "One grid walk checks every word at once and cuts paths that match no prefix",
+        "Tries sort the words",
+        "It avoids recursion",
+        "It makes the grid smaller"
+      ],
+      "a": 0,
+      "why": "Without a trie you would search the grid once per word."
+    }
+  ],
+  "x16": [
+    {
+      "q": "n ≤ 100,000 and you need the answer within a few seconds in Python. Which cost class is the target?",
+      "o": [
+        "O(n log n)",
+        "O(n²)",
+        "O(2ⁿ)",
+        "O(n!)"
+      ],
+      "a": 0,
+      "why": "About 10⁷ simple operations per second: n² would be 10¹⁰."
+    },
+    {
+      "q": "n ≤ 20 and “choose any subset”. Which approach fits?",
+      "o": [
+        "Bitmask or subset enumeration, O(2ⁿ)",
+        "O(n log n) sort",
+        "Floyd–Warshall",
+        "Binary search"
+      ],
+      "a": 0,
+      "why": "2²⁰ ≈ 10⁶ subsets is fine."
+    },
+    {
+      "q": "V ≤ 400 and all-pairs shortest paths. Which fits?",
+      "o": [
+        "Floyd–Warshall, O(V³)",
+        "V runs of Bellman–Ford",
+        "Prim",
+        "Kahn"
+      ],
+      "a": 0,
+      "why": "400³ = 6.4 · 10⁷, borderline but standard; Bellman–Ford from every source would be V²E."
+    },
+    {
+      "q": "n ≤ 5,000 and a table indexed by two positions. Which cost is allowed?",
+      "o": [
+        "O(n²) = 25 million cells",
+        "O(n³)",
+        "O(2ⁿ)",
+        "O(n!)"
+      ],
+      "a": 0,
+      "why": "Two-dimensional DP over 5,000 × 5,000 is the usual ceiling."
+    },
+    {
+      "q": "The answer can be up to 10⁹ and you can check any candidate quickly. Which technique?",
+      "o": [
+        "Binary search on the answer",
+        "DP table over the answer",
+        "Backtracking",
+        "Sorting"
+      ],
+      "a": 0,
+      "why": "About 30 checks instead of 10⁹."
+    },
+    {
+      "q": "Which is the correct way to make a 3×3 grid of zeros in Python?",
+      "o": [
+        "[[0] * 3 for _ in range(3)]",
+        "[[0] * 3] * 3",
+        "[0 * 3] * 3",
+        "[[0, 3]] * 3"
+      ],
+      "a": 0,
+      "why": "The second form makes three names for one row."
+    },
+    {
+      "q": "Why does recursive DFS often fail on a 10⁵-node chain in Python?",
+      "o": [
+        "The default recursion limit is about 1,000 frames",
+        "Python has no recursion",
+        "Lists are too slow",
+        "The stack is a heap"
+      ],
+      "a": 0,
+      "why": "Use an explicit stack or a topological peel."
+    },
+    {
+      "q": "heapq.heappop returns…",
+      "o": [
+        "the smallest item",
+        "the largest item",
+        "the newest item",
+        "a random item"
+      ],
+      "a": 0,
+      "why": "For a max-heap push negated values."
+    }
+  ],
+  "x17": [
+    {
+      "q": "Merge sort is stable if, on a tie, the item from…",
+      "o": [
+        "the left half is taken first",
+        "the right half is taken first",
+        "either half, at random",
+        "neither half, the tie is dropped"
+      ],
+      "a": 0,
+      "why": "Left items came first in the input, so they must stay first."
+    },
+    {
+      "q": "Merge sort’s extra space is…",
+      "o": [
+        "O(n)",
+        "O(1)",
+        "O(log n) only",
+        "O(n²)"
+      ],
+      "a": 0,
+      "why": "The merge needs a buffer for the combined output."
+    },
+    {
+      "q": "Why is appending to a doubling dynamic array O(1) amortised?",
+      "o": [
+        "Copies happen at sizes 1, 2, 4, …, summing to less than 2n over n appends",
+        "Python never copies",
+        "The array is a linked list",
+        "Appending is free"
+      ],
+      "a": 0,
+      "why": "Growing by one instead would copy n(n − 1)/2 elements in total."
+    },
+    {
+      "q": "In open addressing, why must a deleted slot become a tombstone, not an empty slot?",
+      "o": [
+        "An empty slot would end searches early and hide keys placed after it",
+        "To free memory",
+        "To keep the table sorted",
+        "Python requires it"
+      ],
+      "a": 0,
+      "why": "Probing stops at the first empty slot."
+    },
+    {
+      "q": "The load factor of a hash table is…",
+      "o": [
+        "entries divided by slots",
+        "slots divided by entries",
+        "the number of collisions",
+        "the hash of the key"
+      ],
+      "a": 0,
+      "why": "Tables resize when it passes a limit such as 0.75 (chaining) or 0.5 (linear probing)."
+    }
+  ]
+}

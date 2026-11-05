@@ -1,0 +1,396 @@
+<section class="topic" id="ch4" data-group="trees" data-num="4" data-title="Binary Search Trees">
+<div class="topic-head"><div class="badge">4</div><div><div class="meta">Sorting and trees line</div><h2>Binary trees and Binary Search Trees</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>Binary search brings an "ignore half the data" trick to dynamic data. Learn the one rule, and search, insert and delete all follow.</p></div>
+
+
+<h3>Binary trees from scratch</h3>
+<h4>Why trees at all?</h4>
+<p>An array or list is <b>linear</b>: items are in a single row, so finding something means walking along it. Real data is often <b>hierarchical</b>: a folder holds folders, a company has managers and reports, a decision leads to further decisions. A tree stores that shape directly, and (as the next chapters show) a well-shaped tree lets you reach any item in about log n steps instead of n.</p>
+<h4>Definition</h4>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><p>A <b>binary tree</b> is either <b>empty</b>, or a <b>root node</b> together with a <b>left subtree</b> and a <b>right subtree</b>, each of which is itself a binary tree.</p></div>
+<p>That definition is recursive, and this is not an accident: almost every tree algorithm is a recursive function that handles "the empty tree" (base case) and "the root plus two smaller trees" (recursive case).</p>
+<h4>The rules of a binary tree</h4>
+<ol>
+<li><b>One root.</b> There is exactly one topmost node, and it has no parent. (A tree may be empty.)</li>
+<li><b>One parent each.</b> Every other node has exactly one parent: the node directly above it.</li>
+<li><b>At most two children, and they are labelled.</b> A node has a <b>left child</b> and/or a <b>right child</b>, each possibly missing. "Only a left child" and "only a right child" are different trees.</li>
+<li><b>No cycles, and connected.</b> From the root there is exactly one path down to every node. You can never walk around in a loop.</li>
+<li><b>No rule about the values.</b> A plain binary tree may hold any values in any arrangement. Extra ordering rules are what make a <i>BST</i> (this chapter) or a <i>heap</i> (next chapter).</li>
+</ol>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p>Students often mix up the rules. "Parent greater than child" is the <b>heap</b> rule. "Left smaller than node, right larger" is the <b>BST</b> rule. A plain binary tree has neither. Keep the three apart: <i>shape rules</i> (at most 2 children; complete) and <i>value rules</i> (BST order; heap order).</p></div>
+<h4>What a node looks like in code</h4>
+<script type="text/plain" class="code">
+class Node:
+    def __init__(self, value):
+        self.value = value      # the data stored here
+        self.left = None        # pointer to the left child (None = no left child)
+        self.right = None       # pointer to the right child
+
+# Build the tree  1 -> (2, 3)  with 2 -> (4, 7)  and 3 -> right child 6 by hand:
+root = Node(1)
+root.left = Node(2)
+root.right = Node(3)
+root.left.left = Node(4)
+root.left.right = Node(7)
+root.right.right = Node(6)
+</script>
+<p>A leaf is a node whose <code>left</code> and <code>right</code> are both <code>None</code>. The whole tree is referred to by a single variable: the root. If you hold the root you can reach everything.</p>
+
+<h4>Counting facts you can quote in an exam</h4>
+<div class="tbl-wrap"><table>
+<tr><th>Fact</th><th>Why it is true</th></tr>
+<tr><td>A tree with n nodes has <b>n − 1 edges</b>.</td><td>Every node except the root has exactly one edge going up to its parent.</td></tr>
+<tr><td>Level i (root = level 0) holds at most <b>2<sup>i</sup></b> nodes.</td><td>Each node can have at most 2 children, so every level can at most double the one above.</td></tr>
+<tr><td>A tree of height h has at most <b>2<sup>h+1</sup> − 1</b> nodes.</td><td>1 + 2 + 4 + … + 2<sup>h</sup> (a geometric sum). Example: height 2 → 7 nodes.</td></tr>
+<tr><td>A tree with n nodes has height at least <b>⌈log₂(n+1)⌉ − 1</b>, and at most <b>n − 1</b>.</td><td>Best case: levels packed full. Worst case: a single chain.</td></tr>
+<tr><td>A <b>full</b> binary tree has <b>leaves = internal nodes + 1</b>.</td><td>Count edges both ways: n − 1 = 2 × (internal nodes), with n = internal + leaves.</td></tr>
+<tr><td>A binary tree with n nodes has <b>n + 1 empty (None) child slots</b>.</td><td>2n slots in total, and n − 1 of them are used by edges.</td></tr>
+</table></div>
+<p>The heart of the whole chapter: <b>height controls speed.</b> A packed tree of a million nodes has height about 20, so a path from the root to anywhere is about 20 steps. A chain of a million nodes has height 999,999. Same nodes, wildly different performance.</p>
+
+<h4>Shapes of binary trees</h4>
+<div class="cols"><figure><div class="fig" style="text-align:center"><svg viewBox="0 0 172 150" style="width:172px;max-width:100%;height:auto" role="img" aria-label="Full binary tree"><g class="ed"><line x1="86" y1="21" x2="46" y2="69"/><line x1="86" y1="21" x2="126" y2="69"/><line x1="46" y1="69" x2="26" y2="117"/><line x1="46" y1="69" x2="66" y2="117"/></g><g class="gn "><circle cx="86" cy="21" r="15"/><text x="86" y="21">1</text></g><g class="gn "><circle cx="46" cy="69" r="15"/><text x="46" y="69">2</text></g><g class="gn "><circle cx="26" cy="117" r="15"/><text x="26" y="117">4</text></g><g class="gn "><circle cx="66" cy="117" r="15"/><text x="66" y="117">5</text></g><g class="gn "><circle cx="126" cy="69" r="15"/><text x="126" y="69">3</text></g></svg></div><figcaption><b>Full</b>: every node has 0 or 2 children. Node 3 is a leaf, 2 has two children.</figcaption></figure><figure><div class="fig" style="text-align:center"><svg viewBox="0 0 172 150" style="width:172px;max-width:100%;height:auto" role="img" aria-label="Perfect binary tree"><g class="ed"><line x1="86" y1="21" x2="46" y2="69"/><line x1="86" y1="21" x2="126" y2="69"/><line x1="46" y1="69" x2="26" y2="117"/><line x1="46" y1="69" x2="66" y2="117"/><line x1="126" y1="69" x2="106" y2="117"/><line x1="126" y1="69" x2="146" y2="117"/></g><g class="gn "><circle cx="86" cy="21" r="15"/><text x="86" y="21">1</text></g><g class="gn "><circle cx="46" cy="69" r="15"/><text x="46" y="69">2</text></g><g class="gn "><circle cx="26" cy="117" r="15"/><text x="26" y="117">4</text></g><g class="gn "><circle cx="66" cy="117" r="15"/><text x="66" y="117">5</text></g><g class="gn "><circle cx="126" cy="69" r="15"/><text x="126" y="69">3</text></g><g class="gn "><circle cx="106" cy="117" r="15"/><text x="106" y="117">6</text></g><g class="gn "><circle cx="146" cy="117" r="15"/><text x="146" y="117">7</text></g></svg></div><figcaption><b>Perfect</b>: every level completely full (1 + 2 + 4 = 7 nodes). All leaves at the same depth.</figcaption></figure><figure><div class="fig" style="text-align:center"><svg viewBox="0 0 172 150" style="width:172px;max-width:100%;height:auto" role="img" aria-label="Complete binary tree"><g class="ed"><line x1="86" y1="21" x2="46" y2="69"/><line x1="86" y1="21" x2="126" y2="69"/><line x1="46" y1="69" x2="26" y2="117"/><line x1="46" y1="69" x2="66" y2="117"/><line x1="126" y1="69" x2="106" y2="117"/></g><g class="gn "><circle cx="86" cy="21" r="15"/><text x="86" y="21">1</text></g><g class="gn "><circle cx="46" cy="69" r="15"/><text x="46" y="69">2</text></g><g class="gn "><circle cx="26" cy="117" r="15"/><text x="26" y="117">4</text></g><g class="gn "><circle cx="66" cy="117" r="15"/><text x="66" y="117">5</text></g><g class="gn "><circle cx="126" cy="69" r="15"/><text x="126" y="69">3</text></g><g class="gn "><circle cx="106" cy="117" r="15"/><text x="106" y="117">6</text></g></svg></div><figcaption><b>Complete</b> (but not full): all levels full except the last, and the last fills from the left. Node 3 has only a left child, which is allowed.</figcaption></figure><figure><div class="fig" style="text-align:center"><svg viewBox="0 0 172 198" style="width:172px;max-width:100%;height:auto" role="img" aria-label="Skewed binary tree"><g class="ed"><line x1="26" y1="21" x2="66" y2="69"/><line x1="66" y1="69" x2="106" y2="117"/><line x1="106" y1="117" x2="146" y2="165"/></g><g class="gn "><circle cx="26" cy="21" r="15"/><text x="26" y="21">1</text></g><g class="gn "><circle cx="66" cy="69" r="15"/><text x="66" y="69">2</text></g><g class="gn "><circle cx="106" cy="117" r="15"/><text x="106" y="117">3</text></g><g class="gn "><circle cx="146" cy="165" r="15"/><text x="146" y="165">4</text></g></svg></div><figcaption><b>Degenerate / skewed</b>: every node has one child. It is really a linked list. Height n − 1.</figcaption></figure><figure><div class="fig" style="text-align:center"><svg viewBox="0 0 172 150" style="width:172px;max-width:100%;height:auto" role="img" aria-label="Not a complete tree"><g class="ed"><line x1="86" y1="21" x2="46" y2="69"/><line x1="86" y1="21" x2="126" y2="69"/><line x1="46" y1="69" x2="66" y2="117"/></g><g class="gn "><circle cx="86" cy="21" r="15"/><text x="86" y="21">1</text></g><g class="gn "><circle cx="46" cy="69" r="15"/><text x="46" y="69">2</text></g><g class="gn hr"><circle cx="66" cy="117" r="15"/><text x="66" y="117">5</text></g><g class="gn "><circle cx="126" cy="69" r="15"/><text x="126" y="69">3</text></g></svg></div><figcaption><b>Not complete</b>: node 2 has a right child (5) but no left child, leaving a gap. Heaps may not look like this.</figcaption></figure></div>
+<h4>Two ways to store a binary tree</h4>
+<div class="cols">
+<div class="card"><h4>Pointer nodes</h4><p>Each node is an object with <code>left</code> and <code>right</code> pointers (as above). Works for any shape. Used for BSTs.</p></div>
+<div class="card"><h4>Array</h4><p>Store level by level; the children of index i live at <b>2i + 1</b> and <b>2i + 2</b>, and the parent at <b>(i − 1) // 2</b>. No pointers needed, but gaps would waste space, so it is used only for <b>complete</b> trees, which is exactly what heaps are.</p></div>
+</div>
+<h4>Three small recursive helpers</h4>
+<p>Every tree function follows one pattern: handle <code>None</code>, then combine the answers for the left and right subtrees. Learn this and the rest of the chapter becomes easy.</p>
+<script type="text/plain" class="code">
+def count_nodes(node):
+    if node is None:                 # base case: empty tree has 0 nodes
+        return 0
+    return 1 + count_nodes(node.left) + count_nodes(node.right)
+
+def height(node):                    # height in nodes; subtract 1 for edges
+    if node is None:
+        return 0
+    return 1 + max(height(node.left), height(node.right))
+
+def count_leaves(node):
+    if node is None:
+        return 0
+    if node.left is None and node.right is None:
+        return 1                     # a leaf
+    return count_leaves(node.left) + count_leaves(node.right)
+# All three visit every node once: O(n) time, O(h) space for the recursion stack.
+</script>
+
+<h3>Terminology cheat sheet</h3>
+<p>A <b>tree</b> is a set of <b>nodes</b> joined by edges, with no cycles. A <b>binary tree</b> is a tree where each node has at most two children, called <b>left</b> and <b>right</b>. Each node stores a value and two pointers.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td>Root</td><td>The top node, which has no parent.</td></tr>
+<tr><td>Leaf</td><td>A node with no children.</td></tr>
+<tr><td>Parent / child / sibling</td><td>Relationships along edges.</td></tr>
+<tr><td>Subtree</td><td>A node together with all its descendants.</td></tr>
+<tr><td>Depth of a node</td><td>Number of edges from the root to that node. Root has depth 0.</td></tr>
+<tr><td>Height of a tree</td><td>Number of edges on the longest root-to-leaf path. (Empty tree: −1 by CLRS, 0 in some books. State your convention.)</td></tr>
+<tr><td>Full / Perfect / Complete</td><td>Full: every node has 0 or 2 children. Perfect: all leaves at the same depth, all levels full. Complete: all levels full except possibly the last, which is filled left to right (heaps use this).</td></tr>
+</table></div>
+
+<h3>The three depth-first traversals</h3>
+<p>A traversal visits every node once. The three classic orders differ only in <i>when</i> you handle the node relative to its subtrees. A handy mnemonic: the name says where the <b>node</b> goes.</p>
+<div class="two">
+<div class="fig"><svg viewBox="0 0 260 190" role="img" aria-label="Example binary tree with root 1, left child 2 with children 4 and 7, right child 3 with right child 6" style="min-width:240px">
+<g class="ed"><line x1="130" y1="30" x2="70" y2="85"/><line x1="130" y1="30" x2="190" y2="85"/><line x1="70" y1="85" x2="35" y2="145"/><line x1="70" y1="85" x2="105" y2="145"/><line x1="190" y1="85" x2="225" y2="145"/></g>
+<g class="gn"><g><circle cx="130" cy="30" r="17"/><text x="130" y="30">1</text></g><g><circle cx="70" cy="85" r="17"/><text x="70" y="85">2</text></g><g><circle cx="190" cy="85" r="17"/><text x="190" y="85">3</text></g><g><circle cx="35" cy="145" r="17"/><text x="35" y="145">4</text></g><g><circle cx="105" cy="145" r="17"/><text x="105" y="145">7</text></g><g><circle cx="225" cy="145" r="17"/><text x="225" y="145">6</text></g></g></svg></div>
+<div class="tbl-wrap"><table>
+<tr><th>Traversal</th><th>Order</th><th>Result</th></tr>
+<tr><td>Preorder</td><td>node, left, right</td><td class="n">1 2 4 7 3 6</td></tr>
+<tr><td>Inorder</td><td>left, node, right</td><td class="n">4 2 7 1 3 6</td></tr>
+<tr><td>Postorder</td><td>left, right, node</td><td class="n">4 7 2 6 3 1</td></tr>
+<tr><td>Level order (BFS)</td><td>row by row</td><td class="n">1 2 3 4 7 6</td></tr>
+</table></div></div>
+<script type="text/plain" class="code">
+class Node:
+    def __init__(self, value):
+        self.value = value
+        self.left = None
+        self.right = None
+
+def inorder(node, out):
+    if node is None:           # base case: empty subtree
+        return
+    inorder(node.left, out)    # 1. everything on the left
+    out.append(node.value)     # 2. the node itself
+    inorder(node.right, out)   # 3. everything on the right
+# preorder: move the append line above the left call.
+# postorder: move it below the right call.
+</script>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><p>Traversals are all forms of <b>DFS</b> (go deep, then backtrack). Level order is <b>BFS</b>. You will meet both again on graphs in chapter 8.</p></div>
+
+<h4>How to carry out a traversal by hand</h4>
+<p>Each rule is the same recursive recipe with the "visit the node" step placed at a different moment:</p>
+<ul>
+<li><b>Preorder</b> (NLR): visit the node, <i>then</i> do the left subtree, <i>then</i> the right subtree.</li>
+<li><b>Inorder</b> (LNR): do the left subtree, <i>then</i> visit the node, <i>then</i> the right subtree.</li>
+<li><b>Postorder</b> (LRN): do the left subtree, then the right subtree, <i>then</i> visit the node.</li>
+</ul>
+<div class="box analogy"><div class="lbl" data-ico="🧑‍🏫">Teacher's note</div><p><b>The flag trick.</b> Walk once around the outside of the tree, starting at the left of the root and keeping the tree on your left. Preorder writes a node when you pass its <b>left side</b> (first time you meet it). Inorder writes it when you pass <b>underneath</b> it. Postorder writes it when you pass its <b>right side</b> (the last time you see it).</p></div>
+<p>Edit the tree below (level order, <code>#</code> for a missing child) and step through each traversal. Watch the call stack: every pending call is a node still waiting for its subtrees to finish. When a call hits <code>None</code> it returns at once; that is the base case.</p>
+<div class="lab" data-w="btree" data-title="Lab: binary tree traversals and call stack"></div>
+
+
+<h3>The BST rule</h3>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><p><b>For every node x: all values in x's left subtree are smaller than x, and all values in x's right subtree are larger than x.</b> The rule must hold at <i>every</i> node, not just the root.</p></div>
+<ul>
+<li><b>Duplicates</b>: either forbid them, or always send them the same way (say, right). Never mix. (CLRS writes left ≤ node ≤ right; your notes use strict &lt; and &gt;. Say which convention you use.)</li>
+<li><b>Why it helps:</b> at a node, one comparison tells you which entire half of the remaining tree can be ignored. This is binary search, but on a linked structure that supports cheap inserts and deletes (unlike a sorted array, where insert is O(n) because of shifting).</li>
+<li><b>Superpower:</b> an <b>inorder traversal of a BST prints keys in sorted order</b> in Θ(n). Because left &lt; node &lt; right is exactly the inorder visit order.</li>
+</ul>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p>A tree where each node is merely bigger than its left <i>child</i> and smaller than its right <i>child</i> is <b>not</b> necessarily a BST. Example: root 10, left child 5, and 5's right child 15. Locally fine (15 &gt; 5), but 15 is in the left subtree of 10 and must be less than 10. We come back to this in "validate a BST" below.</p></div>
+
+
+<h4>The BST rules, stated precisely</h4>
+<ol>
+<li>A BST is a <b>binary tree</b> (at most two children per node).</li>
+<li>For <b>every</b> node x: <b>every</b> key in x's left subtree is <b>smaller</b> than x's key, and <b>every</b> key in x's right subtree is <b>larger</b>.</li>
+<li>The rule is recursive: x's left and right subtrees are themselves BSTs.</li>
+<li>Decide one duplicate policy: reject duplicates, or always send an equal key to the same side.</li>
+</ol>
+<div class="cols"><figure><div class="fig" style="text-align:center"><svg viewBox="0 0 300 198" style="width:300px;max-width:100%;height:auto" role="img" aria-label="Valid binary search tree"><g class="ed"><line x1="150" y1="21" x2="78" y2="69"/><line x1="150" y1="21" x2="222" y2="69"/><line x1="78" y1="69" x2="42" y2="117"/><line x1="78" y1="69" x2="114" y2="117"/><line x1="114" y1="117" x2="96" y2="165"/><line x1="114" y1="117" x2="132" y2="165"/><line x1="222" y1="69" x2="258" y2="117"/><line x1="258" y1="117" x2="240" y2="165"/></g><g class="gn "><circle cx="150" cy="21" r="15"/><text x="150" y="21">8</text></g><g class="gn "><circle cx="78" cy="69" r="15"/><text x="78" y="69">3</text></g><g class="gn "><circle cx="42" cy="117" r="15"/><text x="42" y="117">1</text></g><g class="gn "><circle cx="114" cy="117" r="15"/><text x="114" y="117">6</text></g><g class="gn "><circle cx="96" cy="165" r="15"/><text x="96" y="165">4</text></g><g class="gn "><circle cx="132" cy="165" r="15"/><text x="132" y="165">7</text></g><g class="gn "><circle cx="222" cy="69" r="15"/><text x="222" y="69">10</text></g><g class="gn "><circle cx="258" cy="117" r="15"/><text x="258" y="117">14</text></g><g class="gn "><circle cx="240" cy="165" r="15"/><text x="240" y="165">13</text></g></svg></div><figcaption><b>Valid BST.</b> Check node 6: it is in 8's left subtree (6 &lt; 8) and in 3's right subtree (6 &gt; 3). Its own children 4 and 7 are also between 3 and 8.</figcaption></figure><figure><div class="fig" style="text-align:center"><svg viewBox="0 0 172 150" style="width:172px;max-width:100%;height:auto" role="img" aria-label="Invalid binary search tree"><g class="ed"><line x1="86" y1="21" x2="46" y2="69"/><line x1="86" y1="21" x2="126" y2="69"/><line x1="46" y1="69" x2="66" y2="117"/></g><g class="gn "><circle cx="86" cy="21" r="15"/><text x="86" y="21">10</text></g><g class="gn "><circle cx="46" cy="69" r="15"/><text x="46" y="69">5</text></g><g class="gn hr"><circle cx="66" cy="117" r="15"/><text x="66" y="117">15</text></g><g class="gn "><circle cx="126" cy="69" r="15"/><text x="126" y="69">20</text></g></svg></div><figcaption><b>Not a BST.</b> 15 is bigger than its parent 5 (fine locally) but it sits in the <i>left</i> subtree of 10, so it must be less than 10. Every node must obey <b>all</b> its ancestors.</figcaption></figure></div>
+<h4>Binary tree vs BST vs heap</h4>
+<div class="tbl-wrap"><table>
+<tr><th></th><th>Plain binary tree</th><th>Binary search tree</th><th>Max-heap</th></tr>
+<tr><td>Shape rule</td><td>At most 2 children</td><td>At most 2 children</td><td>Complete tree (levels filled left to right)</td></tr>
+<tr><td>Value rule</td><td>None</td><td>Left subtree &lt; node &lt; right subtree</td><td>Parent ≥ both children</td></tr>
+<tr><td>Siblings ordered?</td><td>No</td><td>Yes (left &lt; right)</td><td>No</td></tr>
+<tr><td>Find a given key</td><td>O(n)</td><td>O(h)</td><td>O(n)</td></tr>
+<tr><td>Find the maximum</td><td>O(n)</td><td>O(h): keep going right</td><td><b>O(1)</b>: the root</td></tr>
+<tr><td>Inorder traversal is sorted?</td><td>No</td><td><b>Yes</b></td><td>No</td></tr>
+<tr><td>Stored as</td><td>Pointers</td><td>Pointers</td><td>Array</td></tr>
+<tr><td>Best at</td><td>Representing hierarchy</td><td>Dynamic sorted data, range queries</td><td>Priority queue (best item first)</td></tr>
+</table></div>
+
+<h3>Operations</h3>
+<h4>Search</h4>
+<p>Start at the root. If the target is smaller, go left; larger, go right; equal, found; fell off the tree (None), not present. Each step discards a whole subtree.</p>
+<script type="text/plain" class="code">
+def search(node, target):
+    if node is None:
+        return False                      # fell off: not present
+    if target < node.value:
+        return search(node.left, target)  # smaller: can only be on the left
+    if target > node.value:
+        return search(node.right, target) # larger: can only be on the right
+    return True                           # equal: found
+</script>
+<h4>Insert</h4>
+<p>Walk exactly as in search until you reach an empty spot. Put the new node there. A new key always becomes a <b>leaf</b>.</p>
+<script type="text/plain" class="code">
+def insert(node, value):
+    if node is None:
+        return Node(value)                    # empty spot: create the node
+    if value < node.value:
+        node.left = insert(node.left, value)  # re-attach what comes back
+    elif value > node.value:
+        node.right = insert(node.right, value)
+    return node                               # hand the (unchanged) node up
+</script>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p>The line <code>node.left = insert(node.left, value)</code> must <b>assign</b> the return value. If you write just <code>insert(node.left, value)</code>, the new node is created but never linked to its parent and is lost.</p></div>
+<h4>Minimum, maximum, successor</h4>
+<ul>
+<li><b>Minimum</b>: keep going left until there is no left child. <b>Maximum</b>: keep going right.</li>
+<li><b>Inorder successor</b> of x (the next larger key): if x has a right subtree, it is the <i>minimum of that subtree</i>. Otherwise climb up until you arrive from a left child; that ancestor is the successor.</li>
+</ul>
+<h4>Delete: the three cases</h4>
+<p>This is the operation examiners love. Find the node z, then look at how many children it has.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Case</th><th>What to do</th><th>Why it is safe</th></tr>
+<tr><td><b>1. Leaf</b> (no children)</td><td>Remove it (set the parent's pointer to None).</td><td>Nothing hangs below it.</td></tr>
+<tr><td><b>2. One child</b></td><td>Replace z by its only child (the parent now points to that child).</td><td>The whole child subtree was on the correct side of the parent, so it stays valid.</td></tr>
+<tr><td><b>3. Two children</b></td><td>Find z's <b>inorder successor</b> y = minimum of z's right subtree. Copy y's value into z. Then delete y from the right subtree (y has no left child, so that is case 1 or 2).</td><td>y is the smallest key larger than z, so it is greater than everything on the left and smaller than everything else on the right. (Symmetric alternative: use the predecessor, the maximum of the left subtree.)</td></tr>
+</table></div>
+<script type="text/plain" class="code">
+def find_min(node):
+    while node.left:
+        node = node.left
+    return node
+
+def delete(node, key):
+    if node is None:
+        return None
+    if key < node.value:
+        node.left = delete(node.left, key)
+    elif key > node.value:
+        node.right = delete(node.right, key)
+    else:                                   # found the node to delete
+        if node.left is None:               # case 1 and 2a: no left child
+            return node.right               # (may be None for a leaf)
+        if node.right is None:              # case 2b: no right child
+            return node.left
+        succ = find_min(node.right)         # case 3: two children
+        node.value = succ.value             # copy successor's value up
+        node.right = delete(node.right, succ.value)  # remove successor
+    return node
+</script>
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><p><b>CLRS's version</b> does not copy values; it relinks nodes with a helper called <code>TRANSPLANT(u, v)</code> that replaces the subtree rooted at u by the subtree rooted at v. Case 3 there: if the successor y is z's right child, replace z by y directly; otherwise first replace y by y's right child, then replace z by y. Copying values (above) is simpler to write; relinking is better when other code holds pointers to nodes.</p></div>
+
+<h3>Worked trace: build, then delete</h3>
+<div class="box tip"><div class="lbl" data-ico="✏️">Worked example</div><p>Insert 50, 30, 70, 20, 40, 60, 80 in that order. 50 becomes the root. 30 &lt; 50 → left. 70 → right. 20 → left of 50, then left of 30. 40 → left of 50, right of 30. 60 → right of 50, left of 70. 80 → right of 70. A perfectly balanced tree of height 2; inorder gives 20 30 40 50 60 70 80.</p>
+<p><b>Delete 50</b> (root, two children): successor = minimum of the right subtree = 60. Copy 60 into the root, then delete the original 60 (a leaf). Inorder now: 20 30 40 60 70 80. <b>Delete 30</b> next (two children 20 and 40): successor = 40 (minimum of its right subtree). Copy, remove old 40. Try it on the lab.</p></div>
+<div class="lab" data-w="bst" data-title="Lab: Binary Search Tree"></div>
+
+<h3>Cost: it all depends on the height h</h3>
+<p>Search, insert, delete, min, max, successor all follow a single root-to-leaf path, so each costs <b>O(h)</b>.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Tree shape</th><th>Height</th><th>Each operation</th><th>How it happens</th></tr>
+<tr><td>Balanced</td><td>≈ log₂n</td><td>O(log n)</td><td>Keys arrive in a mixed order</td></tr>
+<tr><td>Randomly built</td><td>expected O(log n)</td><td>expected O(log n)</td><td>Random insertion order (CLRS 12.4: same analysis as Quick Sort)</td></tr>
+<tr><td>Skewed</td><td>n − 1</td><td>O(n)</td><td>Keys inserted in sorted order, producing a "linked list"</td></tr>
+</table></div>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p>A plain BST is <b>not self-balancing</b>. "BST operations are O(log n)" is only true for balanced trees. Insert 1, 2, 3, 4, 5 in order in the lab and watch it collapse into a line.</p></div>
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><p><b>Self-balancing trees</b> (AVL, Red-Black) fix this: after each insert or delete they use <i>rotations</i> to keep the height O(log n) always, so worst-case operations are O(log n). AVL keeps the heights of the left and right subtrees of every node within 1 of each other. Not needed for this exam beyond knowing why they exist.</p></div>
+
+<h3>Problem solving with BSTs</h3>
+<p>Almost every BST problem uses one of three ideas: <b>(a)</b> inorder = sorted; <b>(b)</b> use the rule to discard half the tree; <b>(c)</b> pass down <i>bounds</i> that every node in a subtree must respect.</p>
+
+<h4>1. Validate a BST</h4>
+<p>Passing bounds down is the key. Each node must lie strictly between the largest ancestor you turned right at and the smallest ancestor you turned left at.</p>
+<script type="text/plain" class="code">
+def is_bst(node, low=float('-inf'), high=float('inf')):
+    if node is None:
+        return True
+    if not (low < node.value < high):           # violates an ancestor's bound
+        return False
+    return (is_bst(node.left,  low, node.value) and    # left: below this node
+            is_bst(node.right, node.value, high))      # right: above this node
+# Alternative: inorder traversal must be strictly increasing.  O(n) time.
+</script>
+<h4>2. k-th smallest element</h4>
+<p>Inorder visits keys in increasing order, so stop at the k-th visit. O(h + k).</p>
+<script type="text/plain" class="code">
+def kth_smallest(root, k):
+    stack, node = [], root
+    while stack or node:
+        while node:                 # go as far left as possible
+            stack.append(node)
+            node = node.left
+        node = stack.pop()          # next smallest
+        k -= 1
+        if k == 0:
+            return node.value
+        node = node.right
+</script>
+<h4>3. Lowest common ancestor (LCA) of two keys</h4>
+<p>If both keys are smaller than the current node, the LCA is on the left; if both larger, on the right; otherwise the current node is where they split, so it is the LCA. O(h).</p>
+<script type="text/plain" class="code">
+def lca(node, p, q):
+    while node:
+        if p < node.value and q < node.value:
+            node = node.left
+        elif p > node.value and q > node.value:
+            node = node.right
+        else:
+            return node             # paths diverge here
+</script>
+<h4>4. Sorted array to balanced BST</h4>
+<p>Take the middle element as the root so both sides have nearly equal size, then recurse on each half. Height = O(log n).</p>
+<script type="text/plain" class="code">
+def build(a, lo, hi):
+    if lo > hi:
+        return None
+    mid = (lo + hi) // 2
+    node = Node(a[mid])
+    node.left  = build(a, lo, mid - 1)
+    node.right = build(a, mid + 1, hi)
+    return node
+</script>
+<h4>5. Range sum: add all keys between L and R</h4>
+<p>Prune: if a node is below L, its whole left subtree is too small, so skip it. Likewise above R.</p>
+<script type="text/plain" class="code">
+def range_sum(node, L, R):
+    if node is None:
+        return 0
+    if node.value < L:
+        return range_sum(node.right, L, R)      # left side too small
+    if node.value > R:
+        return range_sum(node.left, L, R)       # right side too big
+    return node.value + range_sum(node.left, L, R) + range_sum(node.right, L, R)
+</script>
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><p><b>More patterns to know:</b> floor and ceiling of a key (walk like search and remember the last candidate), convert BST to a sorted linked list (inorder), count nodes in range, two-sum in a BST (inorder to array, then two pointers), recover a BST with two swapped nodes (inorder shows two inversions), find height, check if two trees are identical.</p></div>
+
+<h3 class="pat-head">Patterns for contests: BST</h3>
+<div class="box tip"><div class="lbl" data-ico="🎯">Seen in your contests</div><p><b>Contest 1:</b> Q1 minimum in a BST (keep going left), Q6 balanced BST from a binary tree (inorder gives sorted values, then pick the middle), and <b>Q4 Validate BST</b> (40/80, solved after the deadline). The classic trap there: checking only “left child &lt; node &lt; right child” passes the samples and fails the tests, because a node deep in the right subtree must still be larger than the root. <b>Mid-sem Q1</b> was a plain inorder traversal.</p></div>
+<div class="tbl-wrap"><table>
+<tr><th>Pattern</th><th>Words in the statement</th><th>Tool</th></tr>
+<tr><td>Validate</td><td>“is this a valid BST”</td><td>pass (low, high) bounds down, or check that inorder is strictly increasing</td></tr>
+<tr><td>Inorder is sorted</td><td>“k-th smallest”, “minimum difference”, “mode”, “range sum”</td><td>walk inorder, stop early</td></tr>
+<tr><td>Build from a sequence</td><td>“from sorted array”, “from preorder”, “balance it”</td><td>middle element, or a running upper bound</td></tr>
+<tr><td>Repair</td><td>“two nodes were swapped”</td><td>one inorder walk, look for descents</td></tr>
+<tr><td>Floor, ceiling, successor</td><td>“largest value ≤ x”, “next larger”</td><td>walk down once; in a contest, <code>bisect</code> on a sorted list</td></tr>
+<tr><td>Ancestors</td><td>“lowest common ancestor”</td><td>the split point: the first node between the two keys</td></tr>
+</table></div>
+<script type="text/plain" class="code">
+class Node:
+    def __init__(self, value):
+        self.value = value
+        self.left = self.right = None
+
+def is_bst_wrong(node):                   # the Contest 1 Q4 trap: compares only with the parent
+    if node is None:
+        return True
+    if node.left and node.left.value >= node.value:
+        return False
+    if node.right and node.right.value <= node.value:
+        return False
+    return is_bst_wrong(node.left) and is_bst_wrong(node.right)
+
+def is_bst(node, low=float('-inf'), high=float('inf')):
+    if node is None:
+        return True
+    if not (low < node.value < high):     # every ancestor sets a bound, not just the parent
+        return False
+    return is_bst(node.left, low, node.value) and is_bst(node.right, node.value, high)
+</script>
+<p>Try the tree 5 → (left 1, right 6 → (left 3, right 7)). <code>is_bst_wrong</code> says True; <code>is_bst</code> says False, because 3 sits in the right subtree of 5 and is smaller than 5.</p>
+<script type="text/plain" class="code">
+def bst_from_preorder(pre):               # LC 1008, O(n): each value must stay below a bound
+    i = 0
+    def build(bound):
+        nonlocal i
+        if i == len(pre) or pre[i] > bound:
+            return None
+        node = Node(pre[i]); i += 1
+        node.left = build(node.value)     # left subtree: values below this node
+        node.right = build(bound)         # right subtree: values below the inherited bound
+        return node
+    return build(float('inf'))
+</script>
+<script type="text/plain" class="code">
+def swapped_pair(root):                   # LC 99: two values were swapped; one inorder walk finds them
+    first = second = prev = None
+    stack, node = [], root
+    while stack or node:
+        while node:
+            stack.append(node); node = node.left
+        node = stack.pop()
+        if prev and prev.value > node.value:      # a descent in what should be sorted
+            if first is None:
+                first = prev                      # first descent: its bigger value is misplaced
+            second = node                         # last descent: its smaller value is misplaced
+        prev, node = node, node.right
+    return first.value, second.value
+</script>
+<p>Why the swapped pair shows up as descents: a sorted sequence has none. Swapping two far-apart values creates two descents (take the bigger value of the first and the smaller value of the last); swapping neighbours creates one.</p>
+<p><b>The contest shortcut.</b> In Python there is no built-in balanced BST. When the keys arrive offline, a sorted list with <code>bisect</code> does the same job: <code>insort</code> keeps it sorted and the two functions below give floor and ceiling.</p>
+<script type="text/plain" class="code">
+from bisect import bisect_left, bisect_right, insort
+
+def floor_(a, x):                         # largest element <= x in a sorted list, or None
+    i = bisect_right(a, x)
+    return a[i - 1] if i else None
+
+def ceiling(a, x):                        # smallest element >= x, or None
+    i = bisect_left(a, x)
+    return a[i] if i < len(a) else None
+</script>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p>Duplicates: decide from the statement whether equal keys go left, right or are forbidden, and use the matching strict or non-strict bound. A BST built from sorted input is a linked list of height n: recursion that deep fails in Python, so walk iteratively. Seed the bounds with <code>float('-inf')</code> and <code>float('inf')</code>, not with a guess like 0 or 10⁹.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Validate with bounds from every ancestor, never with the parent alone.</p>
+<p>BST inorder = sorted order; most BST questions are sorted-array questions in disguise.</p>
+<p>Practice: the Ladder, tab BST.</p></div>
+<div class="quiz" data-quiz="s4"></div>
+</section>

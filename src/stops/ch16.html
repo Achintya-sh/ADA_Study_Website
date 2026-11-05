@@ -1,0 +1,305 @@
+<section class="topic" id="ch16" data-group="found" data-num="16" data-title="Contest readiness">
+<div class="topic-head"><div class="badge">16</div><div><div class="meta">Foundations line · constraints, Python pitfalls, templates, interview, 3-hour mock</div><h2>Contest readiness</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>By now you know the algorithms. Contest marks are lost to things <i>around</i> the algorithm: choosing the wrong one, a Python slip, an edge case, or running out of clock. This stop is the final checklist: constraints that tell you the algorithm, the Python pitfalls that cost marks, one sheet of templates to type from memory, how to explain a solution out loud for the Mock AI Interview, and a full three-hour mock contest with answers.</p></div>
+
+<h3>1. Constraints tell you the algorithm</h3>
+<p>Python manages roughly 10⁷ simple operations per second. Read the largest input size n first.</p>
+<div class="tbl-wrap"><table>
+<tr><th>n up to</th><th>Work allowed</th><th>Think</th></tr>
+<tr><td>10 – 11</td><td>O(n!)</td><td>permutations, backtracking</td></tr>
+<tr><td>20 – 25</td><td>O(2ⁿ)</td><td>subsets, bitmask DP; 40 with meet in the middle</td></tr>
+<tr><td>400 – 500</td><td>O(n³)</td><td>Floyd–Warshall, interval DP</td></tr>
+<tr><td>5,000</td><td>O(n²)</td><td>2-D DP, all pairs of items</td></tr>
+<tr><td>10⁵ – 2·10⁵</td><td>O(n log n)</td><td>sort, heap, binary search, Dijkstra, segment or Fenwick tree</td></tr>
+<tr><td>10⁶ – 10⁷</td><td>O(n)</td><td>one pass, two pointers, prefix sums, BFS</td></tr>
+<tr><td>10⁹ or more</td><td>O(log n) or O(1)</td><td>binary search on the answer, a formula</td></tr>
+</table></div>
+<p>The quiz at the end of this stop asks for the algorithm from the constraints alone.</p>
+
+<h3>2. Python pitfalls that cost marks</h3>
+<p>The function below demonstrates five of them with the values you will see (shown in the comments). The rest are in the list underneath.</p>
+<script type="text/plain" class="code">
+import heapq
+
+def pitfalls_demo():
+    out = {}
+    def bad_append(x, acc=[]):             # 1. a mutable default is created ONCE and shared by every call
+        acc.append(x)
+        return acc
+    bad_append(1)
+    out['mutable_default'] = bad_append(2)                     # [1, 2], not [2]
+    grid_bad = [[0] * 3] * 3               # 2. three names for ONE row
+    grid_bad[0][0] = 7
+    grid_good = [[0] * 3 for _ in range(3)]
+    grid_good[0][0] = 7
+    out['alias_grid'] = (grid_bad[2][0], grid_good[2][0])      # (7, 0)
+    a = [3, 1, 2]                          # 3. b = a is a second name; a[:] is a copy (and costs O(n))
+    b, c = a, a[:]
+    a.sort()
+    out['alias_list'] = (b, c)                                 # ([1, 2, 3], [3, 1, 2])
+    h = []                                 # 4. heapq is a MIN-heap; for the max, push the negative
+    for x in (5, 1, 9):
+        heapq.heappush(h, -x)
+    out['max_heap'] = -heapq.heappop(h)                        # 9
+    h2 = [(1, 'b'), (1, 'a')]              # 5. equal first items: Python compares the second ones
+    heapq.heapify(h2)
+    out['tie_break'] = heapq.heappop(h2)                       # (1, 'a')
+    out['floor_div'] = (-7 // 2, -7 % 2, int(-7 / 2))          # (-4, 1, -3): // floors, int() truncates
+    out['sort_stable'] = sorted([(1, 'x'), (0, 'y'), (1, 'a')], key=lambda t: t[0])    # equal keys keep their order
+    return out
+</script>
+<ul>
+<li><b>Recursion limit.</b> Python allows about 1,000 nested calls. DFS on a long chain, a skewed tree, or a deep memoised DP crashes. Write the iterative version (stacks, topological peeling) or convert to a table. Raising the limit with <code>sys.setrecursionlimit</code> may still overflow the real stack.</li>
+<li><b>Slow input.</b> For 10⁵ numbers use <code>sys.stdin.readline</code> or read everything once (template in stop 14).</li>
+<li><b>Costly operations.</b> <code>list.pop(0)</code> and <code>x in list</code> are O(n): use <code>deque</code> and <code>set</code>. <code>s += c</code> in a loop and slices like <code>a[i:]</code> copy; use indices.</li>
+<li><b><code>heapq</code>.</b> A min-heap only (negate for max); tuples compare element by element, so a tie on the first value compares the second and may fail on objects that cannot be compared; there is no decrease-key, so push a new entry and skip stale ones.</li>
+<li><b>Integer division and modulo</b> round toward −∞, not toward zero.</li>
+<li><b>Floats.</b> Compare with a tolerance, or work in integers.</li>
+</ul>
+
+<h3>3. The template sheet: type these from memory</h3>
+<p>Thirteen short functions cover most of what the end-sem can ask. Each is the shortest correct version, and all were checked against the long versions and brute force. Typing them blank, once a day for a week, matters more than reading them again.</p>
+<script type="text/plain" class="code">
+import heapq
+from collections import deque
+
+def search_first_true(lo, hi, ok):         # 1. binary search: smallest x in [lo, hi] with ok(x); ok is F..F T..T
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if ok(mid):
+            hi = mid
+        else:
+            lo = mid + 1
+    return lo
+
+def grid_bfs(grid, start, goal):           # 2. fewest steps on a grid (1 = wall), -1 if unreachable
+    R, C = len(grid), len(grid[0])
+    dist = {start: 0}
+    q = deque([start])
+    while q:
+        r, c = q.popleft()
+        if (r, c) == goal:
+            return dist[(r, c)]
+        for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < R and 0 <= nc < C and grid[nr][nc] == 0 and (nr, nc) not in dist:
+                dist[(nr, nc)] = dist[(r, c)] + 1       # mark when PUSHED
+                q.append((nr, nc))
+    return -1
+
+def reach(adj, s):                         # 3. iterative DFS: which vertices can s reach?
+    seen = {s}
+    stack = [s]
+    while stack:
+        u = stack.pop()
+        for v in adj[u]:
+            if v not in seen:
+                seen.add(v)
+                stack.append(v)
+    return seen
+
+def topo_kahn(n, edges):                   # 4. Kahn: order, or None on a cycle
+    adj = [[] for _ in range(n)]
+    indeg = [0] * n
+    for u, v in edges:
+        adj[u].append(v)
+        indeg[v] += 1
+    q = deque(i for i in range(n) if indeg[i] == 0)
+    out = []
+    while q:
+        u = q.popleft()
+        out.append(u)
+        for v in adj[u]:
+            indeg[v] -= 1
+            if indeg[v] == 0:
+                q.append(v)
+    return out if len(out) == n else None
+
+def shortest_dijkstra(n, edges, s):        # 5. non-negative weights; finalised when POPPED
+    adj = [[] for _ in range(n)]
+    for u, v, w in edges:
+        adj[u].append((v, w))
+    dist = [float('inf')] * n
+    dist[s] = 0
+    heap = [(0, s)]
+    while heap:
+        d, u = heapq.heappop(heap)
+        if d > dist[u]:
+            continue
+        for v, w in adj[u]:
+            if d + w < dist[v]:
+                dist[v] = d + w
+                heapq.heappush(heap, (dist[v], v))
+    return dist
+
+class UF:                                  # 6. union-find: halving + union by size
+    def __init__(self, n):
+        self.p = list(range(n))
+        self.sz = [1] * n
+    def find(self, x):
+        while self.p[x] != x:
+            self.p[x] = self.p[self.p[x]]
+            x = self.p[x]
+        return x
+    def union(self, a, b):
+        a, b = self.find(a), self.find(b)
+        if a == b:
+            return False
+        if self.sz[a] < self.sz[b]:
+            a, b = b, a
+        self.p[b] = a
+        self.sz[a] += self.sz[b]
+        return True
+
+def mst_kruskal(n, edges):                 # 7. edges (u, v, w); total weight or None
+    uf, total, used = UF(n), 0, 0
+    for u, v, w in sorted(edges, key=lambda e: e[2]):
+        if uf.union(u, v):
+            total += w
+            used += 1
+    return total if used == n - 1 else None
+
+def shortest_bf(n, edges, s):              # 8. Bellman-Ford; None on a reachable negative cycle
+    dist = [float('inf')] * n
+    dist[s] = 0
+    for _ in range(n - 1):
+        for u, v, w in edges:
+            if dist[u] + w < dist[v]:
+                dist[v] = dist[u] + w
+    if any(dist[u] + w < dist[v] for u, v, w in edges):
+        return None
+    return dist
+
+def lis_bisect(a):                         # 9. LIS length, strictly increasing, O(n log n)
+    from bisect import bisect_left
+    tails = []
+    for x in a:
+        i = bisect_left(tails, x)          # bisect_right would allow equal values
+        if i == len(tails):
+            tails.append(x)
+        else:
+            tails[i] = x
+    return len(tails)
+
+def knap_01_row(w, v, W):                  # 10. 0/1 knapsack, one row: capacity goes DOWNWARD
+    best = [0] * (W + 1)
+    for wi, vi in zip(w, v):
+        for c in range(W, wi - 1, -1):
+            best[c] = max(best[c], best[c - wi] + vi)
+    return best[W]
+
+def edit_dist_row(a, b):                   # 11. edit distance, forward, one row
+    row = list(range(len(b) + 1))
+    for i in range(1, len(a) + 1):
+        diag, row[0] = row[0], i
+        for j in range(1, len(b) + 1):
+            old = row[j]
+            row[j] = diag if a[i - 1] == b[j - 1] else 1 + min(old, row[j - 1], diag)
+            diag = old
+    return row[-1]
+
+def greater_next(a):                       # 12. index of the next strictly greater element, -1 if none
+    out, stack = [-1] * len(a), []
+    for i, x in enumerate(a):
+        while stack and a[stack[-1]] < x:
+            out[stack.pop()] = i
+        stack.append(i)
+    return out
+
+def all_subsets(a):                        # 13. backtracking: include or skip each element
+    out, cur = [], []
+    def go(i):
+        if i == len(a):
+            out.append(cur[:])             # copy: cur keeps changing
+            return
+        go(i + 1)
+        cur.append(a[i])
+        go(i + 1)
+        cur.pop()                          # undo
+    go(0)
+    return out
+</script>
+<div class="tbl-wrap"><table>
+<tr><th>Template</th><th>Say these edge cases out loud before you submit</th></tr>
+<tr><td>1 binary search</td><td>empty range; answer at either end; does <code>ok</code> flip exactly once?</td></tr>
+<tr><td>2 grid BFS</td><td>start equals goal; start or goal blocked; one cell; mark on push</td></tr>
+<tr><td>3 DFS reachability</td><td>isolated vertex; self-loop; directed versus undirected</td></tr>
+<tr><td>4 Kahn</td><td>fewer than n out means a cycle; several valid orders; n = 0 or 1</td></tr>
+<tr><td>5 Dijkstra</td><td>unreachable (∞); stale entries; negative weights not allowed</td></tr>
+<tr><td>6 union-find</td><td>union of the same set returns False; find compresses</td></tr>
+<tr><td>7 Kruskal</td><td>V − 1 edges kept or disconnected; V = 1; equal weights</td></tr>
+<tr><td>8 Bellman–Ford</td><td>one more pass to detect a negative cycle; unreachable vertices stay ∞</td></tr>
+<tr><td>9 LIS</td><td><code>bisect_left</code> for strict, <code>bisect_right</code> for non-decreasing; empty list</td></tr>
+<tr><td>10 knapsack row</td><td>capacity loops DOWNWARD; W = 0; weight above capacity</td></tr>
+<tr><td>11 edit distance</td><td>empty strings; identical strings; save the diagonal</td></tr>
+<tr><td>12 next greater</td><td>equal values; none to the right (−1); strictly greater or not?</td></tr>
+<tr><td>13 subsets</td><td>copy before saving; undo after the call; empty set is a subset</td></tr>
+</table></div>
+
+<h3>4. Explain it out loud (Mock AI Interview, 10%)</h3>
+<p>The interview asks conceptual questions and hands-on coding. For every algorithm you can code, be able to say four things in under a minute: <b>what it does</b>, <b>the invariant</b> (what stays true each step), <b>the complexity and why</b>, and <b>the edge cases you would test</b>. Then dry-run it on a three-element input.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Algorithm</th><th>Invariant to state</th><th>Cost to justify</th></tr>
+<tr><td>Quick Sort partition</td><td>everything left of the scan pointer is ≤ pivot</td><td>O(n log n) average, O(n²) worst if splits are lopsided</td></tr>
+<tr><td>Heap sift down</td><td>both subtrees are heaps</td><td>O(log n): one path of the tree</td></tr>
+<tr><td>BFS</td><td>vertices leave the queue in order of distance</td><td>O(V + E): each vertex and edge once</td></tr>
+<tr><td>Kahn</td><td>the queue holds exactly the vertices with no unfinished prerequisite</td><td>O(V + E)</td></tr>
+<tr><td>Dijkstra</td><td>a vertex popped with its smallest distance is final (no negative edges)</td><td>O((V + E) log V): E pushes, each log V</td></tr>
+<tr><td>Bellman–Ford</td><td>after round r, dist ≤ the best path with at most r edges</td><td>O(V·E): V − 1 rounds over E edges</td></tr>
+<tr><td>Kruskal</td><td>the kept edges form a forest inside some MST</td><td>O(E log E) for the sort</td></tr>
+<tr><td>DP table</td><td>each cell holds the answer to its subproblem, filled after its dependencies</td><td>cells × work per cell</td></tr>
+</table></div>
+<div class="box tip"><div class="lbl" data-ico="🗣️">A model answer: “Explain Dijkstra”</div><p>“Dijkstra finds shortest paths from one source when no edge is negative. I keep a min-heap of (distance, vertex). I pop the smallest; if it is stale I skip it; otherwise its distance is final, because any other route must go through a vertex still in the heap whose distance is at least as large, and edges cannot make it smaller. I then relax its edges and push improvements. Each edge causes at most one push, so the cost is O((V + E) log V). I would test an unreachable vertex, a graph with one vertex, and two equal-length paths. With a negative edge the finality claim breaks, so I would use Bellman–Ford.”</p></div>
+
+<h3>5. A full three-hour mock contest</h3>
+<p>Six problems in ADA proportions (heaps, trees, backtracking, Graphs II, DP-II, one hard). 180 minutes, 480 marks. <b>Rules:</b> read all six first (10 minutes); for each, write the brute force and submit it before looking for the trick (this is how Chakravyuh’s first subtask would have scored); never leave a problem at zero. Do not open the answers until the clock ends. Statements are summarised in my own words; open the link for the real one.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Q</th><th>Topic</th><th>Problem</th><th>Time</th><th>Marks</th></tr>
+<tr><td>1</td><td>Heaps</td><td><a href="https://leetcode.com/problems/last-stone-weight/" target="_blank" rel="noopener">LC 1046 Last Stone Weight</a>: repeatedly smash the two heaviest stones; report what is left</td><td>15 min</td><td>40</td></tr>
+<tr><td>2</td><td>BST</td><td><a href="https://leetcode.com/problems/validate-binary-search-tree/" target="_blank" rel="noopener">LC 98 Validate Binary Search Tree</a></td><td>20 min</td><td>40</td></tr>
+<tr><td>3</td><td>Backtracking</td><td><a href="https://leetcode.com/problems/palindrome-partitioning/" target="_blank" rel="noopener">LC 131 Palindrome Partitioning</a>: every way to cut a string into palindromes</td><td>25 min</td><td>80</td></tr>
+<tr><td>4</td><td>Graphs II</td><td><a href="https://leetcode.com/problems/path-with-minimum-effort/" target="_blank" rel="noopener">LC 1631 Path With Minimum Effort</a>: grid of heights; minimise the largest step</td><td>30 min</td><td>80</td></tr>
+<tr><td>5</td><td>DP-II</td><td><a href="https://leetcode.com/problems/interleaving-string/" target="_blank" rel="noopener">LC 97 Interleaving String</a></td><td>35 min</td><td>120</td></tr>
+<tr><td>6</td><td>Hard</td><td><a href="https://leetcode.com/problems/largest-color-value-in-a-directed-graph/" target="_blank" rel="noopener">LC 1857 Largest Color Value in a Directed Graph</a></td><td>45 min</td><td>120</td></tr>
+</table></div>
+<details><summary><b>Answers (open after the clock ends)</b></summary>
+<p><b>Q1.</b> A max-heap by negation; pop two, push the difference if non-zero. O(n log n).</p>
+<script type="text/plain" class="code">
+import heapq
+
+def last_stone_weight(stones):             # LC 1046: always smash the two heaviest
+    h = [-s for s in stones]               # max-heap by negating
+    heapq.heapify(h)
+    while len(h) > 1:
+        a = -heapq.heappop(h)
+        b = -heapq.heappop(h)
+        if a != b:
+            heapq.heappush(h, -(a - b))    # what is left of the heavier stone
+    return -h[0] if h else 0
+</script>
+<p><b>Q2.</b> Pass lower and upper bounds down the tree (comparing only with the parent is the classic wrong answer), or check that an inorder walk is strictly increasing. O(n). Code: <code>is_bst</code> in stop 4.</p>
+<p><b>Q3.</b> Precompute which substrings are palindromes (an n × n table), then backtrack over cut points, choosing a palindromic prefix and recursing on the rest. Exponential in the worst case (2ⁿ⁻¹ cuts), which is fine for n ≤ 16. Code: <code>palindrome_partitions</code> in stop 6.</p>
+<p><b>Q4.</b> Dijkstra with <code>max(d, step)</code> in place of <code>d + step</code>, or binary search the limit with BFS as the check. Compare both. O(RC log RC). Code: stop 12 section 2.</p>
+<p><b>Q5.</b> dp[i][j]: do s1[:i] and s2[:j] weave into s3[:i + j]? Return False at once if the lengths do not add up. O(nm). Code: <code>interleave_table</code> and <code>interleave_row</code> in stop 10.</p>
+<p><b>Q6.</b> Kahn’s algorithm; per vertex, a 26-entry list of the best colour counts on any path ending there; push it forward along edges; if fewer than n vertices are peeled, return −1. O((V + E)·26). Code: stop 12 section 1.</p>
+<p><b>Marking.</b> Full marks for an accepted solution; about half for a brute force that passes small tests. If Q3, Q5 or Q6 scored zero, re-do them from a blank file tomorrow and add the trap you hit to My mistakes.</p>
+</details>
+
+<h3>6. Syllabus map</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Course week</th><th>Outline topic</th><th>Stops here</th></tr>
+<tr><td>1</td><td>Problem solving; complexity</td><td><a href="#ch0">0</a>, <a href="#ch1">1</a>, <a href="#ch2">2</a></td></tr>
+<tr><td>2–4</td><td>Quick Sort; trees and BST</td><td><a href="#ch3">3</a>, <a href="#ch4">4</a></td></tr>
+<tr><td>5–6</td><td>Heaps; backtracking</td><td><a href="#ch5">5</a>, <a href="#ch6">6</a>, <a href="#ch13">13</a> (monotonic stacks)</td></tr>
+<tr><td>7–8</td><td>Graphs I: representation, DFS, BFS</td><td><a href="#ch7">7</a>, <a href="#ch8">8</a></td></tr>
+<tr><td>9–10</td><td>Dynamic programming I</td><td><a href="#ch9">9</a>, <a href="#ch11">11</a> (greedy)</td></tr>
+<tr><td>11</td><td>Graphs II: shortest paths; MST (optional)</td><td><a href="#ch12">12</a>, <a href="#ch15">15</a></td></tr>
+<tr><td>12</td><td>Dynamic programming II</td><td><a href="#ch10">10</a></td></tr>
+<tr><td>all</td><td>Contest and interview skills</td><td><a href="#ch14">14</a>, <a href="#ch16">16</a>, <a href="#ladder">the Ladder</a></td></tr>
+<tr><td>beyond the outline</td><td>Merge sort, amortised analysis, hashing</td><td><a href="#ch17">17</a></td></tr>
+</table></div>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p>Starting to code before reading the constraints. Trusting a template without running it on a tiny case and an empty case. Spending forty minutes on the hard problem while an easier one sits at zero. Forgetting that a brute force earns marks. Recursion on a deep structure. Not copying a list before saving it.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Read constraints → pick the cost class → pick the algorithm. Brute force first, submit, then optimise. Say invariant, cost, edge cases, dry run. Type the thirteen templates from memory.</p></div>
+<div class="quiz" data-quiz="x16"></div>
+</section>

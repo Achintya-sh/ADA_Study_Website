@@ -1,0 +1,380 @@
+<section class="topic" id="ch5" data-group="trees" data-num="5" data-title="Heaps">
+<div class="topic-head"><div class="badge">5</div><div><div class="meta">Sorting and trees line</div><h2>Heaps and priority queues</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>A structure built for one question: "who is the most important item right now?" Learn the two rules, the array trick, and the two moves (bubble up, sift down).</p></div>
+
+<h3>The problem a heap solves</h3>
+<p>A hospital emergency room needs three operations: <b>add</b> a patient, <b>see</b> who has the highest emergency score, and <b>remove</b> that patient. Let N be the number of waiting patients.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Design</th><th>insert(x)</th><th>get_max()</th><th>delete_max()</th><th>Problem</th></tr>
+<tr><td>Unsorted line</td><td>O(1)</td><td>O(N)</td><td>O(N)</td><td>Must scan everyone to find the worst case</td></tr>
+<tr><td>Sorted line</td><td>O(N)</td><td>O(1)</td><td>O(1)</td><td>Insert must shift people to keep order</td></tr>
+<tr class="hl"><td><b>Heap</b></td><td><b>O(log N)</b></td><td><b>O(1)</b></td><td><b>O(log N)</b></td><td>Good at everything</td></tr>
+</table></div>
+<p>The heap's trick is to <b>keep just enough order</b>: not fully sorted (expensive), only enough to know the maximum instantly.</p>
+
+<h3>Building the idea from scratch</h3>
+<ol>
+<li>A sorted line is a path. What if we join <i>many short sorted lines</i> into a tree, so that every path from root down to a leaf is sorted?</li>
+<li>For every root-to-leaf path to be sorted (largest at top), each <b>parent must be ≥ its children</b>. This is the <b>order property</b>. Consequence: the maximum is at the root.</li>
+<li>For a fixed number of nodes, the shortest possible tree is one with every level full. That shape is a <b>complete binary tree</b>. Its height is about log₂N, so any root-to-leaf walk is short. This is the <b>shape property</b>.</li>
+</ol>
+
+<h3>The two rules</h3>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><p><b>Max-heap = complete binary tree + every parent ≥ its children.</b><br><b>Min-heap = complete binary tree + every parent ≤ its children.</b></p></div>
+<div class="tbl-wrap"><table>
+<tr><th>Rule</th><th>Meaning</th><th>Who maintains it</th></tr>
+<tr><td>Shape</td><td>All levels full except possibly the last; the last level is filled <b>left to right with no gaps</b>.</td><td>Where we insert / which node we remove (always the last one).</td></tr>
+<tr><td>Order</td><td>Parent ≥ child (max-heap) at every node.</td><td>Bubble up and sift down.</td></tr>
+</table></div>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p>A heap is <b>not</b> a BST. In a heap, the left child is <i>not</i> required to be smaller than the right child. Siblings have no order. That is why searching for an arbitrary value in a heap is O(N), and why a heap cannot print sorted output by a simple inorder walk. A heap only promises: the top is the best.</p></div>
+
+
+<h3>Heap basics: the definition, rule by rule</h3>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><p><b>Definition.</b> A <b>heap</b> is a <b>binary tree</b> that satisfies <b>two rules at once</b>: a <b>shape rule</b> (it is a complete binary tree) and an <b>order rule</b> (every parent is ordered against its children). A <b>max-heap</b> requires parent ≥ child. A <b>min-heap</b> requires parent ≤ child.</p></div>
+<h4>Rule 1: the shape rule (complete binary tree)</h4>
+<p>Number the levels from the top: the root is level 0, its children level 1, and so on. A tree is <b>complete</b> when:</p>
+<ol>
+<li>Every level is <b>completely full</b>, except possibly the very last one.</li>
+<li>The last level is filled <b>from left to right</b> with <b>no gaps</b>.</li>
+</ol>
+<p>Practical meaning: to add a node, you put it in the <b>first free slot reading level by level, left to right</b>. To remove a node, you remove the <b>last</b> one in that reading order. This is why heaps never get lopsided: their height is always about log₂ n.</p>
+<div class="cols"><figure><div class="fig" style="text-align:center"><svg viewBox="0 0 172 150" style="width:172px;max-width:100%;height:auto" role="img" aria-label="Valid complete shape, 5 nodes"><g class="ed"><line x1="86" y1="21" x2="46" y2="69"/><line x1="86" y1="21" x2="126" y2="69"/><line x1="46" y1="69" x2="26" y2="117"/><line x1="46" y1="69" x2="66" y2="117"/></g><g class="gn "><circle cx="86" cy="21" r="15"/><text x="86" y="21">1</text></g><g class="gn "><circle cx="46" cy="69" r="15"/><text x="46" y="69">2</text></g><g class="gn "><circle cx="26" cy="117" r="15"/><text x="26" y="117">4</text></g><g class="gn "><circle cx="66" cy="117" r="15"/><text x="66" y="117">5</text></g><g class="gn "><circle cx="126" cy="69" r="15"/><text x="126" y="69">3</text></g></svg></div><figcaption><b>Valid</b>, 5 nodes: levels 0 and 1 full, last level filled from the left (positions 3 and 4).</figcaption></figure><figure><div class="fig" style="text-align:center"><svg viewBox="0 0 172 150" style="width:172px;max-width:100%;height:auto" role="img" aria-label="Valid complete shape, 6 nodes"><g class="ed"><line x1="86" y1="21" x2="46" y2="69"/><line x1="86" y1="21" x2="126" y2="69"/><line x1="46" y1="69" x2="26" y2="117"/><line x1="46" y1="69" x2="66" y2="117"/><line x1="126" y1="69" x2="106" y2="117"/></g><g class="gn "><circle cx="86" cy="21" r="15"/><text x="86" y="21">1</text></g><g class="gn "><circle cx="46" cy="69" r="15"/><text x="46" y="69">2</text></g><g class="gn "><circle cx="26" cy="117" r="15"/><text x="26" y="117">4</text></g><g class="gn "><circle cx="66" cy="117" r="15"/><text x="66" y="117">5</text></g><g class="gn "><circle cx="126" cy="69" r="15"/><text x="126" y="69">3</text></g><g class="gn "><circle cx="106" cy="117" r="15"/><text x="106" y="117">6</text></g></svg></div><figcaption><b>Valid</b>, 6 nodes: the new node went under 3, the next free slot from the left.</figcaption></figure><figure><div class="fig" style="text-align:center"><svg viewBox="0 0 172 150" style="width:172px;max-width:100%;height:auto" role="img" aria-label="Invalid shape with a gap"><g class="ed"><line x1="86" y1="21" x2="46" y2="69"/><line x1="86" y1="21" x2="126" y2="69"/><line x1="46" y1="69" x2="66" y2="117"/></g><g class="gn "><circle cx="86" cy="21" r="15"/><text x="86" y="21">1</text></g><g class="gn "><circle cx="46" cy="69" r="15"/><text x="46" y="69">2</text></g><g class="gn hr"><circle cx="66" cy="117" r="15"/><text x="66" y="117">5</text></g><g class="gn "><circle cx="126" cy="69" r="15"/><text x="126" y="69">3</text></g></svg></div><figcaption><b>Invalid</b>: 2 has a right child but no left child. There is a gap in the last level.</figcaption></figure><figure><div class="fig" style="text-align:center"><svg viewBox="0 0 172 150" style="width:172px;max-width:100%;height:auto" role="img" aria-label="Invalid shape, level not filled"><g class="ed"><line x1="86" y1="21" x2="46" y2="69"/><line x1="86" y1="21" x2="126" y2="69"/><line x1="126" y1="69" x2="106" y2="117"/></g><g class="gn "><circle cx="86" cy="21" r="15"/><text x="86" y="21">1</text></g><g class="gn "><circle cx="46" cy="69" r="15"/><text x="46" y="69">2</text></g><g class="gn "><circle cx="126" cy="69" r="15"/><text x="126" y="69">3</text></g><g class="gn hr"><circle cx="106" cy="117" r="15"/><text x="106" y="117">6</text></g></svg></div><figcaption><b>Invalid</b>: node 6 sits in the third level while node 2 (to its left) has no children. The third level must fill left to right with no skipping.</figcaption></figure></div>
+<h4>Rule 2: the order rule</h4>
+<p>The order rule compares only a <b>parent with its own children</b>:</p>
+<ul>
+<li><b>Max-heap:</b> value(parent) <b>≥</b> value(each child). Consequently the <b>largest value is at the root</b>.</li>
+<li><b>Min-heap:</b> value(parent) <b>≤</b> value(each child). Consequently the <b>smallest value is at the root</b>.</li>
+</ul>
+<p>Equal values are allowed (that is why we write ≥ and ≤). Crucially, <b>siblings are not compared with each other</b>, and a node is not compared with its cousins or with nodes in other branches.</p>
+<div class="cols"><figure><div class="fig" style="text-align:center"><svg viewBox="0 0 172 150" style="width:172px;max-width:100%;height:auto" role="img" aria-label="Valid max-heap"><g class="ed"><line x1="86" y1="21" x2="46" y2="69"/><line x1="86" y1="21" x2="126" y2="69"/><line x1="46" y1="69" x2="26" y2="117"/><line x1="46" y1="69" x2="66" y2="117"/><line x1="126" y1="69" x2="106" y2="117"/></g><g class="gn "><circle cx="86" cy="21" r="15"/><text x="86" y="21">50</text></g><g class="gn "><circle cx="46" cy="69" r="15"/><text x="46" y="69">30</text></g><g class="gn "><circle cx="26" cy="117" r="15"/><text x="26" y="117">10</text></g><g class="gn "><circle cx="66" cy="117" r="15"/><text x="66" y="117">20</text></g><g class="gn "><circle cx="126" cy="69" r="15"/><text x="126" y="69">40</text></g><g class="gn "><circle cx="106" cy="117" r="15"/><text x="106" y="117">35</text></g></svg></div><figcaption><b>Valid max-heap</b>, array [50, 30, 40, 10, 20, 35]. Every parent ≥ its children. Note siblings 30 and 40 are in no particular order.</figcaption></figure><figure><div class="fig" style="text-align:center"><svg viewBox="0 0 172 150" style="width:172px;max-width:100%;height:auto" role="img" aria-label="Invalid max-heap"><g class="ed"><line x1="86" y1="21" x2="46" y2="69"/><line x1="86" y1="21" x2="126" y2="69"/><line x1="46" y1="69" x2="26" y2="117"/><line x1="46" y1="69" x2="66" y2="117"/><line x1="126" y1="69" x2="106" y2="117"/></g><g class="gn "><circle cx="86" cy="21" r="15"/><text x="86" y="21">50</text></g><g class="gn "><circle cx="46" cy="69" r="15"/><text x="46" y="69">30</text></g><g class="gn "><circle cx="26" cy="117" r="15"/><text x="26" y="117">10</text></g><g class="gn hr"><circle cx="66" cy="117" r="15"/><text x="66" y="117">45</text></g><g class="gn "><circle cx="126" cy="69" r="15"/><text x="126" y="69">40</text></g><g class="gn "><circle cx="106" cy="117" r="15"/><text x="106" y="117">35</text></g></svg></div><figcaption><b>Invalid</b>: 45 is larger than its parent 30. Fixing it takes a swap, then 45 (≤ 50) is fine.</figcaption></figure><figure><div class="fig" style="text-align:center"><svg viewBox="0 0 172 150" style="width:172px;max-width:100%;height:auto" role="img" aria-label="Valid min-heap"><g class="ed"><line x1="86" y1="21" x2="46" y2="69"/><line x1="86" y1="21" x2="126" y2="69"/><line x1="46" y1="69" x2="26" y2="117"/><line x1="46" y1="69" x2="66" y2="117"/><line x1="126" y1="69" x2="106" y2="117"/></g><g class="gn "><circle cx="86" cy="21" r="15"/><text x="86" y="21">5</text></g><g class="gn "><circle cx="46" cy="69" r="15"/><text x="46" y="69">10</text></g><g class="gn "><circle cx="26" cy="117" r="15"/><text x="26" y="117">12</text></g><g class="gn "><circle cx="66" cy="117" r="15"/><text x="66" y="117">15</text></g><g class="gn "><circle cx="126" cy="69" r="15"/><text x="126" y="69">8</text></g><g class="gn "><circle cx="106" cy="117" r="15"/><text x="106" y="117">9</text></g></svg></div><figcaption><b>Valid min-heap</b>, array [5, 10, 8, 12, 15, 9]. Every parent ≤ its children. The root is the smallest.</figcaption></figure></div>
+<h4>Setup: storing a heap in an array</h4>
+<p>Because of the shape rule, the heap occupies positions 0, 1, 2, …, n−1 of an array with <b>no gaps</b>. The array is just the tree read level by level, left to right. To <b>read an array as a heap</b>: write the first element as the root, the next two as its children, the next four as the next level, and so on.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Array</th><th class="n">0</th><th class="n">1</th><th class="n">2</th><th class="n">3</th><th class="n">4</th><th class="n">5</th><th class="n">6</th></tr>
+<tr><td>Values</td><td class="n">50</td><td class="n">30</td><td class="n">40</td><td class="n">10</td><td class="n">20</td><td class="n">35</td><td class="n">25</td></tr>
+<tr><td>Level</td><td>0</td><td colspan="2">1</td><td colspan="4">2</td></tr>
+</table></div>
+<p>Check each parent against its children using the index formulas (children of i at 2i+1 and 2i+2): index 0 (50) vs 30, 40 ✓; index 1 (30) vs 10, 20 ✓; index 2 (40) vs 35, 25 ✓. All parents are ≥ children, so this array is a valid max-heap. The <b>checker lab</b> below does this test for any array and shows you exactly which parent-child pairs break the rule.</p>
+<script type="text/plain" class="code">
+def is_max_heap(a):
+    n = len(a)
+    for i in range(1, n):
+        parent = (i - 1) // 2
+        if a[parent] < a[i]:           # a child is bigger than its parent
+            return False
+    return True                        # the shape rule is automatic for an array
+# Equivalent view: for every i with a child, a[i] >= a[2i+1] and a[i] >= a[2i+2].
+</script>
+<div class="lab" data-w="heapcheck" data-title="Lab: is this array a heap?"></div>
+<h4>Facts that follow from the two rules</h4>
+<div class="tbl-wrap"><table>
+<tr><th>Fact</th><th>Reason</th></tr>
+<tr><td>The max (min-heap: the min) is at index 0.</td><td>Every path from the root goes through non-increasing values.</td></tr>
+<tr><td>Every subtree of a heap is also a heap.</td><td>The rules apply locally at every node.</td></tr>
+<tr><td>Height = ⌊log₂ n⌋ (counting edges).</td><td>Complete shape: all levels are full except the last.</td></tr>
+<tr><td>Level of index i is ⌊log₂(i+1)⌋.</td><td>Level L begins at index 2<sup>L</sup> − 1.</td></tr>
+<tr><td>Nodes at indices ⌊n/2⌋ … n−1 are <b>leaves</b>; there are ⌈n/2⌉ of them.</td><td>The first node that could have a child is the parent of the last node.</td></tr>
+<tr><td>In a max-heap, the <b>2nd largest</b> is a child of the root; the <b>minimum</b> is one of the leaves.</td><td>Any other node has a larger ancestor above it; smaller values can only sit below.</td></tr>
+<tr><td>A heap is <b>not sorted</b>, and its array is not sorted.</td><td>Only parent-versus-child order is enforced.</td></tr>
+</table></div>
+<div class="tbl-wrap"><table>
+<tr><th>Task</th><th>Max-heap</th><th>Sorted array</th><th>Unsorted array</th></tr>
+<tr><td>Get the max</td><td>O(1)</td><td>O(1)</td><td>O(n)</td></tr>
+<tr><td>Insert</td><td>O(log n)</td><td>O(n)</td><td>O(1)</td></tr>
+<tr><td>Remove the max</td><td>O(log n)</td><td>O(1)</td><td>O(n)</td></tr>
+<tr><td>Is x present?</td><td>O(n)</td><td>O(log n) (binary search)</td><td>O(n)</td></tr>
+</table></div>
+<p>A heap is the best compromise when you only ever care about the <b>top</b> item.</p>
+
+<h3>Storing a heap in an array (no pointers!)</h3>
+<p>Because the shape is always "complete", the tree can be stored level by level, left to right, in a plain array. Parent and children are found by arithmetic.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Relationship</th><th>0-indexed (your notes)</th><th>1-indexed (CLRS)</th></tr>
+<tr><td>Left child of i</td><td>2i + 1</td><td>2i</td></tr>
+<tr><td>Right child of i</td><td>2i + 2</td><td>2i + 1</td></tr>
+<tr><td>Parent of i</td><td>⌊(i − 1) / 2⌋</td><td>⌊i / 2⌋</td></tr>
+<tr><td>First leaf</td><td>⌊n / 2⌋</td><td>⌊n / 2⌋ + 1</td></tr>
+</table></div>
+<div class="fig"><svg viewBox="0 0 640 230" role="img" aria-label="Heap tree 15, 8, 10, 6, 3, 5, 7, 2, 1 shown above its array form with indices 0 to 8" style="min-width:560px">
+<g class="ed"><line x1="320" y1="28" x2="170" y2="80"/><line x1="320" y1="28" x2="470" y2="80"/><line x1="170" y1="80" x2="95" y2="132"/><line x1="170" y1="80" x2="245" y2="132"/><line x1="470" y1="80" x2="395" y2="132"/><line x1="470" y1="80" x2="545" y2="132"/><line x1="95" y1="132" x2="60" y2="184"/><line x1="95" y1="132" x2="130" y2="184"/></g>
+<g class="gn">
+<g><circle cx="320" cy="28" r="17"/><text x="320" y="28">15</text></g><g><circle cx="170" cy="80" r="17"/><text x="170" y="80">8</text></g><g><circle cx="470" cy="80" r="17"/><text x="470" y="80">10</text></g>
+<g><circle cx="95" cy="132" r="17"/><text x="95" y="132">6</text></g><g><circle cx="245" cy="132" r="17"/><text x="245" y="132">3</text></g><g><circle cx="395" cy="132" r="17"/><text x="395" y="132">5</text></g><g><circle cx="545" cy="132" r="17"/><text x="545" y="132">7</text></g>
+<g><circle cx="60" cy="184" r="17"/><text x="60" y="184">2</text></g><g><circle cx="130" cy="184" r="17"/><text x="130" y="184">1</text></g></g>
+<g font-size="10" fill="var(--muted)"><text x="340" y="22" class="sub">i=0</text><text x="190" y="74" class="sub">i=1</text><text x="490" y="74" class="sub">i=2</text><text x="115" y="126" class="sub">i=3</text><text x="265" y="126" class="sub">i=4</text><text x="415" y="126" class="sub">i=5</text><text x="565" y="126" class="sub">i=6</text><text x="148" y="190" class="sub">i=7</text><text x="22" y="190" class="sub">i=8</text></g>
+<text x="330" y="222" text-anchor="middle" font-size="12">array = [15, 8, 10, 6, 3, 5, 7, 2, 1]: children of 1 (value 8) are at 3 and 4 (values 6, 3)</text>
+</svg><figcaption>Same data, two views. Node at index 2 (value 10): left child at 2·2+1 = 5 (value 5), right child at 2·2+2 = 6 (value 7), parent at (2−1)//2 = 0 (value 15).</figcaption></div>
+
+<h3>Insert: bubble up (O(log n))</h3>
+<ol>
+<li>Put the new value at the <b>next free slot</b> (end of the array). This keeps the shape rule.</li>
+<li>The order rule may now be broken between the new node and its parent. While the new node is bigger than its parent, <b>swap them</b> (move up one level).</li>
+<li>Stop when the parent is ≥ the node or you reach the root.</li>
+</ol>
+<p>The node climbs at most one level per swap and there are about log₂n levels, so the cost is O(log n).</p>
+<script type="text/plain" class="code">
+def insert(heap, value):
+    heap.append(value)                   # shape: next free slot
+    i = len(heap) - 1
+    while i > 0:
+        parent = (i - 1) // 2
+        if heap[parent] < value:         # order broken: child bigger than parent
+            heap[parent], heap[i] = heap[i], heap[parent]
+            i = parent                   # keep climbing
+        else:
+            break                        # order restored
+</script>
+<div class="box tip"><div class="lbl" data-ico="✏️">Worked example</div><p><b>Insert 9 into [15, 8, 10, 6, 3, 5, 7, 2, 1].</b> New slot is index 9, parent index 4 (value 3).</p>
+<div class="tbl-wrap"><table>
+<tr><th>Step</th><th>Array</th><th>Reason</th></tr>
+<tr><td>place</td><td class="n">15 8 10 6 3 5 7 2 1 <b>9</b></td><td>index 9</td></tr>
+<tr><td>compare 9 with parent 3 (index 4)</td><td class="n">15 8 10 6 <b>9</b> 5 7 2 1 <b>3</b></td><td>9 &gt; 3, swap</td></tr>
+<tr><td>compare 9 with parent 8 (index 1)</td><td class="n">15 <b>9</b> 10 6 <b>8</b> 5 7 2 1 3</td><td>9 &gt; 8, swap</td></tr>
+<tr class="hl"><td>compare 9 with parent 15 (index 0)</td><td class="n">15 9 10 6 8 5 7 2 1 3</td><td>15 ≥ 9, stop. Two swaps.</td></tr>
+</table></div></div>
+
+<h3>Delete max: sift down (O(log n))</h3>
+<p>The max is the root, so removing it leaves a hole at the top and breaks both rules. The repair is neat:</p>
+<ol>
+<li><b>Swap the root with the last node</b>, then remove the last slot. Shape is fixed instantly (we removed the last position). The old max is gone.</li>
+<li>The new root is probably small and breaks the order. <b>Sift down</b>: compare it with its two children, swap it with the <b>larger</b> child, and repeat from there.</li>
+<li>Stop when it is ≥ both children, or it has none.</li>
+</ol>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p>Swap with the <b>larger</b> child, not just any child. If you swap with the smaller child, that smaller child becomes the parent of the larger sibling and the order rule is broken again.</p></div>
+<script type="text/plain" class="code">
+def delete_max(heap):
+    top = heap[0]
+    last = heap.pop()                    # remove last slot (shape fixed)
+    if heap:
+        heap[0] = last                   # move last element to the root
+        sift_down(heap, 0)
+    return top
+
+def sift_down(heap, i):
+    n = len(heap)
+    while True:
+        l, r, big = 2 * i + 1, 2 * i + 2, i
+        if l < n and heap[l] > heap[big]: big = l
+        if r < n and heap[r] > heap[big]: big = r
+        if big == i:
+            return                       # order holds
+        heap[i], heap[big] = heap[big], heap[i]
+        i = big                          # follow the swapped element down
+</script>
+<div class="box tip"><div class="lbl" data-ico="✏️">Worked example</div><p><b>Delete the max (15) from [15, 8, 10, 6, 3, 5, 7, 2, 1].</b></p>
+<div class="tbl-wrap"><table>
+<tr><th>Step</th><th>Array</th><th>Reason</th></tr>
+<tr><td>swap root with last, drop last</td><td class="n"><b>1</b> 8 10 6 3 5 7 2</td><td>1 is now at the root; 15 returned</td></tr>
+<tr><td>children of root: 8, 10</td><td class="n"><b>10</b> 8 <b>1</b> 6 3 5 7 2</td><td>10 is larger: swap with 10</td></tr>
+<tr><td>children of index 2: 5, 7</td><td class="n">10 8 <b>7</b> 6 3 5 <b>1</b> 2</td><td>7 is larger: swap with 7</td></tr>
+<tr class="hl"><td>index 6 has no children</td><td class="n">10 8 7 6 3 5 1 2</td><td>Stop. Valid heap.</td></tr>
+</table></div></div>
+
+<h3>Build a heap from N items: O(N), not O(N log N)</h3>
+<p>Inserting N items one at a time costs O(N log N). There is a faster way: dump the array in as is, then fix it from the bottom up. Leaves are already valid one-node heaps, so start at the <b>last non-leaf</b> (index ⌊n/2⌋ − 1) and <b>sift down</b> each node, moving toward index 0.</p>
+<script type="text/plain" class="code">
+def build_heap(a):
+    for i in range(len(a) // 2 - 1, -1, -1):   # last parent down to root
+        sift_down(a, i)
+</script>
+<div class="box tip"><div class="lbl" data-ico="✏️">Worked example</div><p><b>Build from [4, 10, 3, 5, 1].</b> n = 5, start at i = 1. Node 10 (children 5 and 1): already ≥ both, fine. Then i = 0: node 4 has children 10 and 3, swap with 10 → [10, 4, 3, 5, 1]; 4 now at index 1 with children 5 and 1, swap with 5 → [10, 5, 3, 4, 1]. Done: a valid max-heap in 2 swaps.</p></div>
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><p><b>Why O(N)? (CLRS 6.3)</b> Sifting a node costs O(its height), not O(log n). Half the nodes are leaves (height 0, free). A quarter have height 1, an eighth height 2, and so on. In general at most ⌈n/2<sup>h+1</sup>⌉ nodes have height h. Total = Σ over h of (n / 2<sup>h+1</sup>) · O(h) = O(n · Σ h/2<sup>h</sup>) = O(n), because the sum Σ h/2<sup>h</sup> converges to 2. Most nodes are near the bottom and travel only a short distance.</p></div>
+
+<div class="lab" data-w="heap" data-title="Lab: heap (max / min)"></div>
+
+<h3>Heap sort</h3>
+<p>Build a max-heap in O(n). Then repeat: swap the root (largest) with the last unsorted position, shrink the heap by one, and sift down the new root. After n−1 rounds the array is sorted ascending. Time O(n log n) in <i>all</i> cases, space O(1), not stable.</p>
+<script type="text/plain" class="code">
+def heap_sort(a):
+    build_heap(a)                              # max-heap, O(n)
+    for end in range(len(a) - 1, 0, -1):
+        a[0], a[end] = a[end], a[0]            # largest goes to its final slot
+        sift_down_limit(a, 0, end)             # heap is now a[0:end]
+
+def sift_down_limit(a, i, n):                  # same as sift_down but with size n
+    while True:
+        l, r, big = 2*i + 1, 2*i + 2, i
+        if l < n and a[l] > a[big]: big = l
+        if r < n and a[r] > a[big]: big = r
+        if big == i: return
+        a[i], a[big] = a[big], a[i]
+        i = big
+</script>
+
+<h3>Summary of costs</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Operation</th><th>Time</th><th>Note</th></tr>
+<tr><td>peek max / min</td><td>O(1)</td><td>Root</td></tr>
+<tr><td>insert</td><td>O(log n)</td><td>Bubble up</td></tr>
+<tr><td>delete max / min</td><td>O(log n)</td><td>Sift down</td></tr>
+<tr><td>build from n items</td><td>O(n)</td><td>Sift down from last parent</td></tr>
+<tr><td>search for a value</td><td>O(n)</td><td>No sibling order</td></tr>
+<tr><td>heap sort</td><td>O(n log n)</td><td>In place</td></tr>
+</table></div>
+<div class="box warnbox"><div class="lbl" data-ico="➕">Added: missing from your notes</div><p><b>Priority queue</b> is the abstract idea (insert, get best, remove best). A heap is the standard way to implement it. CLRS names: <code>HEAP-MAXIMUM</code>, <code>HEAP-EXTRACT-MAX</code>, <code>HEAP-INCREASE-KEY</code>, <code>MAX-HEAP-INSERT</code>. In Python, <code>heapq</code> is a <b>min</b>-heap on a list; for a max-heap, push negated values.</p></div>
+
+<h3>Problem solving using heaps</h3>
+<p>Spot the pattern: "repeatedly take the smallest/largest", "top k", "merge sorted streams", "median of a stream".</p>
+
+<h4>1. The k-th largest element</h4>
+<p>Counter-intuitive: use a <b>min</b>-heap of size k. It always holds the k largest seen so far, and its top (the smallest of those k) is the k-th largest. Any new value smaller than the top cannot be among the k largest.</p>
+<script type="text/plain" class="code">
+import heapq
+
+def kth_largest(nums, k):
+    heap = []                              # min-heap, never more than k items
+    for x in nums:
+        if len(heap) < k:
+            heapq.heappush(heap, x)
+        elif x > heap[0]:                  # beats the smallest of the top k
+            heapq.heapreplace(heap, x)     # pop smallest, push x
+    return heap[0]
+# O(n log k) time, O(k) space.  Sorting would be O(n log n).
+</script>
+<div class="box tip"><div class="lbl" data-ico="✏️">Worked example</div><p>nums = [3, 2, 1, 5, 6, 4], k = 2. Heap after each item: [3] → [2,3] → 1 is smaller than 2, ignore → 5 &gt; 2, heap [3,5] → 6 &gt; 3, heap [5,6] → 4 &lt; 5, ignore. Top = <b>5</b>, the 2nd largest. The heap holds the two largest: 5 and 6.</p></div>
+
+<h4>2. Running median (two heaps)</h4>
+<p>Keep the lower half of the numbers in a <b>max</b>-heap and the upper half in a <b>min</b>-heap, with sizes differing by at most 1. The median is at the top of one heap (or the average of both tops). Each insertion is O(log n), reading the median is O(1).</p>
+<script type="text/plain" class="code">
+import heapq
+
+class MedianFinder:
+    def __init__(self):
+        self.low = []      # max-heap (store negatives): smaller half
+        self.high = []     # min-heap: larger half
+
+    def add(self, x):
+        heapq.heappush(self.low, -x)                        # 1. put in low
+        heapq.heappush(self.high, -heapq.heappop(self.low)) # 2. move its max to high
+        if len(self.high) > len(self.low):                  # 3. rebalance sizes
+            heapq.heappush(self.low, -heapq.heappop(self.high))
+
+    def median(self):
+        if len(self.low) > len(self.high):
+            return -self.low[0]
+        return (-self.low[0] + self.high[0]) / 2
+</script>
+
+<h4>3. Merge k sorted lists</h4>
+<p>Put the first element of each list in a min-heap (with its list id). Pop the smallest, output it, push the next element from the same list. N total elements, heap size k → O(N log k).</p>
+<h4>4. Connect ropes at minimum cost</h4>
+<p>Cost of joining two ropes is the sum of their lengths. Greedy: always join the two shortest. Min-heap: pop two, push their sum, add the sum to the cost. O(n log n).</p>
+<h4>5. Other classics</h4>
+<ul>
+<li><b>Top k frequent elements</b>: count with a dictionary, keep a size-k min-heap on counts.</li>
+<li><b>Sort a nearly-sorted array</b> (each element at most k places off): a min-heap of size k+1 gives O(n log k).</li>
+<li><b>Task scheduling / CPU scheduling / Dijkstra's shortest path</b>: all use a priority queue as the engine.</li>
+</ul>
+<div class="box analogy"><div class="lbl" data-ico="🧑‍🏫">Teacher's note</div><p>Whenever a brute force keeps doing "scan everything to find the biggest/smallest", ask: can a heap hand me that in O(log n) instead of O(n)? That one question solves most heap problems.</p></div>
+
+<h3 class="pat-head">Patterns for contests: heaps</h3>
+<div class="box tip"><div class="lbl" data-ico="🎯">Seen in your contests</div><p><b>Contest 1:</b> Q2 second minimum of a min-heap (it is the smaller of the root’s two children, <code>min(heap[1], heap[2])</code>, never a scan of everything) and <b>Q3 insertion in O(log n) with <code>heapq</code> forbidden</b>: bubble up by hand (20/40). <b>Mid-sem Q3</b> was array to min-heap, which is the O(n) build from this stop.</p></div>
+<div class="tbl-wrap"><table>
+<tr><th>Pattern</th><th>Words in the statement</th><th>Tool</th></tr>
+<tr><td>Implement the heap</td><td>“without heapq”, “O(log n) per insertion”</td><td>array, parent (i − 1) // 2, bubble up and sift down</td></tr>
+<tr><td>k-way merge</td><td>“k sorted lists”, “k-th smallest pair sum”</td><td>heap of (value, list, position)</td></tr>
+<tr><td>Top k</td><td>“k largest”, “k most frequent”, a stream</td><td>size-k min-heap, or <code>heapq.nlargest</code></td></tr>
+<tr><td>Running median</td><td>“median after each insertion”</td><td>max-heap below, min-heap above (this stop)</td></tr>
+<tr><td>Rooms and machines</td><td>“fewest rooms”, “earliest free”</td><td>min-heap of end times</td></tr>
+<tr><td>Best available now</td><td>“at most k projects”, “always take the biggest”</td><td>sort by availability, heap of what is unlocked</td></tr>
+<tr><td>Delete a given value</td><td>“remove x” from a heap</td><td>lazy deletion: remember it is dead, skip it when it reaches the top</td></tr>
+</table></div>
+<script type="text/plain" class="code">
+class MinHeap:                            # Contest 1 Q3: heapq is not allowed
+    def __init__(self):
+        self.a = []
+    def push(self, x):                    # O(log n): add at the end, bubble up
+        a = self.a
+        a.append(x)
+        i = len(a) - 1
+        while i > 0:
+            p = (i - 1) // 2
+            if a[p] <= a[i]:
+                break
+            a[p], a[i] = a[i], a[p]
+            i = p
+    def pop(self):                        # O(log n): last item to the root, sift down
+        a = self.a
+        top, last = a[0], a.pop()
+        if a:
+            a[0] = last
+            i, n = 0, len(a)
+            while True:
+                l, r, m = 2 * i + 1, 2 * i + 2, i
+                if l < n and a[l] < a[m]: m = l
+                if r < n and a[r] < a[m]: m = r
+                if m == i:
+                    break
+                a[i], a[m] = a[m], a[i]
+                i = m
+        return top
+</script>
+<script type="text/plain" class="code">
+import heapq
+
+def merge_k(lists):                       # k sorted lists -> one sorted list, O(N log k)
+    heap = [(l[0], i, 0) for i, l in enumerate(lists) if l]
+    heapq.heapify(heap)
+    out = []
+    while heap:
+        v, i, j = heapq.heappop(heap)
+        out.append(v)
+        if j + 1 < len(lists[i]):
+            heapq.heappush(heap, (lists[i][j + 1], i, j + 1))
+    return out
+</script>
+<script type="text/plain" class="code">
+import heapq
+
+def min_rooms(intervals):                 # LC 253: fewest rooms so no two meetings overlap
+    heap = []                             # end times of rooms in use
+    for s, e in sorted(intervals):
+        if heap and heap[0] <= s:
+            heapq.heapreplace(heap, e)    # the earliest-ending room is free: reuse it
+        else:
+            heapq.heappush(heap, e)       # otherwise open a new room
+    return len(heap)
+</script>
+<script type="text/plain" class="code">
+import heapq
+
+def find_max_capital(k, w, profits, capital):     # LC 502: at most k projects, capital grows
+    projects = sorted(zip(capital, profits))
+    heap, i = [], 0                       # heap: profits of projects we can afford
+    for _ in range(k):
+        while i < len(projects) and projects[i][0] <= w:
+            heapq.heappush(heap, -projects[i][1]); i += 1
+        if not heap:
+            break
+        w -= heapq.heappop(heap)          # take the most profitable affordable project
+    return w
+</script>
+<script type="text/plain" class="code">
+import heapq
+from collections import Counter
+
+class LazyHeap:                           # min-heap with remove(x): mark it dead, clean when it reaches the top
+    def __init__(self):
+        self.h, self.dead = [], Counter()
+    def push(self, x):
+        heapq.heappush(self.h, x)
+    def remove(self, x):                  # x must be in the heap
+        self.dead[x] += 1
+    def _clean(self):
+        while self.h and self.dead[self.h[0]]:
+            self.dead[self.h[0]] -= 1
+            heapq.heappop(self.h)
+    def top(self):
+        self._clean()
+        return self.h[0]
+    def pop(self):
+        self._clean()
+        return heapq.heappop(self.h)
+</script>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p><code>heapq</code> is a min-heap only: store negatives for a max-heap. Tuples compare left to right, so put the priority first and add an index as a tie-breaker if the second item can’t be compared. “Touching” meetings (end = next start) share a room when the check is <code>&lt;=</code>. Sifting down: compare with <i>both</i> children and swap with the smaller one.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Heap = the best item now, in O(log n). Sort by when things become available, then pop the best.</p>
+<p>No heapq allowed: array + bubble up + sift down, both O(log n).</p>
+<p>Practice: the Ladder, tab Heaps.</p></div>
+<div class="quiz" data-quiz="s5"></div>
+</section>

@@ -1,0 +1,9 @@
+{
+  "name": "GOD OF ADA \u2014 Interactive Algorithms & Exam Prep Atlas",
+  "short_name": "GOD OF ADA",
+  "start_url": "./hub.html",
+  "display": "standalone",
+  "background_color": "#0c0e12",
+  "theme_color": "#1b6c80",
+  "description": "29 interactive stops, 147+ brute-force-tested Python templates, 380 rated Ladder problems, and 8 exam tools."
+}

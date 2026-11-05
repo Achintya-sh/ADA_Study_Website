@@ -1,0 +1,302 @@
+<section class="topic" id="ch11" data-group="dp" data-num="11" data-title="Greedy algorithms">
+<div class="topic-head"><div class="badge">11</div><div><div class="meta">Dynamic programming and greedy line · weeks 1–12</div><h2>Greedy algorithms</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>A greedy algorithm builds the answer one choice at a time, always taking the option that looks best <b>right now</b>, and never goes back. It is usually just "sort, then one pass", so it's fast and short. The catch: it's only correct when you can argue that the locally best choice never ruins the global answer.</p></div>
+
+<h3>Greedy versus DP in one picture</h3>
+<p>DP (stops 9–10) tries <b>every</b> choice for the last step and keeps the best. Greedy commits to <b>one</b> choice and never reconsiders. When greedy is correct it is simpler and faster; when it isn't, it gives a confident wrong answer. Bridge 8.5's coins show both sides: with coins 1, 5, 10, 25 "biggest coin first" is optimal; with 1, 3, 4 it isn't.</p>
+
+<h3>How to know a greedy is right: the exchange argument</h3>
+<p>CLRS (3rd edition, §16.1–16.2) proves greedy algorithms with one recurring move. Take any optimal solution. If it doesn't start with the greedy choice, <b>swap</b> the greedy choice in and show the solution is still valid and no worse. Then the greedy choice is safe, and the same argument repeats on what's left.</p>
+<div class="box tip"><div class="lbl" data-ico="✏️">Worked example: activity selection (CLRS §16.1)</div><p>Pick as many non-overlapping activities as possible. Greedy rule: always take the activity that <b>finishes earliest</b> among those that start after the last one you took.</p>
+<p>Why it works: let A be any optimal schedule and a its first activity. The earliest-finishing activity g ends no later than a, so replacing a with g can't clash with anything later in A. The schedule is still valid and still has the same size. So some optimal schedule starts with g, and the argument repeats on the activities that start after g ends.</p></div>
+<script type="text/plain" class="code">
+def erase_overlap_intervals(intervals):    # LC 435: remove the fewest to make the rest disjoint
+    intervals.sort(key=lambda x: x[1])     # sort by END time
+    kept, end = 0, float("-inf")
+    for s, e in intervals:
+        if s >= end:                       # starts after the last kept one ends
+            kept += 1
+            end = e
+    return len(intervals) - kept           # O(n log n)
+
+def find_min_arrow_shots(points):          # LC 452: same idea, but touching balloons share an arrow
+    points.sort(key=lambda p: p[1])
+    arrows, end = 0, float("-inf")
+    for s, e in points:
+        if s > end:                        # strictly after: needs a new arrow
+            arrows += 1
+            end = e
+    return arrows
+</script>
+<div class="lab" data-w="intervals" data-title="Lab: which greedy rule picks the most activities?"></div>
+
+<h3>The seven contest patterns</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Pattern</th><th>Signal</th><th>Rule</th><th>Practice (rating)</th></tr>
+<tr><td>1. Cheapest first</td><td>"maximum number of items with budget"</td><td>sort ascending, take while it fits</td><td>2279 (1249), 1833 (1253), 1710 (1310)</td></tr>
+<tr><td>2. Two pointers after sorting</td><td>"pair up", "at most two per boat", "match"</td><td>sort; pair the heaviest with the lightest that fits</td><td>2410 (1381), 881 (1530)</td></tr>
+<tr><td>3. Intervals</td><td>"overlapping", "meetings", "balloons"</td><td>sort by end to keep the most; sort by start to merge</td><td>435, 452, 56 (classics)</td></tr>
+<tr><td>4. Sort by difference</td><td>"each item goes to A or B", "exactly k to A"</td><td>sort by costA − costB (the regret)</td><td>1029 (1348), 2611 (1663)</td></tr>
+<tr><td>5. Repeatedly take the biggest</td><td>"each operation halves / removes the largest"</td><td>max-heap (negate values in heapq)</td><td>2208 (1550)</td></tr>
+<tr><td>6. Frequencies</td><td>"counts must be unique", "tasks in groups of 2 or 3"</td><td>Counter, then decide per count</td><td>2244 (1372), 1647 (1510)</td></tr>
+<tr><td>7. Farthest reach</td><td>"can you reach the last index", "minimum jumps"</td><td>track the farthest reachable index</td><td>55, 45 Jump Game I and II</td></tr>
+</table></div>
+
+<details><summary>Solution: 881 Boats to Save People (1530). Try it first.</summary>
+<p>The heaviest person has to leave on some boat. Give them the lightest partner if one fits; if even the lightest doesn't fit, nobody does. Exchange argument: swapping any other partner for the lightest never makes things worse.</p>
+<script type="text/plain" class="code">
+def numRescueBoats(self, people, limit):
+    people.sort()
+    i, j, boats = 0, len(people) - 1, 0
+    while i <= j:
+        if people[i] + people[j] <= limit:
+            i += 1                         # the lightest rides along
+        j -= 1                             # the heaviest always leaves
+        boats += 1
+    return boats
+</script>
+</details>
+<details><summary>Solution: 1029 Two City Scheduling (1348). Try it first.</summary>
+<p>Send everyone to B, then decide who to move to A. Moving person i changes the cost by a − b, so move the n people with the most negative a − b.</p>
+<script type="text/plain" class="code">
+def twoCitySchedCost(self, costs):
+    costs.sort(key=lambda c: c[0] - c[1])  # strongest preference for A first
+    n = len(costs) // 2
+    return sum(c[0] for c in costs[:n]) + sum(c[1] for c in costs[n:])
+</script>
+</details>
+<details><summary>Solution: 2208 Minimum Operations to Halve Array Sum (1550). Try it first.</summary>
+<p>Halving the largest number always removes the most, so do that every time. Python's <code>heapq</code> is a min-heap: store negatives to get a max-heap.</p>
+<script type="text/plain" class="code">
+import heapq
+
+def halveArray(self, nums):
+    heap = [-x for x in nums]
+    heapq.heapify(heap)
+    target, removed, ops = sum(nums) / 2, 0.0, 0
+    while removed < target:
+        x = -heapq.heappop(heap)
+        removed += x / 2
+        heapq.heappush(heap, -(x / 2))
+        ops += 1
+    return ops                             # O(n + k log n)
+</script>
+</details>
+<details><summary>Solution: 1647 Minimum Deletions to Make Character Frequencies Unique (1510). Try it first.</summary>
+<p>Go through the frequencies from largest to smallest. If a frequency is already taken, lower it until it's free (or reaches 0); each step down is one deletion.</p>
+<script type="text/plain" class="code">
+def minDeletions(self, s):
+    freq = sorted((s.count(ch) for ch in set(s)), reverse=True)
+    used, deletions = set(), 0
+    for f in freq:
+        while f > 0 and f in used:
+            f -= 1
+            deletions += 1
+        used.add(f)
+    return deletions
+</script>
+</details>
+<details><summary>Solution: 55 and 45 Jump Game I and II. Try them first.</summary>
+<script type="text/plain" class="code">
+def canJump(self, nums):                   # can you reach the last index?
+    reach = 0
+    for i, x in enumerate(nums):
+        if i > reach:
+            return False                   # stuck before i
+        reach = max(reach, i + x)
+    return True
+
+def jump(self, nums):                      # fewest jumps: BFS by "levels" of reach
+    jumps = end = far = 0
+    for i in range(len(nums) - 1):
+        far = max(far, i + nums[i])
+        if i == end:                       # used up this jump's range
+            jumps += 1
+            end = far
+    return jumps
+</script>
+</details>
+
+<h3>When greedy fails, and what to use instead</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Problem</th><th>Tempting greedy</th><th>Counterexample</th><th>Correct tool</th></tr>
+<tr><td>Fewest coins</td><td>biggest coin first</td><td>coins 1, 3, 4, amount 6: greedy 4+1+1, best 3+3</td><td>DP (bridge 8.5)</td></tr>
+<tr><td>0/1 knapsack</td><td>best value per kg first</td><td>CLRS §16.2: capacity 50; items (10 kg, 60), (20 kg, 100), (30 kg, 120). Greedy takes the first two for 160; the best is the last two for 220.</td><td>DP (stop 10)</td></tr>
+<tr><td>Fractional knapsack (you may take part of an item)</td><td>best value per kg first</td><td>none: here greedy is optimal</td><td>greedy</td></tr>
+<tr><td>Most activities</td><td>shortest first, or earliest start</td><td>try them in the lab above</td><td>greedy by earliest end</td></tr>
+</table></div>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p>Sorting by the wrong key (start vs end). Getting the tie at a shared endpoint wrong: in 435 intervals [1,2] and [2,3] don't overlap (<code>&gt;=</code>), but in 452 balloons that touch share an arrow (<code>&gt;</code>). Trusting a greedy that passed the examples: try to break it with a small counterexample first; if you can, switch to DP.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><ul>
+<li>Greedy = commit to the locally best choice, never undo. Usually sort + one pass.</li>
+<li>Prove it with an exchange argument; disprove it with one small counterexample.</li>
+<li>Most activities / fewest removals: sort by end. Merging: sort by start.</li>
+<li>Pairing: sort + two pointers. Assigning to A or B: sort by the difference. "Largest each time": a heap.</li>
+</ul></div>
+<h3>More greedy patterns</h3>
+<div class="box tip"><div class="lbl" data-ico="🎯">Seen in your contests</div><p><b>Contest 2 Q1 Bag of Coins</b> (“at most two coins”: the two largest values, but never add a negative one) and <b>Q2 Apple Baskets</b> (total each basket, take the k largest totals) are greedy at its simplest: sort and take. Both are in the stress-test example of stop 14, which fails exactly on the negative-value case.</p></div>
+<div class="tbl-wrap"><table>
+<tr><th>Pattern</th><th>Signal</th><th>Rule</th></tr>
+<tr><td>Two passes</td><td>“each element depends on both neighbours” (candy)</td><td>one pass left to right, one right to left, combine</td></tr>
+<tr><td>Circular route</td><td>“can you complete the circuit” (gas station)</td><td>if the tank goes negative, restart after that point</td></tr>
+<tr><td>Regret</td><td>“schedule jobs with deadlines for the most profit”</td><td>accept everything, then drop the cheapest when over capacity</td></tr>
+<tr><td>Merge the smallest</td><td>“join pieces, each join costs the sum” (Huffman, ropes)</td><td>always join the two smallest, with a min-heap</td></tr>
+</table></div>
+<script type="text/plain" class="code">
+def start_station(gas, cost):              # LC 134
+    if sum(gas) < sum(cost):
+        return -1
+    tank = start = 0
+    for i in range(len(gas)):
+        tank += gas[i] - cost[i]
+        if tank < 0:                      # nothing in [start, i] can work as a start
+            start, tank = i + 1, 0
+    return start
+</script>
+<script type="text/plain" class="code">
+def candy(r):                             # LC 135: two passes, one for each neighbour
+    n = len(r)
+    c = [1] * n
+    for i in range(1, n):
+        if r[i] > r[i - 1]:
+            c[i] = c[i - 1] + 1
+    for i in range(n - 2, -1, -1):
+        if r[i] > r[i + 1]:
+            c[i] = max(c[i], c[i + 1] + 1)
+    return sum(c)
+</script>
+<script type="text/plain" class="code">
+import heapq
+
+def max_profit_deadlines(jobs):           # jobs (deadline, profit), each takes one time slot
+    heap = []                             # profits of the jobs we currently plan to do
+    for d, p in sorted(jobs):
+        heapq.heappush(heap, p)
+        if len(heap) > d:                 # more jobs than slots before deadline d: drop the least profitable
+            heapq.heappop(heap)
+    return sum(heap)
+</script>
+<p>The regret pattern is the one worth memorising: choose greedily now, and keep a heap so you can undo the worst choice later.</p>
+<script type="text/plain" class="code">
+import heapq
+
+def merge_cost(w):                        # join all pieces; a join costs the sum of the two (ropes, Huffman)
+    w = w[:]
+    heapq.heapify(w)
+    total = 0
+    while len(w) > 1:
+        a, b = heapq.heappop(w), heapq.heappop(w)
+        total += a + b
+        heapq.heappush(w, a + b)
+    return total
+</script>
+<p>All four were checked against exhaustive search on small inputs.</p>
+<h3>Two exchange arguments, written out</h3>
+<p>A greedy answer is only trustworthy with a reason. The reason is an <b>exchange argument</b>: take any optimal solution, show you can swap in the greedy choice without making it worse, then repeat on what is left.</p>
+<p><b>Interval scheduling (most non-overlapping intervals).</b> Greedy: sort by <i>end time</i>, take an interval if it starts at or after the last one taken ended. Why: let G be the interval that ends first overall, and O any optimal schedule. Replace O’s first interval with G. G ends no later than O’s first one did, so it overlaps nothing in the rest of O, and the schedule is still valid with the same size. So some optimal schedule starts with G; remove G and everything it overlaps, and repeat. Sorting by start time or by length has no such argument, and counterexamples are easy to build. LC 435 is “total minus the largest non-overlapping set”; LC 452 (arrows) is the same sweep over right ends:</p>
+<script type="text/plain" class="code">
+def find_min_arrow_shots(points):          # LC 452: sort by right end, shoot there, skip everything it bursts
+    arrows, pos = 0, -float('inf')
+    for a, b in sorted(points, key=lambda p: p[1]):
+        if a > pos:
+            arrows += 1
+            pos = b
+    return arrows
+</script>
+<p><b>Fractional knapsack (items may be split).</b> Greedy: take items by value per kilo, best first, splitting the last one. Why: suppose an optimal load holds some of a lower-ratio item B while part of a higher-ratio item A is left behind. Swap a little weight of B for the same weight of A: the value goes up or stays equal. So an optimal load never leaves a better item behind for a worse one.</p>
+<script type="text/plain" class="code">
+def fractional_knapsack(items, W):         # items (value, weight), weight > 0; fractions of an item are allowed
+    total = 0.0
+    for v, w in sorted(items, key=lambda it: it[0] / it[1], reverse=True):     # best value per kilo first
+        if W <= 0:
+            break
+        take = min(w, W)                   # all of it, or whatever still fits
+        total += v * take / w
+        W -= take
+    return total
+</script>
+<h3>When the same greedy fails</h3>
+<p>Both failures below are the same mistake: the choice changes what fits later in a way a single number cannot summarise.</p>
+<p><b>0/1 knapsack</b> (no splitting). Items (value, weight): (60, 10), (100, 20), (120, 30), capacity 50. Ratios 6, 5, 4, so ratio-greedy takes the first two for 160 and strands 20 unused kilos; the best is the last two for 220. The exchange argument breaks because you cannot swap “a little”. Use DP (stop 10).</p>
+<p><b>Coin change.</b> Coins 1, 3, 4 and amount 6: greedy takes 4 + 1 + 1 (three coins), but 3 + 3 uses two. For the coins 1, 5, 10, 25 greedy happens to be optimal, but proving that for a given set is hard, so default to the DP.</p>
+<script type="text/plain" class="code">
+def greedy_coins(coins, amount):           # always take the biggest coin that still fits
+    count = 0
+    for c in sorted(coins, reverse=True):
+        count += amount // c
+        amount %= c
+    return count if amount == 0 else -1
+
+def dp_coins(coins, amount):               # LC 322: always correct
+    INF = float('inf')
+    best = [0] + [INF] * amount
+    for a in range(1, amount + 1):
+        for c in coins:
+            if c <= a and best[a - c] + 1 < best[a]:
+                best[a] = best[a - c] + 1
+    return -1 if best[amount] == INF else best[amount]
+
+def first_greedy_failure(coins, limit=100):    # smallest amount where greedy loses, or None
+    for a in range(1, limit + 1):
+        if greedy_coins(coins, a) != dp_coins(coins, a):
+            return a
+    return None
+</script>
+<h3>Greedy or DP? A drill</h3>
+<p>Cover the right column and decide first.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Prompt</th><th>Pick</th><th>Reason</th></tr>
+<tr><td>Fewest coins for an amount; coins 1, 3, 4</td><td>DP</td><td>greedy fails at 6</td></tr>
+<tr><td>Most meetings that do not overlap</td><td>greedy</td><td>earliest finish, exchange argument</td></tr>
+<tr><td>Split numbers into two groups of equal sum</td><td>DP</td><td>subset sum; no safe local choice</td></tr>
+<tr><td>Can you reach the last index (LC 55)?</td><td>greedy</td><td>track the farthest reachable index</td></tr>
+<tr><td>Fewest jumps to the end (LC 45)</td><td>greedy</td><td>BFS layers: extend the window to the farthest reach</td></tr>
+<tr><td>Best value, items cannot be split</td><td>DP</td><td>0/1 knapsack</td></tr>
+<tr><td>Cut a string into the most pieces so no letter spans two pieces (LC 763)</td><td>greedy</td><td>cut when the farthest last occurrence is behind you</td></tr>
+<tr><td>Fewest total time for tasks with a cooldown (LC 621)</td><td>greedy</td><td>the busiest task fixes the frame</td></tr>
+</table></div>
+<p>Rule of thumb: if you can say “whatever I do, taking this one first is never worse” and defend it with a swap, go greedy. If you cannot, or a small counterexample appears, do DP. Try the counterexample first: it takes thirty seconds.</p>
+<h3>More greedy problems with tested code</h3>
+<p><b>LC 621 Task Scheduler.</b> The busiest task, say A with count top, forces top − 1 gaps of width n + 1 and a final row; every task tied with A’s count adds one slot to the last row. If there are more tasks than that frame needs, no idling is required and the answer is simply the number of tasks.</p>
+<script type="text/plain" class="code">
+from collections import Counter
+
+def least_interval(tasks, n):              # LC 621: the busiest task decides the frame
+    cnt = Counter(tasks)
+    top = max(cnt.values())
+    num_top = sum(1 for v in cnt.values() if v == top)
+    return max(len(tasks), (top - 1) * (n + 1) + num_top)
+</script>
+<p><b>LC 763 Partition Labels.</b> Record each letter’s last position; sweep while keeping the farthest last position seen; cut when the index catches up with it.</p>
+<script type="text/plain" class="code">
+def partition_labels(s):                   # LC 763: cut as soon as the farthest "last occurrence" is behind us
+    last = {ch: i for i, ch in enumerate(s)}
+    out, start, end = [], 0, 0
+    for i, ch in enumerate(s):
+        end = max(end, last[ch])
+        if i == end:
+            out.append(end - start + 1)
+            start = i + 1
+    return out
+</script>
+<p><b>LC 55 Jump Game and LC 45 Jump Game II.</b></p>
+<script type="text/plain" class="code">
+def can_jump(nums):                        # LC 55: track the farthest index reachable so far
+    reach = 0
+    for i, x in enumerate(nums):
+        if i > reach:
+            return False
+        reach = max(reach, i + x)
+    return True
+
+def min_jumps(nums):                       # LC 45 (the end is always reachable): BFS by layers, no queue
+    jumps = cur_end = far = 0
+    for i in range(len(nums) - 1):
+        far = max(far, i + nums[i])
+        if i == cur_end:                   # the current layer is exhausted: one more jump
+            jumps += 1
+            cur_end = far
+    return jumps
+</script>
+<div class="box tip"><div class="lbl" data-ico="🎯">Practice</div><p>LC 435, 452, 621, 763, 134, 135, 55, 45. Everything on this page was checked against exhaustive search on small inputs.</p></div>
+<div class="quiz" data-quiz="c4"></div>
+</section>

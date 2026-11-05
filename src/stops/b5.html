@@ -1,0 +1,37 @@
+<section class="topic half" id="b5" data-group="bt" data-num="5.5" data-title="Counting choices">
+<div class="topic-head"><div class="badge">5.5</div><div><div class="meta">Bridge to stop 6</div><h2>Counting choices: how big is the search?</h2></div></div>
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>Backtracking walks a <b>tree of choices</b>: each level is one decision, each branch one option. Before writing one, count that tree. Its depth and branching tell you how many answers there are, how long brute force takes, and how much pruning has to save.</p></div>
+
+<h3>The multiplication principle</h3>
+<p>If you make one choice with a options and then an independent choice with b options, there are a × b combined outcomes. A 4-digit PIN: 10 × 10 × 10 × 10 = 10⁴. Every count below is this rule applied level by level down the tree.</p>
+<div class="tbl-wrap"><table>
+<tr><th>You are generating…</th><th>How many</th><th>Tree shape</th><th>n = 10</th></tr>
+<tr><td>Strings of length n over k symbols</td><td>kⁿ</td><td>depth n, k branches every level</td><td class="n">2¹⁰ = 1,024 (k = 2)</td></tr>
+<tr><td>Subsets of n items</td><td>2ⁿ</td><td>depth n, 2 branches (in / out)</td><td class="n">1,024</td></tr>
+<tr><td>Orderings (permutations) of n items</td><td>n!</td><td>depth n, branches n, n−1, …, 1</td><td class="n">3,628,800</td></tr>
+<tr><td>Ordered picks of k from n</td><td>n! / (n−k)!</td><td>depth k, branches n, n−1, …</td><td class="n">720 (k = 3)</td></tr>
+<tr><td>Unordered picks (combinations) of k from n</td><td>C(n, k) = n! / (k!(n−k)!)</td><td>depth k, only increasing picks</td><td class="n">120 (k = 3)</td></tr>
+</table></div>
+<p>Combinations divide by k! because each unordered group of k items can be listed in k! orders, and we only want one of them. Picking in increasing index order is how the code makes sure of that.</p>
+
+<h3>Count nodes, not just answers</h3>
+<p>The work is the number of <b>nodes</b> the search visits, not just the leaves. The subset tree has 1 + 2 + 4 + … + 2ⁿ = 2ⁿ⁺¹ − 1 nodes (the sum from stop 0), about twice its leaves. The permutation tree has about e · n! ≈ 2.72 · n! nodes. If recording each answer copies a list of length n, the totals become O(n · 2ⁿ) and O(n · n!).</p>
+<div class="tbl-wrap"><table>
+<tr><th>At about 10⁸ simple steps per second</th><th>Largest n that finishes in about a second</th></tr>
+<tr><td>2ⁿ (subsets)</td><td>about 25 to 27 (2²⁶ ≈ 6.7 × 10⁷)</td></tr>
+<tr><td>n! (permutations)</td><td>about 11 (11! ≈ 4 × 10⁷; 12! ≈ 4.8 × 10⁸)</td></tr>
+</table></div>
+<p>These limits explain why stop 6 cares so much about <b>pruning</b>. N-Queens with one queen per row has 8⁸ ≈ 16.8 million placements for N = 8; refusing to reuse a column cuts that to 8! = 40,320; checking diagonals too leaves only 92 solutions, and far fewer nodes are ever visited.</p>
+<div class="lab" data-w="count" data-title="Lab: size of the search tree"></div>
+
+<h3>Snapshots versus the live list</h3>
+<p>Backtracking code builds one list <code>cur</code>, adds a choice, recurses, and removes it again. That single list is shared by the whole search (bridge 3.5). When you record an answer, record a <b>snapshot</b>: <code>res.append(cur[:])</code>. Appending <code>cur</code> itself stores a tag to the live list, which the undo steps later empty.</p>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam trap</div><p>2ⁿ and n! look similar for small n and are wildly different later: at n = 20, 2ⁿ ≈ 10⁶ but n! ≈ 2.4 × 10¹⁸. Say which one your algorithm is, and why (in/out per item, or "any unused item next").</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div><ul>
+<li>Strings kⁿ, subsets 2ⁿ, permutations n!, ordered picks n!/(n−k)!, combinations C(n, k).</li>
+<li>Work = nodes visited × work per node, not just the number of answers.</li>
+<li>Brute force limits: 2ⁿ to n ≈ 25, n! to n ≈ 11.</li>
+<li>Record <code>cur[:]</code>, never <code>cur</code>.</li>
+</ul></div>
+<div class="quiz" data-quiz="b5"></div>
+</section>

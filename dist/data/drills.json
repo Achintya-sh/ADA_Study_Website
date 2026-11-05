@@ -1,0 +1,1734 @@
+{
+  "topic_names": {
+    "s0": "Prerequisites",
+    "s1": "Problem solving",
+    "s2": "Complexity",
+    "s3": "Quick Sort",
+    "s4": "Binary trees and BSTs",
+    "s5": "Heaps",
+    "s6": "Backtracking",
+    "s7": "Graphs",
+    "s8": "DFS and BFS",
+    "s9": "Dynamic programming I",
+    "s10": "Dynamic programming II",
+    "b0": "Tracing code",
+    "b1": "Growth and induction",
+    "b2": "Swaps and partitions",
+    "b3": "References and linked lists",
+    "b4": "Complete trees and priority queues",
+    "b5": "Counting choices",
+    "b6": "Pairs, sets and grids",
+    "b7": "The traversal template",
+    "b8": "Caches and greedy",
+    "b9": "Prefixes and 2D tables",
+    "b10": "Choosing the technique",
+    "c1": "Contest toolkit",
+    "c2": "Graph patterns",
+    "c3": "DP patterns",
+    "c4": "Greedy",
+    "e0": "Functional graphs",
+    "e1": "Contest routine",
+    "e2": "Knapsack family",
+    "e3": "Graphs II",
+    "m13": "Monotonic stacks",
+    "x15": "Bridges between the tools",
+    "x16": "Contest readiness",
+    "x17": "Appendix: merge sort, amortised, hashing"
+  },
+  "extra_qs": [
+    {
+      "t": "Quick Sort",
+      "q": "What is arr after this call, and what does partition return?",
+      "c": "arr = [4, 7, 2, 6, 5]\npos = partition(arr, 0, 4)    # Lomuto, last element is the pivot",
+      "o": [
+        "[4, 2, 5, 6, 7], returns 2",
+        "[2, 4, 5, 6, 7], returns 2",
+        "[4, 2, 5, 7, 6], returns 2",
+        "[4, 5, 2, 6, 7], returns 1"
+      ],
+      "a": 0,
+      "e": "Pivot 5. Only 4 and 2 are ≤ 5, so they are swapped into slots 0 and 1 in the order they are met: [4, 2, 7, 6, 5]. Then the pivot swaps with slot 2. The values right of the pivot are not sorted, just bigger."
+    },
+    {
+      "t": "Heaps",
+      "q": "What does the max-heap array look like after this insert?",
+      "c": "heap = [9, 7, 8, 3, 5]\ninsert(heap, 10)",
+      "o": [
+        "[10, 7, 9, 3, 5, 8]",
+        "[10, 9, 8, 3, 5, 7]",
+        "[9, 7, 10, 3, 5, 8]",
+        "[10, 7, 8, 3, 5, 9]"
+      ],
+      "a": 0,
+      "e": "10 goes to index 5. Its parent is (5 − 1) // 2 = 2, holding 8: swap. Now at index 2, the parent is index 0 holding 9: swap again. 10 is the new root."
+    },
+    {
+      "t": "Heaps",
+      "q": "What does delete_max return, and what is left in the heap?",
+      "c": "heap = [10, 7, 9, 3, 5, 8]\ntop = delete_max(heap)",
+      "o": [
+        "10, and [9, 7, 8, 3, 5]",
+        "10, and [8, 7, 9, 3, 5]",
+        "10, and [9, 8, 7, 3, 5]",
+        "8, and [10, 7, 9, 3, 5]"
+      ],
+      "a": 0,
+      "e": "The last value 8 moves to the root: [8, 7, 9, 3, 5]. Sift down: the children are 7 and 9, so swap with the larger, 9. At index 2 there are no children left, so it stops."
+    },
+    {
+      "t": "Binary trees and BSTs",
+      "q": "Insert these keys into an empty BST, in this order. What is the preorder traversal?",
+      "c": "for k in [50, 30, 70, 20, 40, 60]:\n    root = insert(root, k)",
+      "o": [
+        "50 30 20 40 70 60",
+        "20 30 40 50 60 70",
+        "20 40 30 60 70 50",
+        "50 30 70 20 40 60"
+      ],
+      "a": 0,
+      "e": "Preorder visits the node, then the whole left subtree, then the right. The sorted list is inorder; 20 40 30 60 70 50 is postorder; 50 30 70 20 40 60 is level order."
+    },
+    {
+      "t": "DFS and BFS",
+      "q": "What does recursive DFS print, starting from 0?",
+      "c": "adj = [[1, 2], [3], [3], []]     # directed\ndfs(0, [False] * 4, adj)",
+      "o": [
+        "0 1 3 2",
+        "0 1 2 3",
+        "0 2 3 1",
+        "0 3 1 2"
+      ],
+      "a": 0,
+      "e": "From 0 go to 1 first, from 1 to 3. Vertex 3 has no outgoing edges, so back out to 0 and try 2. Its neighbour 3 is already visited. 0 1 2 3 would be the BFS order."
+    },
+    {
+      "t": "DFS and BFS",
+      "q": "What order does BFS process the vertices in, starting from 0?",
+      "c": "adj = [[2, 1], [0, 3], [0, 4], [1], [2]]\nbfs(0, 5, adj)",
+      "o": [
+        "0 2 1 4 3",
+        "0 1 2 3 4",
+        "0 2 4 1 3",
+        "0 2 1 3 4"
+      ],
+      "a": 0,
+      "e": "Neighbours are queued in list order: 0 queues 2 then 1. Processing 2 queues 4; processing 1 queues 3. The queue is first in, first out, so 4 comes before 3. 0 2 4 1 3 is the DFS order."
+    },
+    {
+      "t": "Backtracking",
+      "q": "What does subsets([1, 2]) return, with \"exclude\" tried before \"include\"?",
+      "c": "def go(i):\n    if i == len(nums):\n        res.append(cur[:]); return\n    go(i + 1)                # exclude nums[i]\n    cur.append(nums[i])      # include it\n    go(i + 1)\n    cur.pop()",
+      "o": [
+        "[[], [2], [1], [1, 2]]",
+        "[[1, 2], [1], [2], []]",
+        "[[], [1], [2], [1, 2]]",
+        "[[], [], [], []]"
+      ],
+      "a": 0,
+      "e": "The deepest decision (about 2) flips fastest. Exclude 1 then exclude 2 gives []; exclude 1, include 2 gives [2]; then the include-1 branch gives [1] and [1, 2]. [[], [], [], []] is what you get if you forget the [:] copy."
+    },
+    {
+      "t": "Complexity",
+      "q": "What is the time complexity of this code?",
+      "c": "for i in range(1, n + 1):\n    j = 1\n    while j < i:\n        j *= 2",
+      "o": [
+        "O(n log n)",
+        "O(n)",
+        "O(n²)",
+        "O(log n)"
+      ],
+      "a": 0,
+      "e": "The outer loop runs n times. The inner loop doubles j until it reaches i, about log₂ i times. The sum of log i for i up to n is Θ(n log n)."
+    },
+    {
+      "t": "Dynamic programming I",
+      "q": "What does rob([2, 7, 9, 3, 1]) return?",
+      "c": "dp[i] = max(dp[i - 1], dp[i - 2] + nums[i])",
+      "o": [
+        "12",
+        "11",
+        "13",
+        "10"
+      ],
+      "a": 0,
+      "e": "dp = [2, 7, 11, 11, 12]. Robbing houses 0, 2 and 4 gives 2 + 9 + 1 = 12. Greedily taking 7 and 3 gives only 10."
+    },
+    {
+      "t": "Dynamic programming II",
+      "q": "0/1 knapsack with weights [1, 3, 4], values [15, 20, 30], capacity 4. What is dp[n][W]?",
+      "o": [
+        "35",
+        "30",
+        "50",
+        "65"
+      ],
+      "a": 0,
+      "e": "Items 1 and 3 together weigh exactly 4 and are worth 15 + 20 = 35, which beats item 4 alone (30). 50 and 65 would need a total weight above 4."
+    },
+    {
+      "t": "Graphs II",
+      "q": "What does Kahn’s algorithm return for this graph? (Vertices with in-degree 0 are queued in index order.)",
+      "c": "edges = [(0, 2), (1, 2), (2, 3)]\nprint(topo_order(4, edges))",
+      "o": [
+        "[0, 1, 2, 3]",
+        "[1, 0, 2, 3]",
+        "[0, 2, 1, 3]",
+        "[3, 2, 1, 0]"
+      ],
+      "a": 0,
+      "e": "Vertices 0 and 1 start at in-degree 0 and are popped in that order. Vertex 2 reaches in-degree 0 only after both are gone, then 3."
+    },
+    {
+      "t": "Graphs II",
+      "q": "What distances does Dijkstra return from vertex 0?",
+      "c": "edges = [(0, 1, 4), (0, 2, 1), (2, 1, 2)]\nprint(dijkstra(3, edges, 0)[0])",
+      "o": [
+        "[0, 4, 1]",
+        "[0, 3, 1]",
+        "[0, 1, 3]",
+        "[0, 3, 3]"
+      ],
+      "a": 1,
+      "e": "0 → 2 → 1 costs 1 + 2 = 3, which beats the direct edge 0 → 1 of cost 4."
+    },
+    {
+      "t": "Graphs II",
+      "q": "Edge weights are all 0 or 1. Which algorithm runs in O(V + E)?",
+      "o": [
+        "Dijkstra with a heap",
+        "0-1 BFS with a deque",
+        "Bellman–Ford",
+        "Floyd–Warshall"
+      ],
+      "a": 1,
+      "e": "Free edges push to the front of the deque and cost-1 edges to the back, so the deque stays sorted by distance without a heap."
+    },
+    {
+      "t": "Graphs II",
+      "q": "Why does the textbook Dijkstra fail on a graph with a negative edge?",
+      "o": [
+        "A vertex finalised early can later be undercut",
+        "The heap overflows",
+        "Python cannot add negatives",
+        "It finds longest paths instead"
+      ],
+      "a": 0,
+      "e": "On 0→1 (2), 0→2 (3), 2→1 (−2) the textbook version finalises vertex 1 at 2, but 0→2→1 costs 1."
+    },
+    {
+      "t": "Graphs II",
+      "q": "A graph has 6 vertices and no negative cycle. How many rounds of Bellman–Ford are always enough?",
+      "o": [
+        "5",
+        "6",
+        "2",
+        "36"
+      ],
+      "a": 0,
+      "e": "A shortest simple path has at most V − 1 = 5 edges."
+    },
+    {
+      "t": "Graphs II",
+      "q": "What does this “at most k stops” search return (k = 1 stop, so up to 2 edges)?",
+      "c": "flights = [[0, 1, 100], [1, 2, 100], [0, 2, 500]]\nprint(cheapest_flights(3, flights, 0, 2, 1))",
+      "o": [
+        "500",
+        "200",
+        "100",
+        "-1"
+      ],
+      "a": 1,
+      "e": "One stop allows 0 → 1 → 2 for 100 + 100 = 200, which beats the direct flight at 500."
+    },
+    {
+      "t": "Graphs II",
+      "q": "What total weight does Kruskal return?",
+      "c": "edges = [(5, 0, 1), (3, 1, 2), (4, 0, 2), (1, 2, 3), (6, 1, 3)]   # (weight, u, v)\nprint(kruskal(4, edges))",
+      "o": [
+        "9",
+        "14",
+        "8",
+        "13"
+      ],
+      "a": 2,
+      "e": "Kept in order: 1, 3, 4. The edges of weight 5 and 6 would each close a cycle."
+    },
+    {
+      "t": "Graphs II",
+      "q": "Why is Kruskal’s running time O(E log E)?",
+      "o": [
+        "Sorting the edges dominates; union-find is almost constant per operation",
+        "Each edge needs a full DFS",
+        "It runs V Dijkstras",
+        "It builds an E × E table"
+      ],
+      "a": 0,
+      "e": "After the sort, each edge costs one find or union, which is near-constant with path compression and union by size."
+    },
+    {
+      "t": "Graphs II",
+      "q": "Course Schedule (LC 207): prerequisites [[1, 0]] means…",
+      "o": [
+        "take course 0 before course 1, so the edge is 0 → 1",
+        "take course 1 before course 0",
+        "the courses are the same",
+        "there is a cycle"
+      ],
+      "a": 0,
+      "e": "The pair is [a, b]: to take a you must first take b, so the edge points from b to a."
+    },
+    {
+      "t": "Graphs II",
+      "q": "Longest Increasing Path in a Matrix (LC 329) is solved with Kahn’s algorithm by counting…",
+      "o": [
+        "the number of BFS layers peeled",
+        "the number of cells",
+        "the largest value",
+        "the number of components"
+      ],
+      "a": 0,
+      "e": "Each layer adds one more cell to the longest path; peeling avoids the deep recursion the memoised DFS needs."
+    },
+    {
+      "t": "Graphs II",
+      "q": "Path With Maximum Probability (LC 1514) with heapq: what do you push?",
+      "o": [
+        "the negated probability, because heapq is a min-heap",
+        "the probability itself",
+        "the edge weight",
+        "the vertex only"
+      ],
+      "a": 0,
+      "e": "Popping the smallest negated value pops the largest probability."
+    },
+    {
+      "t": "Graphs II",
+      "q": "Which statement is the cycle property of MSTs?",
+      "o": [
+        "An edge strictly heavier than every other edge on some cycle belongs to no MST",
+        "Every cycle contains an MST edge",
+        "The lightest edge of a cycle is never in an MST",
+        "MSTs contain no cycles, so cycles are irrelevant"
+      ],
+      "a": 0,
+      "e": "Swap it out for the cycle’s lighter edges and the tree gets lighter, so it cannot have been minimum."
+    },
+    {
+      "t": "Graphs II",
+      "q": "Which algorithm answers “connect all 3,000 points in the plane at minimum total distance”?",
+      "o": [
+        "Prim without a heap, O(n²), on the implicit complete graph",
+        "Dijkstra from point 0",
+        "Topological sort",
+        "Floyd–Warshall"
+      ],
+      "a": 0,
+      "e": "The graph is complete (about 4.5 million edges), so the array version of Prim beats sorting all edges."
+    },
+    {
+      "t": "Greedy",
+      "q": "What do greedy and the DP return for coins 1, 3, 4 and amount 6?",
+      "c": "print(greedy_coins([1, 3, 4], 6), 'and', dp_coins([1, 3, 4], 6))",
+      "o": [
+        "3 and 2",
+        "2 and 2",
+        "3 and 3",
+        "2 and 3"
+      ],
+      "a": 0,
+      "e": "Greedy takes 4 + 1 + 1 = 3 coins; the best is 3 + 3 = 2 coins."
+    },
+    {
+      "t": "Greedy",
+      "q": "What does Task Scheduler return?",
+      "c": "print(least_interval(list('AAABBB'), 2))",
+      "o": [
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "a": 2,
+      "e": "A B _ A B _ A B: the frame is (3 − 1) · (2 + 1) = 6 plus a final row holding the 2 tasks tied for the highest count."
+    },
+    {
+      "t": "Greedy",
+      "q": "What does Partition Labels return?",
+      "c": "print(partition_labels('ababcbacadefegdehijhklij'))",
+      "o": [
+        "[9, 7, 8]",
+        "[8, 8, 8]",
+        "[9, 8, 7]",
+        "[24]"
+      ],
+      "a": 0,
+      "e": "The first piece ends at the last “a” (index 8), the second at the last “e” (index 15), the third is the rest."
+    },
+    {
+      "t": "Greedy",
+      "q": "What does Jump Game (LC 55) return?",
+      "c": "print(can_jump([3, 2, 1, 0, 4]))",
+      "o": [
+        "True",
+        "False",
+        "it depends on the order of jumps",
+        "IndexError"
+      ],
+      "a": 1,
+      "e": "Every route lands on index 3, whose jump length is 0, so index 4 is out of reach."
+    },
+    {
+      "t": "Greedy",
+      "q": "For which problem is “take the highest value per kilo first” provably optimal?",
+      "o": [
+        "fractional knapsack",
+        "0/1 knapsack",
+        "coin change with coins 1, 3, 4",
+        "subset sum"
+      ],
+      "a": 0,
+      "e": "Only when fractions are allowed can no capacity be stranded."
+    },
+    {
+      "t": "Monotonic stacks",
+      "q": "What does this return? (index of the next strictly greater element, −1 if none)",
+      "c": "print(greater_next([2, 1, 2, 4, 3]))",
+      "o": [
+        "[2, 2, 3, -1, -1]",
+        "[3, 2, 3, -1, -1]",
+        "[3, 2, 3, -1, 4]",
+        "[1, 2, 3, 4, -1]"
+      ],
+      "a": 1,
+      "e": "Both 2s see the 4 at index 3 first as strictly greater; the 1 sees the 2 at index 2."
+    },
+    {
+      "t": "Monotonic stacks",
+      "q": "The code uses a strict comparison. What does it return when values are equal?",
+      "c": "print(greater_next([2, 2, 3]))",
+      "o": [
+        "[1, 2, -1]",
+        "[2, 2, -1]",
+        "[2, -1, -1]",
+        "[1, 1, -1]"
+      ],
+      "a": 1,
+      "e": "Equal values are not greater, so the first 2 must wait for the 3 at index 2, exactly like the second 2."
+    },
+    {
+      "t": "Monotonic stacks",
+      "q": "Why is a monotonic stack pass O(n) even though one step may pop many elements?",
+      "o": [
+        "each element is pushed once and popped at most once",
+        "pops are free",
+        "the stack is sorted",
+        "n is small"
+      ],
+      "a": 0,
+      "e": "The total number of pops cannot exceed the total number of pushes: that is amortised analysis."
+    },
+    {
+      "t": "DP II conversions",
+      "q": "What does the one-row version return?",
+      "c": "print(lcs_row('abcde', 'ace'))",
+      "o": [
+        "2",
+        "3",
+        "5",
+        "4"
+      ],
+      "a": 1,
+      "e": "The longest common subsequence is “ace”, length 3."
+    },
+    {
+      "t": "DP II conversions",
+      "q": "Why does the one-row LCS need a saved “diag” variable?",
+      "o": [
+        "The cell diagonal to you is overwritten before you need it",
+        "Python lists cannot be edited",
+        "To count matches",
+        "To store the answer"
+      ],
+      "a": 0,
+      "e": "dp[i][j] reads dp[i+1][j+1], which lives in the slot that was just overwritten for the previous j."
+    },
+    {
+      "t": "DP II conversions",
+      "q": "A table cell reads only the cell above and the cell to its left. Which way do the loops run?",
+      "o": [
+        "forwards in both i and j",
+        "backwards in both",
+        "diagonally only",
+        "columns first, backwards"
+      ],
+      "a": 0,
+      "e": "Both dependencies have smaller indices, so they must be filled first."
+    },
+    {
+      "t": "Bridges",
+      "q": "What does House Robber III return for the tree [3, 2, 3, null, 3, null, 1]?",
+      "c": "print(rob_tree(build_tree([3, 2, 3, None, 3, None, 1])))",
+      "o": [
+        "6",
+        "7",
+        "8",
+        "9"
+      ],
+      "a": 1,
+      "e": "Rob the root (3) and the two grandchildren (3 and 1): 3 + 3 + 1 = 7. Robbing the two middle nodes gives 2 + 3 = 5."
+    },
+    {
+      "t": "Bridges",
+      "q": "After adding 5, 2 and 8 to the two-heap median finder, what is find_median()?",
+      "c": "m = MedianFinder()\nfor x in (5, 2, 8):\n    m.add_num(x)\nprint(m.find_median())",
+      "o": [
+        "5.0",
+        "2.0",
+        "8.0",
+        "5.5"
+      ],
+      "a": 0,
+      "e": "Sorted: 2, 5, 8; the middle is 5. The max-heap holds {2, 5} with top 5; the min-heap holds {8}."
+    }
+  ],
+  "blanks": [
+    {
+      "t": "Quick Sort",
+      "p": "Lomuto partition: the last element is the pivot, k marks the end of the \"≤ pivot\" zone.",
+      "c": "def partition(arr, lo, hi):\n    pivot = arr[{{hi}}]\n    k = lo - {{1}}\n    for pos in range(lo, {{hi}}):\n        if arr[pos] {{<=}} pivot:\n            k += 1\n            arr[k], arr[pos] = arr[pos], arr[k]\n    arr[k + 1], arr[hi] = arr[hi], arr[k + 1]\n    return {{k + 1}}"
+    },
+    {
+      "t": "Quick Sort",
+      "p": "The recursive driver: stop at 0 or 1 element, and never include the pivot in either half.",
+      "c": "def quick_sort(arr, lo, hi):\n    if lo {{>=}} hi:\n        return\n    pos = partition(arr, lo, hi)\n    quick_sort(arr, lo, {{pos - 1}})\n    quick_sort(arr, {{pos + 1}}, hi)"
+    },
+    {
+      "t": "Binary trees and BSTs",
+      "p": "Recursive BST insert that re-attaches whatever comes back.",
+      "c": "def insert(node, value):\n    if node is {{None}}:\n        return {{Node(value)}}\n    if value < node.value:\n        node.{{left}} = insert(node.left, value)\n    elif value > node.value:\n        node.{{right}} = insert(node.right, value)\n    return {{node}}"
+    },
+    {
+      "t": "Binary trees and BSTs",
+      "p": "Inorder traversal: the one that lists a BST in sorted order.",
+      "c": "def inorder(node, out):\n    if node is None:\n        return\n    inorder(node.{{left}}, out)\n    out.{{append}}(node.value)\n    inorder(node.{{right}}, out)"
+    },
+    {
+      "t": "Binary trees and BSTs",
+      "p": "The two-children delete case: copy up the inorder successor, then remove it.",
+      "c": "succ = find_min(node.{{right}})\nnode.value = succ.{{value}}\nnode.right = delete(node.{{right}}, succ.value)"
+    },
+    {
+      "t": "Heaps",
+      "p": "Index arithmetic for a heap stored in a 0-based array.",
+      "c": "left   = {{2 * i + 1}}\nright  = {{2 * i + 2}}\nparent = {{(i - 1) // 2}}"
+    },
+    {
+      "t": "Heaps",
+      "p": "Insert into a max-heap: add at the end, then bubble up.",
+      "c": "def insert(heap, value):\n    heap.{{append}}(value)\n    i = len(heap) - 1\n    while i {{>}} 0:\n        parent = {{(i - 1) // 2}}\n        if heap[parent] {{<}} value:\n            heap[parent], heap[i] = heap[i], heap[parent]\n            i = {{parent}}\n        else:\n            break"
+    },
+    {
+      "t": "Heaps",
+      "p": "Sift down: swap with the LARGER child until the order rule holds.",
+      "c": "def sift_down(heap, i):\n    n = len(heap)\n    while True:\n        l, r, big = 2 * i + 1, 2 * i + 2, i\n        if l < n and heap[l] > heap[{{big}}]: big = l\n        if r < n and heap[r] > heap[{{big}}]: big = r\n        if big == {{i}}:\n            return\n        heap[i], heap[big] = heap[big], heap[i]\n        i = {{big}}"
+    },
+    {
+      "t": "Heaps",
+      "p": "Build a heap in O(n): sift down every parent, from the last one back to the root.",
+      "c": "def build_heap(a):\n    for i in range({{len(a) // 2 - 1}}, {{-1}}, {{-1}}):\n        sift_down(a, i)"
+    },
+    {
+      "t": "Backtracking",
+      "p": "All subsets: exclude, include, undo. Save a copy, not the live list.",
+      "c": "def subsets(nums):\n    res, cur = [], []\n    def go(i):\n        if i == {{len(nums)}}:\n            res.append(cur{{[:]|.copy()}})\n            return\n        go(i + 1)\n        cur.{{append}}(nums[i])\n        go(i + 1)\n        cur.{{pop}}()\n    go(0)\n    return res"
+    },
+    {
+      "t": "Backtracking",
+      "p": "Permutations: two things change on CHOOSE, so two things are restored on UNDO.",
+      "c": "def permute(i, curr, visited, n):\n    if i == n:\n        print(curr[:])\n        return\n    for num in range(1, n + 1):\n        if not visited[num]:\n            visited[num] = {{True}}\n            curr.append(num)\n            permute({{i + 1}}, curr, visited, n)\n            curr.{{pop}}()\n            visited[num] = {{False}}"
+    },
+    {
+      "t": "DFS and BFS",
+      "p": "Recursive DFS: mark on entry, recurse into unvisited neighbours.",
+      "c": "def dfs(node, visited, adj):\n    visited[node] = {{True}}\n    print(node)\n    for nb in {{adj[node]}}:\n        if not {{visited[nb]}}:\n            {{dfs}}(nb, visited, adj)"
+    },
+    {
+      "t": "DFS and BFS",
+      "p": "BFS with a deque. Mark a vertex the moment you enqueue it.",
+      "c": "from collections import {{deque}}\n\ndef bfs(start, n, adj):\n    visited = [False] * n\n    queue = deque([start])\n    visited[start] = True\n    order = []\n    while queue:\n        node = queue.{{popleft}}()\n        order.append(node)\n        for nb in adj[node]:\n            if not visited[nb]:\n                visited[nb] = {{True}}\n                queue.{{append}}(nb)\n    return order"
+    },
+    {
+      "t": "Dynamic programming I",
+      "p": "Climbing Stairs, bottom-up.",
+      "c": "def ways_table(n):\n    dp = [1] * ({{n + 1}})\n    for i in range({{2}}, n + 1):\n        dp[i] = {{dp[i - 1] + dp[i - 2]|dp[i - 2] + dp[i - 1]}}\n    return dp[{{n}}]"
+    },
+    {
+      "t": "Dynamic programming I",
+      "p": "House Robber: skip house i, or rob it and add the best up to i − 2.",
+      "c": "dp[i] = {{max}}(dp[i - 1], dp[{{i - 2}}] + nums[{{i}}])"
+    },
+    {
+      "t": "Dynamic programming II",
+      "p": "The LCS cell rule.",
+      "c": "if x[i - 1] == y[j - 1]:\n    c[i][j] = {{c[i - 1][j - 1] + 1|1 + c[i - 1][j - 1]}}\nelse:\n    c[i][j] = {{max}}(c[i - 1][j], {{c[i][j - 1]}})"
+    },
+    {
+      "t": "Dynamic programming II",
+      "p": "0/1 Knapsack: skip item i, or take it if it fits.",
+      "c": "dp[i][c] = dp[{{i - 1}}][c]\nif w[i - 1] {{<=}} c:\n    dp[i][c] = max(dp[i][c], dp[i - 1][{{c - w[i - 1]}}] + {{v[i - 1]}})"
+    },
+    {
+      "t": "Complexity",
+      "p": "Master theorem for T(n) = a·T(n/b) + f(n), with c = log_b(a). Write the answers with ^ for powers.",
+      "lang": "out",
+      "c": "f(n) polynomially smaller than n^c  ->  T(n) = Θ({{n^c}})\nf(n) = Θ(n^c)                       ->  T(n) = Θ({{n^c log n|n^c·log n|n^c * log n|n^c lg n}})\nf(n) polynomially larger than n^c   ->  T(n) = Θ({{f(n)}})"
+    },
+    {
+      "t": "References and linked lists",
+      "p": "Reverse a linked list in place: save the rest, turn the arrow, step forward.",
+      "c": "def reverse(head):\n    prev, cur = None, head\n    while cur:\n        nxt = cur.{{next}}\n        cur.next = {{prev}}\n        prev = {{cur}}\n        cur = {{nxt}}\n    return {{prev}}"
+    },
+    {
+      "t": "Swaps and partitions",
+      "p": "Reader–writer partition: move every even number to the front.",
+      "c": "k = {{-1}}\nfor pos in range(len(a)):\n    if a[pos] % 2 == 0:\n        k {{+=}} 1\n        a[k], a[{{pos}}] = a[pos], a[k]"
+    },
+    {
+      "t": "Pairs, sets and grids",
+      "p": "Build an R × C grid of zeros with R separate rows.",
+      "c": "grid = [{{[0] * C}} for _ in range({{R}})]"
+    },
+    {
+      "t": "Caches and greedy",
+      "p": "Memoize a recursive function with the standard library.",
+      "c": "from functools import {{lru_cache}}\n\n@lru_cache(maxsize={{None}})\ndef fib(n):\n    if n < 2:\n        return n\n    return fib(n - 1) + fib(n - 2)"
+    },
+    {
+      "t": "Contest graphs",
+      "p": "Multi-source BFS: one whole level of the queue per minute.",
+      "c": "while q and fresh:\n    for _ in range({{len(q)}}):\n        x, y = q.{{popleft}}()\n        for dx, dy in DIRS:\n            nx, ny = x + dx, y + dy\n            if 0 <= nx < R and 0 <= ny < C and grid[nx][ny] == 1:\n                grid[nx][ny] = 2\n                fresh -= 1\n                q.{{append}}((nx, ny))\n    minutes += {{1}}"
+    },
+    {
+      "t": "Contest DP",
+      "p": "Frog Jump, bottom-up: the last jump came from i − 1 or i − 2.",
+      "c": "dp[i] = min(dp[i - 1] + abs(h[i] - h[{{i - 1}}]),\n            dp[{{i - 2}}] + abs(h[i] - h[i - 2]))"
+    },
+    {
+      "t": "Greedy",
+      "p": "Keep the most non-overlapping intervals.",
+      "c": "intervals.sort(key=lambda x: x[{{1}}])\nkept, end = 0, float(\"-inf\")\nfor s, e in intervals:\n    if s {{>=}} end:\n        kept += 1\n        end = {{e}}"
+    },
+    {
+      "t": "Graphs II",
+      "p": "Dijkstra with lazy deletion: skip stale pairs, relax with the popped distance.",
+      "c": "while heap:\n    d, u = heapq.{{heappop}}(heap)\n    if d {{>}} dist[u]:\n        continue\n    for v, w in adj[u]:\n        if d + w < dist[v]:\n            dist[v] = {{d + w}}\n            heapq.heappush(heap, ({{dist[v]}}, v))"
+    },
+    {
+      "t": "Graphs II",
+      "p": "Kahn: queue a vertex the moment its last prerequisite is done.",
+      "c": "for v in adj[u]:\n    indeg[v] {{-=}} 1\n    if indeg[v] == {{0}}:\n        q.append(v)"
+    },
+    {
+      "t": "Knapsack family",
+      "p": "0/1 knapsack in one row: the capacity loop runs downward.",
+      "c": "for w, v in zip(weights, values):\n    for c in range({{W}}, {{w - 1}}, {{-1}}):\n        dp[c] = max(dp[c], dp[{{c - w}}] + v)"
+    },
+    {
+      "t": "Graphs II",
+      "p": "Kahn’s algorithm: peel every vertex whose prerequisites are all done.",
+      "c": "def topo_order(n, edges):\n    adj = [[] for _ in range(n)]\n    indeg = [0] * n\n    for u, v in edges:\n        adj[u].append(v)\n        indeg[v] {{+=}} 1\n    q = deque(u for u in range(n) if indeg[u] == {{0}})\n    order = []\n    while q:\n        u = q.popleft()\n        order.append(u)\n        for v in adj[u]:\n            indeg[v] {{-=}} 1\n            if indeg[v] == 0:\n                q.append(v)\n    return order if len(order) == {{n}} else None"
+    },
+    {
+      "t": "Graphs II",
+      "p": "Dijkstra with a heap: skip stale entries, relax, push the improvement.",
+      "c": "def dijkstra(n, edges, src):\n    adj = [[] for _ in range(n)]\n    for u, v, w in edges:\n        adj[u].append((v, w))\n    INF = float('inf')\n    dist, par = [INF] * n, [-1] * n\n    dist[src] = 0\n    heap = [(0, src)]\n    while heap:\n        d, u = heapq.heappop(heap)\n        if d {{>}} dist[u]:\n            continue\n        for v, w in adj[u]:\n            if d + w {{<}} dist[v]:\n                dist[v], par[v] = d + w, u\n                heapq.heappush(heap, ({{dist[v]}}, v))\n    return dist, par"
+    },
+    {
+      "t": "Graphs II",
+      "p": "Kruskal: lightest edges first, keep an edge only if it joins two components.",
+      "c": "def kruskal(n, edges):\n    dsu, total, used = DSU(n), 0, 0\n    for w, u, v in {{sorted}}(edges):\n        if dsu.{{union}}(u, v):\n            total += w\n            used += 1\n    return total if used == n {{-}} 1 else None"
+    },
+    {
+      "t": "Graphs II",
+      "p": "At most k stops: k + 1 rounds, each reading the OLD distances.",
+      "c": "def cheapest_flights(n, flights, src, dst, k):\n    INF = float('inf')\n    dist = [INF] * n\n    dist[src] = 0\n    for _ in range({{k + 1}}):\n        nxt = {{dist[:]}}\n        for u, v, w in flights:\n            if dist[u] + w < nxt[v]:\n                nxt[v] = dist[u] + w\n        dist = {{nxt}}\n    return -1 if dist[dst] == INF else dist[dst]"
+    },
+    {
+      "t": "Monotonic stacks",
+      "p": "Next strictly greater element: pop everything smaller than the newcomer.",
+      "c": "def greater_next(a):\n    out, stack = [-1] * len(a), []\n    for i, x in enumerate(a):\n        while stack and a[stack[-1]] {{<}} x:\n            out[{{stack.pop()}}] = i\n        stack.append({{i}})\n    return out"
+    },
+    {
+      "t": "Greedy",
+      "p": "Most non-overlapping intervals: sort by END time, keep what starts after the last kept one ends.",
+      "c": "def keep_intervals(iv):\n    kept, last_end = 0, -float('inf')\n    for s, e in sorted(iv, key=lambda p: p[{{1}}]):\n        if s {{>=}} last_end:\n            kept += 1\n            last_end = {{e}}\n    return kept"
+    },
+    {
+      "t": "DP II conversions",
+      "p": "One-row LCS: save the diagonal before it is overwritten.",
+      "c": "def lcs_row(a, b):\n    n, m = len(a), len(b)\n    row = [0] * (m + 1)\n    for i in range(n - 1, -1, -1):\n        diag = 0\n        for j in range(m - 1, -1, -1):\n            old = row[j]\n            row[j] = 1 + diag if a[i] == b[j] else max(old, row[{{j + 1}}])\n            diag = {{old}}\n    return row[0]"
+    }
+  ],
+  "bugs": [
+    {
+      "t": "Quick Sort",
+      "p": "quick_sort([3, 1, 2], 0, 2) never finishes: RecursionError.",
+      "c": [
+        "def quick_sort(arr, lo, hi):",
+        "    if lo >= hi:",
+        "        return",
+        "    pos = partition(arr, lo, hi)",
+        "    quick_sort(arr, lo, pos)",
+        "    quick_sort(arr, pos + 1, hi)"
+      ],
+      "a": [
+        4
+      ],
+      "e": "The pivot is already in its final place, so the left call must stop at pos − 1. Including pos means a range whose pivot is its largest value gets the same range back, forever.",
+      "f": "    quick_sort(arr, lo, pos - 1)"
+    },
+    {
+      "t": "Quick Sort",
+      "p": "After partition, the pivot is not between the smaller and larger values.",
+      "c": [
+        "def partition(arr, lo, hi):",
+        "    pivot = arr[hi]",
+        "    k = lo - 1",
+        "    for pos in range(lo, hi):",
+        "        if arr[pos] <= pivot:",
+        "            k += 1",
+        "            arr[k], arr[pos] = arr[pos], arr[k]",
+        "    arr[k], arr[hi] = arr[hi], arr[k]",
+        "    return k"
+      ],
+      "a": [
+        7,
+        8
+      ],
+      "e": "k is the last index of the \"≤ pivot\" zone, so the pivot belongs at k + 1. Swapping into k drops the pivot on top of a smaller value, and when nothing is ≤ pivot, k is −1, which Python reads as the last element.",
+      "f": "    arr[k + 1], arr[hi] = arr[hi], arr[k + 1]\n    return k + 1"
+    },
+    {
+      "t": "Binary trees and BSTs",
+      "p": "Values smaller than the root never appear in the inorder output.",
+      "c": [
+        "def insert(node, value):",
+        "    if node is None:",
+        "        return Node(value)",
+        "    if value < node.value:",
+        "        insert(node.left, value)",
+        "    elif value > node.value:",
+        "        node.right = insert(node.right, value)",
+        "    return node"
+      ],
+      "a": [
+        4
+      ],
+      "e": "The recursive call returns the new node, but the result is thrown away, so nothing is ever attached on the left. Both sides must re-attach what comes back.",
+      "f": "        node.left = insert(node.left, value)"
+    },
+    {
+      "t": "Binary trees and BSTs",
+      "p": "Deleting a node with two children breaks the BST rule.",
+      "c": [
+        "def delete(node, key):",
+        "    if node is None:",
+        "        return None",
+        "    if key < node.value:",
+        "        node.left = delete(node.left, key)",
+        "    elif key > node.value:",
+        "        node.right = delete(node.right, key)",
+        "    else:",
+        "        if node.left is None:",
+        "            return node.right",
+        "        if node.right is None:",
+        "            return node.left",
+        "        succ = find_min(node.left)",
+        "        node.value = succ.value",
+        "        node.right = delete(node.right, succ.value)",
+        "    return node"
+      ],
+      "a": [
+        12
+      ],
+      "e": "The inorder successor is the smallest value in the RIGHT subtree. The smallest value on the left is smaller than the rest of the left subtree, so copying it up breaks the rule, and line 15 then tries to delete a value that is not on the right at all.",
+      "f": "        succ = find_min(node.right)"
+    },
+    {
+      "t": "Heaps",
+      "p": "After some inserts, a child is bigger than its parent.",
+      "c": [
+        "def insert(heap, value):",
+        "    heap.append(value)",
+        "    i = len(heap) - 1",
+        "    while i > 0:",
+        "        parent = i // 2",
+        "        if heap[parent] < value:",
+        "            heap[parent], heap[i] = heap[i], heap[parent]",
+        "            i = parent",
+        "        else:",
+        "            break"
+      ],
+      "a": [
+        4
+      ],
+      "e": "i // 2 is the parent formula for 1-based arrays. With 0-based Python lists the parent of i is (i − 1) // 2: for i = 2, i // 2 gives 1, but the real parent is 0.",
+      "f": "        parent = (i - 1) // 2"
+    },
+    {
+      "t": "Heaps",
+      "p": "delete_max returns the right value, but the heap left behind is sometimes invalid.",
+      "c": [
+        "def sift_down(heap, i):",
+        "    n = len(heap)",
+        "    while True:",
+        "        l, r, big = 2 * i + 1, 2 * i + 2, i",
+        "        if l < n and heap[l] > heap[big]: big = l",
+        "        if r < n and heap[r] > heap[i]: big = r",
+        "        if big == i:",
+        "            return",
+        "        heap[i], heap[big] = heap[big], heap[i]",
+        "        i = big"
+      ],
+      "a": [
+        5
+      ],
+      "e": "The right child must be compared with heap[big], the larger of the parent and the left child. Comparing with heap[i] picks the right child whenever it beats the parent, even when the left child is larger, so the smaller child is promoted above its bigger sibling.",
+      "f": "        if r < n and heap[r] > heap[big]: big = r"
+    },
+    {
+      "t": "Backtracking",
+      "p": "subsets([1, 2]) returns [[], [], [], []] instead of four different subsets.",
+      "c": [
+        "def subsets(nums):",
+        "    res, cur = [], []",
+        "    def go(i):",
+        "        if i == len(nums):",
+        "            res.append(cur)",
+        "            return",
+        "        go(i + 1)",
+        "        cur.append(nums[i])",
+        "        go(i + 1)",
+        "        cur.pop()",
+        "    go(0)",
+        "    return res"
+      ],
+      "a": [
+        4
+      ],
+      "e": "res stores four references to the same list. Every undo empties it again, so by the end all four entries show []. Save a snapshot with cur[:].",
+      "f": "            res.append(cur[:])      # save a copy"
+    },
+    {
+      "t": "Backtracking",
+      "p": "permute(0, [], [False] * 4, 3) prints [1, 2, 3] and nothing else.",
+      "c": [
+        "def permute(i, curr, visited, n):",
+        "    if i == n:",
+        "        print(curr[:])",
+        "        return",
+        "    for num in range(1, n + 1):",
+        "        if not visited[num]:",
+        "            visited[num] = True",
+        "            curr.append(num)",
+        "            permute(i + 1, curr, visited, n)",
+        "            curr.pop()",
+        "            visited[num] = True"
+      ],
+      "a": [
+        10
+      ],
+      "e": "CHOOSE changed two things, so UNDO must restore two things. Leaving visited[num] as True means every number stays \"used\" after the first branch, and no other arrangement can be built.",
+      "f": "            visited[num] = False    # undo BOTH changes"
+    },
+    {
+      "t": "DFS and BFS",
+      "p": "With adj = [[1, 2, 3], [0], [0], [0]] this \"BFS\" returns [0, 3, 2, 1] instead of [0, 1, 2, 3].",
+      "c": [
+        "def bfs(start, n, adj):",
+        "    visited = [False] * n",
+        "    queue = deque([start])",
+        "    visited[start] = True",
+        "    order = []",
+        "    while queue:",
+        "        node = queue.pop()",
+        "        order.append(node)",
+        "        for nb in adj[node]:",
+        "            if not visited[nb]:",
+        "                visited[nb] = True",
+        "                queue.append(nb)",
+        "    return order"
+      ],
+      "a": [
+        6
+      ],
+      "e": "pop() removes from the right: last in, first out. That turns the queue into a stack and the search into a DFS-like order. BFS takes the oldest vertex with popleft().",
+      "f": "        node = queue.popleft()    # first in, first out"
+    },
+    {
+      "t": "DFS and BFS",
+      "p": "dfs(0, ...) on an undirected graph crashes with RecursionError.",
+      "c": [
+        "def dfs(node, visited, adj):",
+        "    print(node)",
+        "    for nb in adj[node]:",
+        "        if not visited[nb]:",
+        "            dfs(nb, visited, adj)",
+        "    visited[node] = True"
+      ],
+      "a": [
+        5
+      ],
+      "e": "The node is only marked after all its neighbours are explored. In an undirected graph 0 sees 1, 1 sees 0 (still unmarked), 0 sees 1 again, and so on. Mark on entry, before the loop.",
+      "f": "def dfs(node, visited, adj):\n    visited[node] = True     # mark on ENTRY\n    print(node)\n    for nb in adj[node]:\n        if not visited[nb]:\n            dfs(nb, visited, adj)"
+    },
+    {
+      "t": "Dynamic programming I",
+      "p": "ways_table(4) raises IndexError instead of returning 5.",
+      "c": [
+        "def ways_table(n):",
+        "    dp = [1] * n",
+        "    for i in range(2, n + 1):",
+        "        dp[i] = dp[i - 1] + dp[i - 2]",
+        "    return dp[n]"
+      ],
+      "a": [
+        1
+      ],
+      "e": "The answer lives in dp[n], so the table needs indices 0 to n: that is n + 1 slots.",
+      "f": "    dp = [1] * (n + 1)      # indices 0..n"
+    },
+    {
+      "t": "Dynamic programming I",
+      "p": "ways_memo(40, {}) takes minutes, as slow as plain recursion.",
+      "c": [
+        "def ways_memo(n, memo):",
+        "    if n <= 1:",
+        "        return 1",
+        "    if n in memo:",
+        "        return memo[n]",
+        "    return ways_memo(n - 1, memo) + ways_memo(n - 2, memo)"
+      ],
+      "a": [
+        5
+      ],
+      "e": "The memo is checked but never filled, so every subproblem is recomputed. Store the answer before returning it.",
+      "f": "    memo[n] = ways_memo(n - 1, memo) + ways_memo(n - 2, memo)\n    return memo[n]"
+    },
+    {
+      "t": "Dynamic programming II",
+      "p": "knapsack_1d([2], [3], 4) returns 6, but there is only one item, worth 3.",
+      "c": [
+        "def knapsack_1d(w, v, W):",
+        "    dp = [0] * (W + 1)",
+        "    for wi, vi in zip(w, v):",
+        "        for c in range(wi, W + 1):",
+        "            dp[c] = max(dp[c], dp[c - wi] + vi)",
+        "    return dp[W]"
+      ],
+      "a": [
+        3
+      ],
+      "e": "Looping capacity upward lets dp[c − wi] already include this item, so it is taken twice (dp[2] = 3, then dp[4] = dp[2] + 3). Loop downward so each item is used at most once.",
+      "f": "        for c in range(W, wi - 1, -1):   # downward: each item once"
+    },
+    {
+      "t": "References and linked lists",
+      "p": "reverse of 1 → 2 → 3 returns a list containing only 1.",
+      "c": [
+        "def reverse(head):",
+        "    prev, cur = None, head",
+        "    while cur:",
+        "        cur.next = prev",
+        "        prev = cur",
+        "        cur = cur.next",
+        "    return prev"
+      ],
+      "a": [
+        3,
+        5
+      ],
+      "e": "Line 4 overwrites cur.next before it is saved, so line 6 follows the new arrow (back to prev, which is None on the first pass) and the loop ends. Save the rest of the list first.",
+      "f": "        nxt = cur.next\n        cur.next = prev\n        prev = cur\n        cur = nxt"
+    },
+    {
+      "t": "Swaps and partitions",
+      "p": "three_way([1, 2, 0], 1) leaves [1, 0, 2]: a 0 is stuck after the 1.",
+      "c": [
+        "def three_way(a, pivot):",
+        "    lo, mid, hi = 0, 0, len(a) - 1",
+        "    while mid <= hi:",
+        "        if a[mid] < pivot:",
+        "            a[lo], a[mid] = a[mid], a[lo]",
+        "            lo += 1; mid += 1",
+        "        elif a[mid] > pivot:",
+        "            a[mid], a[hi] = a[hi], a[mid]",
+        "            hi -= 1; mid += 1",
+        "        else:",
+        "            mid += 1"
+      ],
+      "a": [
+        8
+      ],
+      "e": "The value swapped in from hi has never been examined. Moving mid past it leaves it unchecked: here the 0 lands in the \"equal\" zone.",
+      "f": "            hi -= 1             # mid stays: re-examine the swapped-in value"
+    },
+    {
+      "t": "Knapsack family",
+      "p": "0/1/2 knapsack with one item (w 2, v 3) and W = 6 returns 9, but only two copies exist (answer 6).",
+      "c": [
+        "dp = [0] * (W + 1)",
+        "for w, v in zip(weights, values):",
+        "    for c in range(w, W + 1):",
+        "        dp[c] = max(dp[c], dp[c - w] + v)",
+        "        if c >= 2 * w:",
+        "            dp[c] = max(dp[c], dp[c - 2 * w] + 2 * v)"
+      ],
+      "a": [
+        2
+      ],
+      "e": "The loop runs upward, so dp[c − w] already contains this item and copies stack: three copies give 9. Sweep capacity downward.",
+      "f": "    for c in range(W, w - 1, -1):"
+    },
+    {
+      "t": "Graphs II",
+      "p": "Dijkstra gives dist[1] = 4 from node 0, but 0 → 2 → 1 costs 1 + 2 = 3.",
+      "c": [
+        "dist = [INF] * n; dist[src] = 0",
+        "heap, done = [(0, src)], {src}",
+        "while heap:",
+        "    d, u = heapq.heappop(heap)",
+        "    for v, w in adj[u]:",
+        "        if v not in done:",
+        "            done.add(v)",
+        "            dist[v] = d + w",
+        "            heapq.heappush(heap, (dist[v], v))"
+      ],
+      "a": [
+        5,
+        6
+      ],
+      "e": "Marking a node done when it is first pushed freezes the first route found. That is right for BFS, wrong with weights. Compare d + w < dist[v] and treat a node as final when it is popped.",
+      "f": "        if d + w < dist[v]:\n            dist[v] = d + w\n            heapq.heappush(heap, (dist[v], v))"
+    },
+    {
+      "t": "Functional graphs",
+      "p": "brute([0]) never returns: node 0 points to itself.",
+      "c": [
+        "def brute(a):",
+        "    ans = []",
+        "    for v in range(len(a)):",
+        "        count, u = 0, v",
+        "        while u != -1:",
+        "            count += 1",
+        "            u = a[u]",
+        "        ans.append(count)",
+        "    return ans"
+      ],
+      "a": [
+        4
+      ],
+      "e": "Following edges until −1 never stops on a cycle. Keep a set of seen nodes, stop on a repeat, and answer with the size of the set.",
+      "f": "        seen, u = set(), v\n        while u != -1 and u not in seen:\n            seen.add(u)\n            u = a[u]\n        ans.append(len(seen))"
+    },
+    {
+      "t": "Graphs II",
+      "p": "dijkstra_bad({0: [(1, 5), (2, 1)], 1: [], 2: [(1, 1)]}, 0) gives vertex 1 a distance of 5; the right answer is 2.",
+      "c": [
+        "def dijkstra_bad(adj, s):",
+        "    dist = {s: 0}",
+        "    seen = {s}",
+        "    heap = [(0, s)]",
+        "    while heap:",
+        "        d, u = heapq.heappop(heap)",
+        "        for v, w in adj[u]:",
+        "            if v not in seen:",
+        "                seen.add(v)",
+        "                dist[v] = d + w",
+        "                heapq.heappush(heap, (d + w, v))",
+        "    return dist"
+      ],
+      "a": [
+        7,
+        8
+      ],
+      "e": "Marking a vertex when it is first pushed is BFS’s rule. In Dijkstra the first route found (cost 5 to vertex 1) can be beaten later (0 → 2 → 1 costs 2), so a vertex is final only when popped. Relax whenever a cheaper route appears.",
+      "f": "            if v not in dist or d + w < dist[v]:\n# remove: seen.add(v)"
+    },
+    {
+      "t": "Graphs II",
+      "p": "find_order_bad(3, [[1, 0], [2, 1], [1, 2]]) should return [] because courses 1 and 2 need each other, but it returns [0].",
+      "c": [
+        "def find_order_bad(n, pre):",
+        "    adj = [[] for _ in range(n)]",
+        "    indeg = [0] * n",
+        "    for a, b in pre:",
+        "        adj[b].append(a)",
+        "        indeg[a] += 1",
+        "    q = deque(i for i in range(n) if indeg[i] == 0)",
+        "    order = []",
+        "    while q:",
+        "        u = q.popleft()",
+        "        order.append(u)",
+        "        for v in adj[u]:",
+        "            indeg[v] -= 1",
+        "            if indeg[v] == 0:",
+        "                q.append(v)",
+        "    return order"
+      ],
+      "a": [
+        15
+      ],
+      "e": "Kahn never queues vertices on a cycle, so a cycle shows up as an order shorter than n. Without the length check the function silently returns a partial order.",
+      "f": "    return order if len(order) == n else []"
+    },
+    {
+      "t": "Graphs II",
+      "p": "cheapest_flights_bad(4, [[0, 1, 100], [1, 2, 100], [2, 3, 100], [0, 3, 1000]], 0, 3, 1) should be 1000 (at most 2 edges) but returns 300.",
+      "c": [
+        "def cheapest_flights_bad(n, flights, src, dst, k):",
+        "    INF = float('inf')",
+        "    dist = [INF] * n",
+        "    dist[src] = 0",
+        "    for _ in range(k + 1):",
+        "        for u, v, w in flights:",
+        "            if dist[u] + w < dist[v]:",
+        "                dist[v] = dist[u] + w",
+        "    return -1 if dist[dst] == INF else dist[dst]"
+      ],
+      "a": [
+        5,
+        6,
+        7
+      ],
+      "e": "Updating dist in place lets a later edge in the same round use a value improved earlier in that round, so one round can add several edges and the stop limit is ignored. Read from the old list and write to a copy.",
+      "f": "    for _ in range(k + 1):\n        nxt = dist[:]\n        for u, v, w in flights:\n            if dist[u] + w < nxt[v]:\n                nxt[v] = dist[u] + w\n        dist = nxt"
+    },
+    {
+      "t": "Graphs II",
+      "p": "floyd_bad on the path 0 → 2 → 3 → 1 (all weights 1) leaves the distance from 0 to 1 at infinity; it should be 3.",
+      "c": [
+        "def floyd_bad(n, edges):",
+        "    INF = float('inf')",
+        "    d = [[0 if i == j else INF for j in range(n)] for i in range(n)]",
+        "    for u, v, w in edges:",
+        "        d[u][v] = min(d[u][v], w)",
+        "    for i in range(n):",
+        "        for j in range(n):",
+        "            for k in range(n):",
+        "                if d[i][k] + d[k][j] < d[i][j]:",
+        "                    d[i][j] = d[i][k] + d[k][j]",
+        "    return d"
+      ],
+      "a": [
+        5,
+        6,
+        7
+      ],
+      "e": "The loop over the intermediate vertex k must be outermost: the table has to be complete for k − 1 before k is allowed as a stop. With k innermost, d[0][1] is examined, in its one and only visit, before d[0][3] (the first half of the route 0 → 3 → 1) is known.",
+      "f": "    for k in range(n):\n        for i in range(n):\n            for j in range(n):"
+    },
+    {
+      "t": "Graphs II",
+      "p": "kruskal_bad(4, [(0, 1, 5), (1, 2, 3), (0, 2, 4), (2, 3, 1), (1, 3, 6)]) returns 15 instead of 8.",
+      "c": [
+        "def kruskal_bad(n, edges):",
+        "    dsu, total, used = DSU(n), 0, 0",
+        "    for u, v, w in sorted(edges):",
+        "        if dsu.union(u, v):",
+        "            total += w",
+        "            used += 1",
+        "    return total if used == n - 1 else None"
+      ],
+      "a": [
+        2
+      ],
+      "e": "sorted(edges) sorts tuples by their first item, the vertex u, not the weight. Kruskal needs the lightest edges first: sort by e[2], or store edges as (w, u, v).",
+      "f": "    for u, v, w in sorted(edges, key=lambda e: e[2]):"
+    },
+    {
+      "t": "Graphs II",
+      "p": "has_cycle_bad(4, [[1, 2], [3], [3], []]) says there is a cycle, but the graph is a diamond-shaped DAG.",
+      "c": [
+        "def has_cycle_bad(n, adj):",
+        "    WHITE, GREY, BLACK = 0, 1, 2",
+        "    color = [WHITE] * n",
+        "    def dfs(u):",
+        "        color[u] = GREY",
+        "        for v in adj[u]:",
+        "            if color[v] != WHITE:",
+        "                return True",
+        "            if dfs(v):",
+        "                return True",
+        "        color[u] = BLACK",
+        "        return False",
+        "    return any(color[u] == WHITE and dfs(u) for u in range(n))"
+      ],
+      "a": [
+        6
+      ],
+      "e": "Only a vertex on the CURRENT path (grey) proves a cycle. A finished (black) vertex reached again through another route, as vertex 3 is here, is perfectly fine in a DAG.",
+      "f": "            if color[v] == GREY:"
+    },
+    {
+      "t": "Greedy",
+      "p": "max_meetings_bad([(1, 10), (2, 3), (4, 5)]) returns 1; two meetings fit.",
+      "c": [
+        "def max_meetings_bad(iv):",
+        "    kept, last_end = 0, -float('inf')",
+        "    for s, e in sorted(iv):",
+        "        if s >= last_end:",
+        "            kept += 1",
+        "            last_end = e",
+        "    return kept"
+      ],
+      "a": [
+        2
+      ],
+      "e": "Sorting by start time lets one long early meeting block everything. The exchange argument works only when you sort by end time.",
+      "f": "    for s, e in sorted(iv, key=lambda p: p[1]):"
+    },
+    {
+      "t": "Monotonic stacks",
+      "p": "next_greater_bad([2, 2, 3]) returns [1, 2, -1]; the first 2 should point at the 3, index 2.",
+      "c": [
+        "def next_greater_bad(a):",
+        "    out, stack = [-1] * len(a), []",
+        "    for i, x in enumerate(a):",
+        "        while stack and a[stack[-1]] <= x:",
+        "            out[stack.pop()] = i",
+        "        stack.append(i)",
+        "    return out"
+      ],
+      "a": [
+        3
+      ],
+      "e": "“Strictly greater” needs <; with <= an equal value pops its twin and is wrongly recorded as its next greater element.",
+      "f": "        while stack and a[stack[-1]] < x:"
+    }
+  ],
+  "parsons": [
+    {
+      "t": "Lomuto partition",
+      "p": "Order the lines of partition (last element is the pivot).",
+      "c": [
+        "def partition(arr, lo, hi):",
+        "    pivot, k = arr[hi], lo - 1",
+        "    for pos in range(lo, hi):",
+        "        if arr[pos] <= pivot:",
+        "            k += 1",
+        "            arr[k], arr[pos] = arr[pos], arr[k]",
+        "    arr[k + 1], arr[hi] = arr[hi], arr[k + 1]",
+        "    return k + 1"
+      ],
+      "why": "Grow the zone (k += 1) before swapping into it, and only place the pivot after the scan, at k + 1."
+    },
+    {
+      "t": "Recursive DFS",
+      "p": "Order the lines so every reachable vertex is visited exactly once.",
+      "c": [
+        "def dfs(node, visited, adj):",
+        "    visited[node] = True",
+        "    for nb in adj[node]:",
+        "        if not visited[nb]:",
+        "            dfs(nb, visited, adj)"
+      ],
+      "why": "Mark on entry, before the loop. Marking afterwards lets a neighbour call straight back into this node and recurse forever."
+    },
+    {
+      "t": "BFS distances",
+      "p": "Order the lines of BFS that records the distance (in edges) from start.",
+      "c": [
+        "def bfs_dist(start, n, adj):",
+        "    dist = [-1] * n",
+        "    dist[start] = 0",
+        "    queue = deque([start])",
+        "    while queue:",
+        "        u = queue.popleft()",
+        "        for v in adj[u]:",
+        "            if dist[v] == -1:",
+        "                dist[v] = dist[u] + 1",
+        "                queue.append(v)",
+        "    return dist"
+      ],
+      "ok": [
+        [
+          0,
+          1,
+          3,
+          2,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        [
+          0,
+          3,
+          1,
+          2,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          9,
+          8,
+          10
+        ],
+        [
+          0,
+          1,
+          3,
+          2,
+          4,
+          5,
+          6,
+          7,
+          9,
+          8,
+          10
+        ],
+        [
+          0,
+          3,
+          1,
+          2,
+          4,
+          5,
+          6,
+          7,
+          9,
+          8,
+          10
+        ]
+      ],
+      "why": "dist doubles as the visited array: −1 means \"not reached\". Set a vertex's distance the moment it is discovered, from the vertex that discovered it. The queue setup and the last two lines can swap without changing the result."
+    },
+    {
+      "t": "Count components",
+      "p": "Order the lines that count connected components using dfs from the puzzle above.",
+      "c": [
+        "def count_components(n, adj):",
+        "    visited = [False] * n",
+        "    count = 0",
+        "    for i in range(n):",
+        "        if not visited[i]:",
+        "            count += 1",
+        "            dfs(i, visited, adj)",
+        "    return count"
+      ],
+      "ok": [
+        [
+          0,
+          2,
+          1,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          4,
+          6,
+          5,
+          7
+        ],
+        [
+          0,
+          2,
+          1,
+          3,
+          4,
+          6,
+          5,
+          7
+        ]
+      ],
+      "why": "Each time the outer loop finds an unvisited vertex, a brand new component starts there; one dfs call then marks the whole component."
+    },
+    {
+      "t": "Heap delete max",
+      "p": "Order the lines of delete_max for a max-heap stored in a list.",
+      "c": [
+        "def delete_max(heap):",
+        "    top = heap[0]",
+        "    last = heap.pop()",
+        "    if heap:",
+        "        heap[0] = last",
+        "        sift_down(heap, 0)",
+        "    return top"
+      ],
+      "why": "Read the root before touching the list: with a one-item heap, pop() empties it and heap[0] would fail. Then the last value fills the root and sinks to its place."
+    },
+    {
+      "t": "All subsets",
+      "p": "Order the lines of the include / exclude backtracking for subsets.",
+      "c": [
+        "def subsets(nums):",
+        "    res, cur = [], []",
+        "    def go(i):",
+        "        if i == len(nums):",
+        "            res.append(cur[:])",
+        "            return",
+        "        go(i + 1)",
+        "        cur.append(nums[i])",
+        "        go(i + 1)",
+        "        cur.pop()",
+        "    go(0)",
+        "    return res"
+      ],
+      "ok": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          6,
+          9,
+          8,
+          10,
+          11
+        ]
+      ],
+      "why": "The base case saves a copy and returns. Then: one branch without nums[i], one with it, and an undo straight after the \"with\" branch. Trying \"include\" first is also correct; it only changes the output order."
+    },
+    {
+      "t": "Climbing Stairs",
+      "p": "Order the bottom-up table version.",
+      "c": [
+        "def ways_table(n):",
+        "    dp = [1] * (n + 1)",
+        "    for i in range(2, n + 1):",
+        "        dp[i] = dp[i - 1] + dp[i - 2]",
+        "    return dp[n]"
+      ],
+      "why": "Create the table with the base cases filled, fill it from small i to large, then read the answer from dp[n]."
+    },
+    {
+      "t": "LCS table",
+      "p": "Order the loops and the cell rule that fill the LCS table c.",
+      "c": [
+        "for i in range(1, m + 1):",
+        "    for j in range(1, n + 1):",
+        "        if x[i - 1] == y[j - 1]:",
+        "            c[i][j] = c[i - 1][j - 1] + 1",
+        "        else:",
+        "            c[i][j] = max(c[i - 1][j], c[i][j - 1])"
+      ],
+      "why": "Row by row, left to right, so the three cells each entry reads (diagonal, above, left) are already filled. The indentation tells you which loop is outer."
+    },
+    {
+      "t": "Reverse a linked list",
+      "p": "Order the lines of the iterative reverse.",
+      "c": [
+        "def reverse(head):",
+        "    prev, cur = None, head",
+        "    while cur:",
+        "        nxt = cur.next",
+        "        cur.next = prev",
+        "        prev = cur",
+        "        cur = nxt",
+        "    return prev"
+      ],
+      "why": "Save the rest of the list before turning the arrow; move prev up to cur before cur moves on; the old tail (prev) is the new head."
+    },
+    {
+      "t": "Kahn’s algorithm",
+      "p": "Order the lines of the topological sort that detects cycles.",
+      "c": [
+        "def topo_order(n, edges):",
+        "    adj = [[] for _ in range(n)]",
+        "    indeg = [0] * n",
+        "    for u, v in edges:",
+        "        adj[u].append(v)",
+        "        indeg[v] += 1",
+        "    q = deque(u for u in range(n) if indeg[u] == 0)",
+        "    order = []",
+        "    while q:",
+        "        u = q.popleft()",
+        "        order.append(u)",
+        "        for v in adj[u]:",
+        "            indeg[v] -= 1",
+        "            if indeg[v] == 0:",
+        "                q.append(v)",
+        "    return order if len(order) == n else None"
+      ],
+      "why": "Count in-degrees first, queue the sources, then pop, record, lower the neighbours’ counts and queue those that reach zero. The final length check is what reports a cycle.",
+      "ok": [
+        [
+          0,
+          2,
+          1,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          5,
+          4,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          6,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          0,
+          2,
+          1,
+          3,
+          4,
+          5,
+          7,
+          6,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          5,
+          4,
+          7,
+          6,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          0,
+          2,
+          1,
+          3,
+          5,
+          4,
+          7,
+          6,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        [
+          0,
+          2,
+          1,
+          3,
+          5,
+          4,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ]
+      ]
+    },
+    {
+      "t": "Dijkstra with a heap",
+      "p": "Order the lines of Dijkstra (stale-entry check included).",
+      "c": [
+        "def dijkstra(n, edges, src):",
+        "    adj = [[] for _ in range(n)]",
+        "    for u, v, w in edges:",
+        "        adj[u].append((v, w))",
+        "    INF = float('inf')",
+        "    dist, par = [INF] * n, [-1] * n",
+        "    dist[src] = 0",
+        "    heap = [(0, src)]",
+        "    while heap:",
+        "        d, u = heapq.heappop(heap)",
+        "        if d > dist[u]:",
+        "            continue",
+        "        for v, w in adj[u]:",
+        "            if d + w < dist[v]:",
+        "                dist[v], par[v] = d + w, u",
+        "                heapq.heappush(heap, (dist[v], v))",
+        "    return dist, par"
+      ],
+      "why": "Pop first, skip the stale entry, and only then relax; a push happens only when a strictly shorter route is found.",
+      "ok": [
+        [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          7,
+          6,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          4,
+          7,
+          5,
+          6,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16
+        ],
+        [
+          0,
+          1,
+          2,
+          3,
+          7,
+          4,
+          5,
+          6,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16
+        ]
+      ]
+    },
+    {
+      "t": "Kruskal with union-find",
+      "p": "Order the lines of Kruskal’s MST.",
+      "c": [
+        "def kruskal(n, edges):",
+        "    dsu, total, used = DSU(n), 0, 0",
+        "    for w, u, v in sorted(edges):",
+        "        if dsu.union(u, v):",
+        "            total += w",
+        "            used += 1",
+        "    return total if used == n - 1 else None"
+      ],
+      "why": "Sort first so the lightest edge is considered first; add the weight only when union() accepts the edge; check V − 1 edges at the end.",
+      "ok": [
+        [
+          0,
+          1,
+          2,
+          3,
+          5,
+          4,
+          6
+        ]
+      ]
+    },
+    {
+      "t": "Next greater element",
+      "p": "Order the lines of the monotonic-stack scan.",
+      "c": [
+        "def greater_next(a):",
+        "    out, stack = [-1] * len(a), []",
+        "    for i, x in enumerate(a):",
+        "        while stack and a[stack[-1]] < x:",
+        "            out[stack.pop()] = i",
+        "        stack.append(i)",
+        "    return out"
+      ],
+      "why": "For each newcomer, first answer everyone on the stack it beats, then push the newcomer itself.",
+      "ok": []
+    }
+  ]
+}
