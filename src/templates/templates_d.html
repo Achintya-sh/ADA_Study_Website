@@ -1,0 +1,247 @@
+<!--@@ ch11_more -->
+<h3>Two exchange arguments, written out</h3>
+<p>A greedy answer is only trustworthy with a reason. The reason is an <b>exchange argument</b>: take any optimal solution, show you can swap in the greedy choice without making it worse, then repeat on what is left.</p>
+<p><b>Interval scheduling (most non-overlapping intervals).</b> Greedy: sort by <i>end time</i>, take an interval if it starts at or after the last one taken ended. Why: let G be the interval that ends first overall, and O any optimal schedule. Replace O’s first interval with G. G ends no later than O’s first one did, so it overlaps nothing in the rest of O, and the schedule is still valid with the same size. So some optimal schedule starts with G; remove G and everything it overlaps, and repeat. Sorting by start time or by length has no such argument, and counterexamples are easy to build. LC 435 is “total minus the largest non-overlapping set”; LC 452 (arrows) is the same sweep over right ends:</p>
+{{code:min_arrows}}
+<p><b>Fractional knapsack (items may be split).</b> Greedy: take items by value per kilo, best first, splitting the last one. Why: suppose an optimal load holds some of a lower-ratio item B while part of a higher-ratio item A is left behind. Swap a little weight of B for the same weight of A: the value goes up or stays equal. So an optimal load never leaves a better item behind for a worse one.</p>
+{{code:fractional_knapsack}}
+<h3>When the same greedy fails</h3>
+<p>Both failures below are the same mistake: the choice changes what fits later in a way a single number cannot summarise.</p>
+<p><b>0/1 knapsack</b> (no splitting). Items (value, weight): (60, 10), (100, 20), (120, 30), capacity 50. Ratios 6, 5, 4, so ratio-greedy takes the first two for 160 and strands 20 unused kilos; the best is the last two for 220. The exchange argument breaks because you cannot swap “a little”. Use DP (stop 10).</p>
+<p><b>Coin change.</b> Coins 1, 3, 4 and amount 6: greedy takes 4 + 1 + 1 (three coins), but 3 + 3 uses two. For the coins 1, 5, 10, 25 greedy happens to be optimal, but proving that for a given set is hard, so default to the DP.</p>
+{{code:greedy_vs_dp_coins}}
+<h3>Greedy or DP? A drill</h3>
+<p>Cover the right column and decide first.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Prompt</th><th>Pick</th><th>Reason</th></tr>
+<tr><td>Fewest coins for an amount; coins 1, 3, 4</td><td>DP</td><td>greedy fails at 6</td></tr>
+<tr><td>Most meetings that do not overlap</td><td>greedy</td><td>earliest finish, exchange argument</td></tr>
+<tr><td>Split numbers into two groups of equal sum</td><td>DP</td><td>subset sum; no safe local choice</td></tr>
+<tr><td>Can you reach the last index (LC 55)?</td><td>greedy</td><td>track the farthest reachable index</td></tr>
+<tr><td>Fewest jumps to the end (LC 45)</td><td>greedy</td><td>BFS layers: extend the window to the farthest reach</td></tr>
+<tr><td>Best value, items cannot be split</td><td>DP</td><td>0/1 knapsack</td></tr>
+<tr><td>Cut a string into the most pieces so no letter spans two pieces (LC 763)</td><td>greedy</td><td>cut when the farthest last occurrence is behind you</td></tr>
+<tr><td>Fewest total time for tasks with a cooldown (LC 621)</td><td>greedy</td><td>the busiest task fixes the frame</td></tr>
+</table></div>
+<p>Rule of thumb: if you can say “whatever I do, taking this one first is never worse” and defend it with a swap, go greedy. If you cannot, or a small counterexample appears, do DP. Try the counterexample first: it takes thirty seconds.</p>
+<h3>More greedy problems with tested code</h3>
+<p><b>LC 621 Task Scheduler.</b> The busiest task, say A with count top, forces top − 1 gaps of width n + 1 and a final row; every task tied with A’s count adds one slot to the last row. If there are more tasks than that frame needs, no idling is required and the answer is simply the number of tasks.</p>
+{{code:task_scheduler}}
+<p><b>LC 763 Partition Labels.</b> Record each letter’s last position; sweep while keeping the farthest last position seen; cut when the index catches up with it.</p>
+{{code:partition_labels}}
+<p><b>LC 55 Jump Game and LC 45 Jump Game II.</b></p>
+{{code:jump_game}}
+<div class="box tip"><div class="lbl" data-ico="🎯">Practice</div><p>LC 435, 452, 621, 763, 134, 135, 55, 45. Everything on this page was checked against exhaustive search on small inputs.</p></div>
+
+<!--@@ ch10_conv -->
+<h3>Memo → table → one row: three full conversions</h3>
+<p>Your end-sem question may hand you a memoised solution and ask for the table, or the table and ask for one row. The conversion is mechanical. Four steps:</p>
+<ol>
+<li><b>Recursion.</b> Define <code>f(i, j)</code> in words (“the LCS of <code>a[i:]</code> and <code>b[j:]</code>”) and write it with base cases.</li>
+<li><b>Memo.</b> Cache <code>f</code>. Same cells, same answers; only the repeated work disappears.</li>
+<li><b>Table.</b> Allocate every (i, j). Read the arrows: if a cell needs (i + 1, j), (i, j + 1) and (i + 1, j + 1), those must be filled first, so loop <i>backwards</i>. If it needs (i − 1, j) and (i, j − 1), loop forwards. Base cases become the border row and column.</li>
+<li><b>One row.</b> If row i only reads row i + 1 (or i − 1), keep a single list. The cell diagonal to you gets overwritten before you need it, so <b>save it in a variable first</b>.</li>
+</ol>
+<div class="tbl-wrap"><table>
+<tr><th>The cell reads…</th><th>Loops</th><th>One-row trick</th></tr>
+<tr><td>(i + 1, j), (i, j + 1)</td><td>i, j backwards</td><td>row[j] still holds the old row; row[j + 1] is already new</td></tr>
+<tr><td>also (i + 1, j + 1)</td><td>backwards</td><td>carry <code>diag</code>: the old row[j + 1], saved before it is overwritten</td></tr>
+<tr><td>(i − 1, j), (i, j − 1)</td><td>forwards</td><td>row[j] is the old row (up); row[j − 1] is new (left)</td></tr>
+</table></div>
+<h4>Conversion 1: LCS (LC 1143)</h4>
+{{code:conv_lcs}}
+<h4>Conversion 2: edit distance (LC 72)</h4>
+<p>The base cases look different in each version: the recursion returns <code>len(b) − j</code> when <code>a</code> runs out, while the table writes that as the whole last row and the last column. In the row version, the last column entry is rewritten at the start of every row.</p>
+{{code:conv_edit}}
+<h4>Conversion 3: Interleaving String (LC 97), filled forwards</h4>
+<p>Can <code>s3</code> be woven from <code>s1</code> and <code>s2</code>, each keeping its own order? State: <code>dp[i][j]</code> = the first i letters of s1 and the first j of s2 weave into the first i + j of s3. A cell reads the cell above (use s1[i − 1]) or to the left (use s2[j − 1]), so the loops run forwards and the row version needs no diagonal at all. The first column has no left neighbour, which is the special case in the code.</p>
+{{code:conv_interleave}}
+<p>All nine functions were run against each other and against a plain exponential recursion on thousands of random strings, including the empty ones.</p>
+<h4>Convert-this-code drills</h4>
+<ol>
+<li>Close the page and write <code>lcs_table</code> from <code>lcs_memo</code>. Which way do the loops run, and why? <details><summary>Answer</summary>Backwards in both i and j, because f(i, j) calls f(i + 1, …) and f(…, j + 1): those cells must exist first.</details></li>
+<li>Why does <code>lcs_row</code> need <code>diag</code> but a one-row coin-change table does not? <details><summary>Answer</summary>The LCS cell reads a diagonal neighbour, which the one-row update has already overwritten. The coin table only reads cells of its own row (and the previous values of the same cell), so nothing is lost.</details></li>
+<li>For minimum path sum on a grid (LC 64) a cell reads only the cell above and the cell to the left. Write the one-row version. <details><summary>Answer</summary>Initialise <code>row[0]</code> and the first row by running sums; then for each later row set <code>row[0] += g[i][0]</code> and <code>row[j] = min(row[j], row[j − 1]) + g[i][j]</code>: <code>row[j]</code> is the cell above, <code>row[j − 1]</code> is the cell to the left. No diagonal, so no <code>diag</code> variable.</details></li>
+<li>In <code>interleave_row</code>, what breaks if you drop the <code>j == 0</code> case? <details><summary>Answer</summary><code>row[j − 1]</code> would index −1 and read the last cell, silently mixing in the wrong value instead of raising an error.</details></li>
+</ol>
+<div class="box tip"><div class="lbl" data-ico="🎯">Harder table problems for contests</div><p>Fill direction and the diagonal matter most here: LC 97, LC 115 Distinct Subsequences, LC 174 Dungeon Game (fill from the bottom-right, because the answer depends on what is ahead), LC 221 Maximal Square (reads the diagonal), LC 1035, LC 583, LC 712, LC 647, and from earlier in this stop LC 416, 322, 518, 1049. All are on the Ladder, tab DP.</p></div>
+
+<!--@@ ch15 -->
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>You already know trees, heaps, DP, graphs and union-find. Contest problems rarely use one tool alone. This stop shows six combinations that appear again and again: <b>DP on a tree</b>, <b>DP on a DAG</b>, <b>binary search plus a check</b>, <b>union-find for more than MST</b>, <b>heaps with greedy</b>, and the <b>trie</b>. None is a new idea; each is two familiar ideas snapped together. It goes slightly beyond the written outline, and every function below was tested.</p></div>
+
+<h3>1. DP on a tree</h3>
+<p>A tree’s subproblems are its subtrees, and the order is “children before parent”. Compute a small answer for every node from its children’s answers. The simplest safe way to get that order is a stack that lists nodes parent-first, then reversed: every child then comes before its parent, with no recursion, so a 10⁵-long chain cannot crash Python.</p>
+<ul>
+<li><b>LC 337 House Robber III.</b> Two numbers per node: best if you rob it, best if you skip it.</li>
+<li><b>LC 543 Diameter.</b> A path bends at one node; its length is the left height plus the right height.</li>
+<li><b>LC 124 Maximum Path Sum.</b> Going <i>up</i> a path may use only one branch; a path that <i>bends</i> here may use both. Ignore negative branches.</li>
+</ul>
+{{code:tree_dp}}
+<h3>2. DP on a DAG</h3>
+<p>Any DAG (see stop 12) is a “tree with sharing”: fill the table in topological order. Shortest path, longest path, number of paths, and LC 329 and LC 1857 are all this. The recipe never changes: define the value at a vertex from its predecessors, process vertices in topological order, and a cycle means no answer.</p>
+<h3>3. Binary search on the answer, with a graph check</h3>
+<p>If “can we do it with limit x?” is easy to check, and the answer to that question changes from <i>no</i> to <i>yes</i> exactly once as x grows, binary search x. Typical checks are a BFS (LC 1631, 778), a greedy scan (LC 875 Koko, LC 1011 ship packages, LC 410 split array) or a union-find over the edges at most x. The check in LC 1631 appears in stop 12 beside the Dijkstra version; solving a problem two ways and comparing is the best way to catch a mistake. The generic pattern is <code>first_true</code> in stop 14.</p>
+<h3>4. Union-find beyond MST</h3>
+<p>Union-find also answers “which items end up in one group?” <b>LC 721 Accounts Merge:</b> two accounts sharing an email are the same person, so union all emails of an account. <b>LC 399 Evaluate Division:</b> a <i>weighted</i> union-find stores each node’s ratio to its parent, so a query is a ratio of two ratios to the same root. Both use an iterative find, so long chains are safe. LC 2092 (union by time) and CF 722C (run time backwards) are on the Ladder.</p>
+{{code:dsu_extras}}
+<h3>5. Heaps with greedy</h3>
+<p>Stop 5 has the one-heap patterns: top-k, k-way merge, meeting rooms and “best available now”. A new one is <b>two heaps meeting at the middle</b>, for a running median (LC 295): a max-heap holds the smaller half, a min-heap the larger half, and their tops are the median.</p>
+{{code:median_finder}}
+<h3>6. The trie</h3>
+<p>A trie is a tree with one child per letter; a word is a path ending in a marker. Insert, search and prefix queries cost O(length of the word), independent of how many words are stored. It pairs with backtracking: <b>LC 212 Word Search II</b> walks the grid and the trie together, so a path that matches no prefix is cut at once, and a branch whose words are all found is deleted.</p>
+{{code:trie}}
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p>Tree DP with recursion fails on deep trees in Python. In the running median, rebalance after every insert. A trie’s <code>starts_with</code> on an empty prefix is always true; LeetCode prefixes are never empty. The check function in a binary search must be monotone, or the search returns nonsense. A weighted union-find must compress paths <i>and</i> fix the ratios while doing it.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Tree DP: children first (reverse of parent-first), two numbers per node when a choice depends on the parent. DAG DP: topological order. Binary search: “is x enough?” must flip once. DSU: merge things that must be together; weighted DSU stores ratios or parities. Two heaps: smaller half in a max-heap, larger half in a min-heap. Trie: path = word.</p></div>
+<div class="quiz" data-quiz="x15"></div>
+
+<!--@@ ch16 -->
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>By now you know the algorithms. Contest marks are lost to things <i>around</i> the algorithm: choosing the wrong one, a Python slip, an edge case, or running out of clock. This stop is the final checklist: constraints that tell you the algorithm, the Python pitfalls that cost marks, one sheet of templates to type from memory, how to explain a solution out loud for the Mock AI Interview, and a full three-hour mock contest with answers.</p></div>
+
+<h3>1. Constraints tell you the algorithm</h3>
+<p>Python manages roughly 10⁷ simple operations per second. Read the largest input size n first.</p>
+<div class="tbl-wrap"><table>
+<tr><th>n up to</th><th>Work allowed</th><th>Think</th></tr>
+<tr><td>10 – 11</td><td>O(n!)</td><td>permutations, backtracking</td></tr>
+<tr><td>20 – 25</td><td>O(2ⁿ)</td><td>subsets, bitmask DP; 40 with meet in the middle</td></tr>
+<tr><td>400 – 500</td><td>O(n³)</td><td>Floyd–Warshall, interval DP</td></tr>
+<tr><td>5,000</td><td>O(n²)</td><td>2-D DP, all pairs of items</td></tr>
+<tr><td>10⁵ – 2·10⁵</td><td>O(n log n)</td><td>sort, heap, binary search, Dijkstra, segment or Fenwick tree</td></tr>
+<tr><td>10⁶ – 10⁷</td><td>O(n)</td><td>one pass, two pointers, prefix sums, BFS</td></tr>
+<tr><td>10⁹ or more</td><td>O(log n) or O(1)</td><td>binary search on the answer, a formula</td></tr>
+</table></div>
+<p>The quiz at the end of this stop asks for the algorithm from the constraints alone.</p>
+
+<h3>2. Python pitfalls that cost marks</h3>
+<p>The function below demonstrates five of them with the values you will see (shown in the comments). The rest are in the list underneath.</p>
+{{code:pitfalls_demo}}
+<ul>
+<li><b>Recursion limit.</b> Python allows about 1,000 nested calls. DFS on a long chain, a skewed tree, or a deep memoised DP crashes. Write the iterative version (stacks, topological peeling) or convert to a table. Raising the limit with <code>sys.setrecursionlimit</code> may still overflow the real stack.</li>
+<li><b>Slow input.</b> For 10⁵ numbers use <code>sys.stdin.readline</code> or read everything once (template in stop 14).</li>
+<li><b>Costly operations.</b> <code>list.pop(0)</code> and <code>x in list</code> are O(n): use <code>deque</code> and <code>set</code>. <code>s += c</code> in a loop and slices like <code>a[i:]</code> copy; use indices.</li>
+<li><b><code>heapq</code>.</b> A min-heap only (negate for max); tuples compare element by element, so a tie on the first value compares the second and may fail on objects that cannot be compared; there is no decrease-key, so push a new entry and skip stale ones.</li>
+<li><b>Integer division and modulo</b> round toward −∞, not toward zero.</li>
+<li><b>Floats.</b> Compare with a tolerance, or work in integers.</li>
+</ul>
+
+<h3>3. The template sheet: type these from memory</h3>
+<p>Thirteen short functions cover most of what the end-sem can ask. Each is the shortest correct version, and all were checked against the long versions and brute force. Typing them blank, once a day for a week, matters more than reading them again.</p>
+{{code:memory_sheet}}
+<div class="tbl-wrap"><table>
+<tr><th>Template</th><th>Say these edge cases out loud before you submit</th></tr>
+<tr><td>1 binary search</td><td>empty range; answer at either end; does <code>ok</code> flip exactly once?</td></tr>
+<tr><td>2 grid BFS</td><td>start equals goal; start or goal blocked; one cell; mark on push</td></tr>
+<tr><td>3 DFS reachability</td><td>isolated vertex; self-loop; directed versus undirected</td></tr>
+<tr><td>4 Kahn</td><td>fewer than n out means a cycle; several valid orders; n = 0 or 1</td></tr>
+<tr><td>5 Dijkstra</td><td>unreachable (∞); stale entries; negative weights not allowed</td></tr>
+<tr><td>6 union-find</td><td>union of the same set returns False; find compresses</td></tr>
+<tr><td>7 Kruskal</td><td>V − 1 edges kept or disconnected; V = 1; equal weights</td></tr>
+<tr><td>8 Bellman–Ford</td><td>one more pass to detect a negative cycle; unreachable vertices stay ∞</td></tr>
+<tr><td>9 LIS</td><td><code>bisect_left</code> for strict, <code>bisect_right</code> for non-decreasing; empty list</td></tr>
+<tr><td>10 knapsack row</td><td>capacity loops DOWNWARD; W = 0; weight above capacity</td></tr>
+<tr><td>11 edit distance</td><td>empty strings; identical strings; save the diagonal</td></tr>
+<tr><td>12 next greater</td><td>equal values; none to the right (−1); strictly greater or not?</td></tr>
+<tr><td>13 subsets</td><td>copy before saving; undo after the call; empty set is a subset</td></tr>
+</table></div>
+
+<h3>4. Explain it out loud (Mock AI Interview, 10%)</h3>
+<p>The interview asks conceptual questions and hands-on coding. For every algorithm you can code, be able to say four things in under a minute: <b>what it does</b>, <b>the invariant</b> (what stays true each step), <b>the complexity and why</b>, and <b>the edge cases you would test</b>. Then dry-run it on a three-element input.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Algorithm</th><th>Invariant to state</th><th>Cost to justify</th></tr>
+<tr><td>Quick Sort partition</td><td>everything left of the scan pointer is ≤ pivot</td><td>O(n log n) average, O(n²) worst if splits are lopsided</td></tr>
+<tr><td>Heap sift down</td><td>both subtrees are heaps</td><td>O(log n): one path of the tree</td></tr>
+<tr><td>BFS</td><td>vertices leave the queue in order of distance</td><td>O(V + E): each vertex and edge once</td></tr>
+<tr><td>Kahn</td><td>the queue holds exactly the vertices with no unfinished prerequisite</td><td>O(V + E)</td></tr>
+<tr><td>Dijkstra</td><td>a vertex popped with its smallest distance is final (no negative edges)</td><td>O((V + E) log V): E pushes, each log V</td></tr>
+<tr><td>Bellman–Ford</td><td>after round r, dist ≤ the best path with at most r edges</td><td>O(V·E): V − 1 rounds over E edges</td></tr>
+<tr><td>Kruskal</td><td>the kept edges form a forest inside some MST</td><td>O(E log E) for the sort</td></tr>
+<tr><td>DP table</td><td>each cell holds the answer to its subproblem, filled after its dependencies</td><td>cells × work per cell</td></tr>
+</table></div>
+<div class="box tip"><div class="lbl" data-ico="🗣️">A model answer: “Explain Dijkstra”</div><p>“Dijkstra finds shortest paths from one source when no edge is negative. I keep a min-heap of (distance, vertex). I pop the smallest; if it is stale I skip it; otherwise its distance is final, because any other route must go through a vertex still in the heap whose distance is at least as large, and edges cannot make it smaller. I then relax its edges and push improvements. Each edge causes at most one push, so the cost is O((V + E) log V). I would test an unreachable vertex, a graph with one vertex, and two equal-length paths. With a negative edge the finality claim breaks, so I would use Bellman–Ford.”</p></div>
+
+<h3>5. A full three-hour mock contest</h3>
+<p>Six problems in ADA proportions (heaps, trees, backtracking, Graphs II, DP-II, one hard). 180 minutes, 480 marks. <b>Rules:</b> read all six first (10 minutes); for each, write the brute force and submit it before looking for the trick (this is how Chakravyuh’s first subtask would have scored); never leave a problem at zero. Do not open the answers until the clock ends. Statements are summarised in my own words; open the link for the real one.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Q</th><th>Topic</th><th>Problem</th><th>Time</th><th>Marks</th></tr>
+<tr><td>1</td><td>Heaps</td><td><a href="https://leetcode.com/problems/last-stone-weight/" target="_blank" rel="noopener">LC 1046 Last Stone Weight</a>: repeatedly smash the two heaviest stones; report what is left</td><td>15 min</td><td>40</td></tr>
+<tr><td>2</td><td>BST</td><td><a href="https://leetcode.com/problems/validate-binary-search-tree/" target="_blank" rel="noopener">LC 98 Validate Binary Search Tree</a></td><td>20 min</td><td>40</td></tr>
+<tr><td>3</td><td>Backtracking</td><td><a href="https://leetcode.com/problems/palindrome-partitioning/" target="_blank" rel="noopener">LC 131 Palindrome Partitioning</a>: every way to cut a string into palindromes</td><td>25 min</td><td>80</td></tr>
+<tr><td>4</td><td>Graphs II</td><td><a href="https://leetcode.com/problems/path-with-minimum-effort/" target="_blank" rel="noopener">LC 1631 Path With Minimum Effort</a>: grid of heights; minimise the largest step</td><td>30 min</td><td>80</td></tr>
+<tr><td>5</td><td>DP-II</td><td><a href="https://leetcode.com/problems/interleaving-string/" target="_blank" rel="noopener">LC 97 Interleaving String</a></td><td>35 min</td><td>120</td></tr>
+<tr><td>6</td><td>Hard</td><td><a href="https://leetcode.com/problems/largest-color-value-in-a-directed-graph/" target="_blank" rel="noopener">LC 1857 Largest Color Value in a Directed Graph</a></td><td>45 min</td><td>120</td></tr>
+</table></div>
+<details><summary><b>Answers (open after the clock ends)</b></summary>
+<p><b>Q1.</b> A max-heap by negation; pop two, push the difference if non-zero. O(n log n).</p>
+{{code:last_stone}}
+<p><b>Q2.</b> Pass lower and upper bounds down the tree (comparing only with the parent is the classic wrong answer), or check that an inorder walk is strictly increasing. O(n). Code: <code>is_bst</code> in stop 4.</p>
+<p><b>Q3.</b> Precompute which substrings are palindromes (an n × n table), then backtrack over cut points, choosing a palindromic prefix and recursing on the rest. Exponential in the worst case (2ⁿ⁻¹ cuts), which is fine for n ≤ 16. Code: <code>palindrome_partitions</code> in stop 6.</p>
+<p><b>Q4.</b> Dijkstra with <code>max(d, step)</code> in place of <code>d + step</code>, or binary search the limit with BFS as the check. Compare both. O(RC log RC). Code: stop 12 section 2.</p>
+<p><b>Q5.</b> dp[i][j]: do s1[:i] and s2[:j] weave into s3[:i + j]? Return False at once if the lengths do not add up. O(nm). Code: <code>interleave_table</code> and <code>interleave_row</code> in stop 10.</p>
+<p><b>Q6.</b> Kahn’s algorithm; per vertex, a 26-entry list of the best colour counts on any path ending there; push it forward along edges; if fewer than n vertices are peeled, return −1. O((V + E)·26). Code: stop 12 section 1.</p>
+<p><b>Marking.</b> Full marks for an accepted solution; about half for a brute force that passes small tests. If Q3, Q5 or Q6 scored zero, re-do them from a blank file tomorrow and add the trap you hit to My mistakes.</p>
+</details>
+
+<h3>6. Syllabus map</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Course week</th><th>Outline topic</th><th>Stops here</th></tr>
+<tr><td>1</td><td>Problem solving; complexity</td><td><a href="#ch0">0</a>, <a href="#ch1">1</a>, <a href="#ch2">2</a></td></tr>
+<tr><td>2–4</td><td>Quick Sort; trees and BST</td><td><a href="#ch3">3</a>, <a href="#ch4">4</a></td></tr>
+<tr><td>5–6</td><td>Heaps; backtracking</td><td><a href="#ch5">5</a>, <a href="#ch6">6</a>, <a href="#ch13">13</a> (monotonic stacks)</td></tr>
+<tr><td>7–8</td><td>Graphs I: representation, DFS, BFS</td><td><a href="#ch7">7</a>, <a href="#ch8">8</a></td></tr>
+<tr><td>9–10</td><td>Dynamic programming I</td><td><a href="#ch9">9</a>, <a href="#ch11">11</a> (greedy)</td></tr>
+<tr><td>11</td><td>Graphs II: shortest paths; MST (optional)</td><td><a href="#ch12">12</a>, <a href="#ch15">15</a></td></tr>
+<tr><td>12</td><td>Dynamic programming II</td><td><a href="#ch10">10</a></td></tr>
+<tr><td>all</td><td>Contest and interview skills</td><td><a href="#ch14">14</a>, <a href="#ch16">16</a>, <a href="#ladder">the Ladder</a></td></tr>
+<tr><td>beyond the outline</td><td>Merge sort, amortised analysis, hashing</td><td><a href="#ch17">17</a></td></tr>
+</table></div>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p>Starting to code before reading the constraints. Trusting a template without running it on a tiny case and an empty case. Spending forty minutes on the hard problem while an easier one sits at zero. Forgetting that a brute force earns marks. Recursion on a deep structure. Not copying a list before saving it.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Read constraints → pick the cost class → pick the algorithm. Brute force first, submit, then optimise. Say invariant, cost, edge cases, dry run. Type the thirteen templates from memory.</p></div>
+<div class="quiz" data-quiz="x16"></div>
+
+<!--@@ ch17 -->
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p><b>Beyond the course outline.</b> Everything here is optional for the end-sem. These are the topics a strong algorithms course would add next: <b>merge sort</b> and counting inversions during the merge, <b>amortised analysis</b> (why occasional expensive steps average out), and <b>hashing</b> (what a Python <code>dict</code> does underneath). They explain costs you have been quoting without proof, such as union-find and heap-build. A final page lists what comes after, with pointers, so you know it exists.</p></div>
+
+<h3>1. Merge sort</h3>
+<p>Quick Sort (stop 3) partitions then recurses. <b>Merge sort</b> recurses then merges: split the list in half, sort each half, merge the two sorted halves by repeatedly taking the smaller front item. Every level of the recursion does O(n) merging and there are log₂ n levels, so the cost is <b>O(n log n) in every case</b>, with no bad input. The price is <b>O(n) extra space</b> for the merge.</p>
+<p>It is <b>stable</b>: items that compare equal keep their original order, as long as ties are resolved in favour of the <i>left</i> half (<code>&lt;=</code>, not <code>&lt;</code>). Python’s built-in <code>sort</code> is stable too, which is why sorting by one key and then another works.</p>
+{{code:merge_sort_stable}}
+<p>Hand trace of the merge of [2, 5, 9] and [3, 4, 10]: compare 2 and 3, take 2; 5 and 3, take 3; 5 and 4, take 4; 5 and 10, take 5; 9 and 10, take 9; the left side is empty, so append the rest: [2, 3, 4, 5, 9, 10].</p>
+<h4>The contest payoff: counting while you merge</h4>
+<p>An <b>inversion</b> is a pair i &lt; j with a[i] &gt; a[j]. During a merge, when you take an item from the right half while left items remain, that right item is smaller than all of them: you have just counted that many inversions in O(1). This turns the O(n²) pair count into O(n log n). The same idea answers <b>LC 315</b> (for each element, how many later elements are smaller; sort the <i>indices</i> so you remember who is who) and <b>LC 493</b> (count pairs with a[i] &gt; 2·a[j] in a separate sweep before each merge, since both halves are sorted). Stop 2 uses merge sort to show the recurrence T(n) = 2T(n/2) + O(n), and the sorting patterns in stop 3 have a plain <code>count_inversions</code>; LC 912 itself is simply “implement a sort”.</p>
+{{code:merge_counting}}
+<div class="box tip"><div class="lbl" data-ico="🎯">Practice</div><p>LC 912, LC 315, LC 493 (all on the Ladder, tab Sorting). Checked against the O(n²) pair count and, for stability, against Python’s stable <code>sorted</code>.</p></div>
+
+<h3>2. Amortised analysis</h3>
+<p>Some operations are usually cheap and occasionally expensive. <b>Amortised cost</b> is the average per operation over a whole sequence, worst case guaranteed. It is not average over random inputs.</p>
+<p><b>The dynamic array.</b> <code>list.append</code> is O(1) most of the time, but when the array is full it allocates a bigger one and copies everything. If the capacity <b>doubles</b>, the copies happen at sizes 1, 2, 4, 8, …, and the sum of that series is less than 2n. So n appends cost under 3n elementary steps in total: O(1) amortised per append. If the capacity grew by only <b>1</b> each time, the copies would be 1 + 2 + … + (n − 1) = n(n − 1)/2, which is O(n²). The multiplicative growth is what matters.</p>
+{{code:amortised}}
+<p>The code counts the copies: after n appends with doubling, <code>copies &lt; 2n</code>; with growth by one it is exactly n(n − 1)/2 (both asserted for sizes up to 5,000).</p>
+<p><b>Other costs you have been quoting.</b> <i>Building a heap</i> from n items is O(n), not O(n log n), because most nodes are near the bottom and sift down only a step or two (stop 5). <i>Union-find</i> with union by size and path compression costs O(α(n)) amortised per operation, where α is the inverse Ackermann function, below 5 for any input that fits in a computer; that is why Kruskal’s sort dominates its running time. <i>Monotonic stacks</i> are O(n) because each element is pushed once and popped at most once, however many pops one step makes. All three use the same accounting idea: a charge per item, paid once.</p>
+
+<h3>3. Hashing, and what a dict does</h3>
+<p>A <b>hash table</b> stores a key at position <code>hash(key) % size</code>. Two keys can land on the same position: a <b>collision</b>. There are two standard answers.</p>
+<ul>
+<li><b>Chaining.</b> Each position holds a small list of the entries that landed there. Lookup walks one list. Simple, and deletes are easy.</li>
+<li><b>Open addressing.</b> One entry per slot; on a collision, probe the next slot (linear probing: the next one, then the next…). A deleted slot must become a <b>tombstone</b>, not empty: an empty slot ends a search, and would cut off the keys that were placed after it.</li>
+</ul>
+<p>The <b>load factor</b> is entries ÷ slots. As it rises, chains lengthen and probe runs grow, so tables <b>resize</b> (usually doubling) and re-place every key, which is another amortised O(1) argument. With a good hash and a controlled load factor, insert, lookup and delete cost O(1) on average. The worst case is O(n), if every key collides. This is why Python’s <code>dict</code> and <code>set</code> are fast but can be slowed by an adversarial input in a contest, and why keys must be hashable (a <code>list</code> is not; use a tuple).</p>
+{{code:hashing}}
+<p>Both maps were run against Python’s own <code>dict</code> on random sequences of inserts, updates, lookups and deletes with integer and string keys, and the load factor stayed below its limit.</p>
+<p><b>LC 146 LRU Cache</b> is a hash table plus a doubly linked list: the table finds an entry in O(1), the list moves it to the front in O(1), and the back of the list is always the least recently used. Sentinel nodes at both ends remove the edge cases. <b>LC 705 and LC 706</b> ask you to build a set and a map from nothing; fixed-size chaining, as in <code>MyHashMap</code>, is enough.</p>
+<div class="box tip"><div class="lbl" data-ico="🎯">Practice</div><p>LC 146, LC 705, LC 706 (Ladder tab Arrays and search). The LRU cache was checked against Python’s <code>OrderedDict</code> on random operation sequences.</p></div>
+
+<h3>4. What comes after: a map, not a lesson</h3>
+<p>These are not in your course. Each is a single idea you can learn in an evening once the course tools are solid. Nothing here is on the end-sem outline.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Topic</th><th>What it is</th><th>Builds on</th></tr>
+<tr><td>Strongly connected components (Kosaraju, Tarjan)</td><td>groups of vertices that can all reach each other; collapsing them leaves a DAG</td><td>DFS, reverse graph, topological order (stops 8, 12). CSES Planets and Kingdoms is on the Ladder.</td></tr>
+<tr><td>Bridges and articulation points</td><td>edges or vertices whose removal disconnects the graph; found with DFS “low-link” values</td><td>DFS tree (stop 8)</td></tr>
+<tr><td>Lowest common ancestor, binary lifting</td><td>jump up a tree 2ᵏ steps at a time; O(log n) per query</td><td>trees, the <code>build_jump</code> sample in stop 8</td></tr>
+<tr><td>Balanced BSTs (AVL, red-black)</td><td>rotations keep height O(log n) so every operation is O(log n)</td><td>BST (stop 4)</td></tr>
+<tr><td>Segment tree, sparse table</td><td>range queries with updates (segment tree) or without (sparse table); Fenwick is the lighter cousin</td><td>trees, prefix sums; Fenwick is in stop 14</td></tr>
+<tr><td>Digit DP, matrix exponentiation</td><td>count numbers by their digits; compute linear recurrences in O(log n)</td><td>DP (stops 9–10)</td></tr>
+</table></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Merge sort: O(n log n) always, O(n) space, stable if the left wins ties; counting inversions is free inside the merge. Doubling a dynamic array gives O(1) amortised append. Hash tables: collisions, load factor, resizing; tombstones for open addressing; O(1) average, O(n) worst.</p></div>
+<div class="quiz" data-quiz="x17"></div>

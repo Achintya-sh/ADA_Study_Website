@@ -1,0 +1,222 @@
+<!--@@ ch13 -->
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>A <b>monotonic stack</b> keeps its contents in sorted order by popping everything that can no longer matter before pushing the new item. That one rule turns “for each element, find the nearest bigger/smaller one” from O(n²) into O(n): every element is pushed once and popped once. Your course outline lists monotonic stacks as a feature; this stop is where they live. The <b>monotonic deque</b> is the same idea with the front also expiring, for sliding windows.</p></div>
+<div class="tbl-wrap"><table>
+<tr><th>Words in the statement</th><th>Tool</th></tr>
+<tr><td>“next greater”, “next warmer day”, “previous smaller”, “stock span”</td><td>stack of indices; pop while the top is beaten</td></tr>
+<tr><td>“largest rectangle”, “widest range where this is the minimum”</td><td>the popped element’s left and right boundaries</td></tr>
+<tr><td>“sum over all subarrays of the minimum (or maximum)”</td><td>count each element’s contribution: left span × right span</td></tr>
+<tr><td>“smallest number / lexicographically smallest after removing k”</td><td>pop while the top is bigger than the new item and removals remain</td></tr>
+<tr><td>“maximum of every window of size k”</td><td>monotonic deque</td></tr>
+<tr><td>“trapped water”</td><td>two pointers, or a stack of walls</td></tr>
+<tr><td>“pairs that can see each other”</td><td>stack of (height, count)</td></tr>
+</table></div>
+<h3>The template: next greater element</h3>
+<p>The stack holds indices whose answer is still unknown, with decreasing values. A new value that beats the top is the answer for everything it beats.</p>
+{{code:next_greater}}
+<p>Dry run on <code>[2, 1, 2, 4, 3]</code>: push 0; 1 doesn’t beat 2, push 1; the second 2 beats index 1 (answer 2), not index 0 (equal), push 2; 4 beats indices 2 and 0 (answer 3), push 3; 3 beats nothing, push 4. Result <code>[3, 2, 3, −1, −1]</code>. Strict versus non-strict comparison (<code>&lt;</code> versus <code>&lt;=</code>) is the one decision that changes with the wording “greater” or “greater or equal”.</p>
+<h3>Histogram: each bar, as the shortest bar of a rectangle</h3>
+{{code:histogram}}
+<h3>Contribution counting, and the tie-break that avoids double counting</h3>
+<p>Sum of the minimum over all subarrays: element i is the minimum of (distance to the previous smaller) × (distance to the next smaller) subarrays. With equal values both sides would count the same subarray, so make one side strict and the other non-strict.</p>
+{{code:sum_mins}}
+<h3>Remove k digits, sliding window, rain water</h3>
+{{code:remove_k}}
+{{code:sliding_max}}
+{{code:trap}}
+<h3>A pairs problem: Visible Pairs</h3>
+<p>Count pairs of people who can see each other when nobody between them is taller than the shorter of the two. The stack holds (height, how many people have it) so that equal heights, which really happen, are counted once per person. It’s in the Vault on the Ladder with the full statement; the solution is:</p>
+{{code:visible_pairs}}
+<p>Every function on this page was checked against an O(n²) or O(n³) brute force on random inputs.</p>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p>Store indices, not values, when you need distances. Decide strict versus non-strict from the statement’s wording about equal values. Flush the stack at the end (a sentinel 0 in the histogram) or the last bars never get an answer. Pop in a <code>while</code>, not an <code>if</code>. Each element is pushed once and popped once, so the whole thing is O(n) even though there’s a loop inside a loop.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Pop what can’t matter any more, then push. Next/previous greater/smaller in O(n).</p>
+<p>Min or max over all subarrays: each element’s contribution = left span × right span, one side strict.</p>
+<p>Sliding window maximum: a deque whose front expires.</p>
+<p>Practice: the Ladder, tab Monotonic stack.</p></div>
+<div class="quiz" data-quiz="m13"></div>
+
+<!--@@ ch14 -->
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>Contests reward the same small set of habits: read the limits first, write a brute force, trust nothing you haven’t stress-tested, and know your standard library so no minute is lost to typing. This stop collects them, plus the Python tools and tricks that sit just outside the lecture notes but pay off on every topic.</p></div>
+
+<h3>Ratings: Codeforces and LeetCode, side by side</h3>
+<p>The Ladder shows both. <b>CF</b> ratings come from Codeforces contests (a problem rated 1600 is solved by about half of the contestants rated 1600). <b>LC</b> ratings are the community estimates for LeetCode contest problems; classics that never appeared in a contest have none. The two scales aren’t officially linked and LeetCode’s run higher. This notebook uses a rough rule, <b>LC rating − 400 ≈ CF rating</b>, and marks every converted number with ≈. Your teacher’s hardest end-sem rung is a typical Div. 2 C (CF 1600): an easy pattern behind one real observation.</p>
+
+<h3>Constraints tell you the algorithm</h3>
+<div class="tbl-wrap"><table>
+<tr><th>Constraint</th><th>Aim for</th><th>Usually means</th></tr>
+<tr><td>n ≤ 10</td><td>O(n!)</td><td>try every ordering</td></tr>
+<tr><td>n ≤ 20</td><td>O(2ⁿ)</td><td>every subset, backtracking, bitmask</td></tr>
+<tr><td>n ≤ 40</td><td>O(2^(n/2))</td><td>meet in the middle</td></tr>
+<tr><td>n ≤ 500</td><td>O(n³)</td><td>Floyd–Warshall, DP over triples</td></tr>
+<tr><td>n ≤ 5,000</td><td>O(n²)</td><td>DP over pairs, a walk from every node</td></tr>
+<tr><td>n ≤ 2·10⁵</td><td>O(n log n)</td><td>sort, heap, binary search, BFS/DFS, monotonic stack</td></tr>
+<tr><td>n ≤ 10¹⁸</td><td>O(log n)</td><td>binary lifting, fast power, a formula</td></tr>
+<tr><td>“modulo 10⁹ + 7”</td><td>—</td><td>a counting DP; take the modulo after every addition</td></tr>
+</table></div>
+<p>Python manages about 10⁷ simple operations per second, so the useful budget is smaller than in C++: an O(n²) with n = 5,000 (2.5·10⁷) is borderline, and 10⁵ squared is hopeless.</p>
+
+<h3>The routine for every problem</h3>
+<ol>
+<li><b>Read the constraints and the subtasks before the story.</b> Write down what each limit allows.</li>
+<li><b>Work one example by hand</b> and restate the problem in one line using graph, DP or sorting words.</li>
+<li><b>Write the most obvious correct solution</b> (simulate, try everything). Aim for about 10 minutes.</li>
+<li><b>Submit it.</b> Marks are in the bank before you start thinking hard.</li>
+<li><b>Use it as a microscope:</b> print its answers for tiny inputs and look for what repeats or stays fixed.</li>
+<li><b>Write the fast version, stress-test it against the brute force, then submit.</b></li>
+</ol>
+<p>On the unseen hard problems of the end-sem, steps 3 and 4 are worth more than any single clever idea: Chakravyuh’s first subtask needed only an eight-line brute force.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Topic</th><th>Edge cases to try in your head</th></tr>
+<tr><td>Graph</td><td>n = 1; no edges; several components; unreachable target (return −1?); start equals target; self-loops, repeated edges</td></tr>
+<tr><td>Grid</td><td>one row or column; everything blocked; start blocked; the answer is 0</td></tr>
+<tr><td>DP</td><td>smallest n (0, 1, 2); all values equal; impossible states (−1 or ∞, never 0); modulo after every addition</td></tr>
+<tr><td>Greedy</td><td>ties in the sort key; touching intervals; negative values; an empty selection</td></tr>
+<tr><td>Arrays</td><td>length 1; all equal; already sorted; sorted backwards; maximum values (overflow is not a Python problem, speed is)</td></tr>
+</table></div>
+
+<h3>Stress testing: let the brute force check you</h3>
+<p>Run both versions on thousands of tiny random inputs and stop at the first disagreement. Tiny inputs matter: the failing case is small enough to trace by hand. This one catches the “at most two coins” trap from Contest 2 Q1 when values can be negative:</p>
+{{code:stress}}
+<p>It prints a mismatch such as <code>MISMATCH on [-1] brute 0 fast -1</code> (the exact case varies): with only a negative coin, taking none beats taking one. The fix is to ignore negative values, <code>sum(x for x in sorted(c)[-2:] if x &gt; 0)</code>; rerun, and silence means you can submit.</p>
+
+<h3>Python for contests</h3>
+<p><b>Input and output.</b> Calling <code>input()</code> hundreds of thousands of times is slow on its own; read everything once and print once. Unseen Codeforces problems use standard input and usually several test cases:</p>
+{{code:cf_input}}
+<p>“The sum of n over all test cases is at most 2·10⁵” means you size arrays per test, never at the maximum for every test.</p>
+<p><b>The standard library you should have in your fingers.</b></p>
+{{code:stdlib}}
+<div class="tbl-wrap"><table>
+<tr><th>Tool</th><th>Use it for</th></tr>
+<tr><td><code>bisect_left / bisect_right / insort</code></td><td>binary search on a sorted list; floor, ceiling, count of values below x; LIS</td></tr>
+<tr><td><code>heapq</code> (<code>heappush, heappop, heapreplace, nsmallest, merge</code>)</td><td>priority queues, Dijkstra, k-way merge, top-k</td></tr>
+<tr><td><code>collections.deque</code></td><td>BFS queue, 0-1 BFS, monotonic deque</td></tr>
+<tr><td><code>collections.Counter</code></td><td>frequencies, “most common”, comparing multisets</td></tr>
+<tr><td><code>itertools</code> (<code>permutations, combinations, product, accumulate, groupby, pairwise</code>)</td><td>brute force over small n, prefix sums, run-length grouping</td></tr>
+<tr><td><code>functools.cache</code>, <code>cmp_to_key</code></td><td>memoisation (watch recursion depth); custom sort order</td></tr>
+<tr><td><code>math</code> (<code>gcd, lcm, isqrt, comb, inf</code>)</td><td>number tricks; <code>isqrt</code> is exact, <code>sqrt</code> is not</td></tr>
+<tr><td><code>pow(x, -1, m)</code>, <code>pow(x, e, m)</code></td><td>modular inverse and power</td></tr>
+<tr><td>list comprehension over <code>[[0] * m for _ in range(n)]</code></td><td>grids; never <code>[[0] * m] * n</code></td></tr>
+<tr><td><code>sorted(key=lambda x: (-x[0], x[1]))</code></td><td>sort by several rules in one go</td></tr>
+</table></div>
+<p><b>Speed.</b> Local variables are faster than globals, so put the work inside a function. List comprehensions beat explicit loops. Lists of lists beat <code>defaultdict(list)</code> when keys are 0 to n − 1. Appending to a string with <code>+=</code> in a loop is fine in CPython, but join a list when in doubt. Some judges run PyPy, which is much faster on plain loops but slower at some built-ins: use whichever interpreter the judge uses and test with it.</p>
+<p><b>Hash-map attacks.</b> On Codeforces some tests are built to make Python’s <code>dict</code> and <code>set</code> collide and slow to a crawl. If a hash-heavy solution times out for no visible reason, sort instead (<code>bisect</code> on a sorted list) or XOR the keys with a random 32-bit number before inserting.</p>
+<p><b>Deep recursion.</b> The default limit is about 1,000 calls. Prefer an explicit stack or queue for graphs and write DP bottom-up. When you must recurse deeply, raise the limit <i>and</i> run in a thread with a big stack:</p>
+{{code:deep_rec}}
+<p><b>Floats.</b> Compare with a tolerance, or avoid floats: ratios as fractions of integers, square roots with <code>isqrt</code>.</p>
+
+<h3>Array tricks that appear everywhere</h3>
+<p><b>Binary search on the answer.</b> “Minimise the maximum”, “smallest x such that …”: if “can it be done with value x?” goes False, False, …, True, True as x grows, search for the first True. You only write the yes/no check, often a greedy or a BFS.</p>
+{{code:first_true}}
+<p><b>Prefix sums, difference arrays and a sliding window.</b> Prefix sums turn “sum of a range” into a subtraction, and with a dictionary they count subarrays with a given sum even with negatives. A difference array applies many range additions in O(n + ops). A window whose left end never moves back finds the shortest subarray with a large enough sum in O(n).</p>
+{{code:prefix}}
+<p><b>Fenwick tree.</b> Prefix sums with point updates in O(log n): the first step beyond the course when a problem mixes “change one value” with “sum of a range”.</p>
+{{code:fenwick}}
+
+<h3>The map beyond the course</h3>
+<p>Everything in the first group has a page or code in this notebook. The second group is the natural next layer for these topics; the third is deliberately left out of this exam’s prep.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Group</th><th>Tools</th></tr>
+<tr><td>In this notebook</td><td>bisect and heapq tricks; binary search on the answer; prefix sums, difference arrays, sliding window; monotonic stack and deque; union-find; binary lifting; Floyd cycle detection; 0-1 BFS; Bellman–Ford, Floyd–Warshall; bitmask DP; meet in the middle; lazy-deletion heaps; Fenwick tree</td></tr>
+<tr><td>Next layer (say if you want full pages)</td><td>strongly connected components (Kosaraju or Tarjan); bridges and articulation points; LCA with binary lifting; tree DP and rerooting; digit DP; matrix exponentiation for linear recurrences</td></tr>
+<tr><td>Skipped on purpose</td><td>lazy segment trees, max-flow, geometry, suffix structures, FFT</td></tr>
+</table></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Limits tell you the complexity. Brute force first, submit, then think. Stress test before trusting a fast idea.</p>
+<p>Read once, print once. Iterative traversals. Hash attacks exist.</p>
+<p>Minimise the maximum → binary search the answer. Range sums → prefix sums. Windows → two pointers.</p>
+<p>15 minutes with no new idea: bank what you have and move.</p></div>
+<div class="quiz" data-quiz="c1"></div>
+<div class="quiz" data-quiz="e1"></div>
+
+<!--@@ ladder -->
+<div class="box idea"><div class="lbl" data-ico="💡">Big idea</div><p>Reading solutions feels like progress; solving problems at the edge of your ability under a clock is what moves you. The Ladder holds every problem in the notebook in one place, rated on both Codeforces and LeetCode scales, from warm-ups to the Ego tier. Tick a problem only when it was accepted without reading a solution: each tick earns XP, and harder tiers pay more.</p></div>
+<div class="lab" data-w="ladder2" data-title="The Ladder"></div>
+
+<h3>Your plan for today</h3>
+<p>Set the end-sem date when it’s announced; the plan shows which phase you’re in.</p>
+<div class="lab" data-w="endplan" data-title="Lab: your plan for today"></div>
+
+<h3>Your three contests, mapped to the stops</h3>
+<p>Each contest came before you had studied its topics, which is why the late solves cluster there. Every problem now has a home: the stop that teaches its pattern.</p>
+<div class="tbl-wrap"><table>
+<tr><th>Contest</th><th>Problem</th><th>Result</th><th>Taught in</th></tr>
+<tr><td rowspan="6">Contest 1 · 11 Sep</td><td>Minimum in BST</td><td>in time</td><td><a href="#ch4">stop 4</a></td></tr>
+<tr><td>Second Minimum in a Heap</td><td>in time</td><td><a href="#ch5">stop 5</a></td></tr>
+<tr><td>Insertion in Min Heap (no heapq)</td><td>20/40, late</td><td><a href="#ch5">stop 5</a></td></tr>
+<tr><td>Validate BST</td><td>40/80, late</td><td><a href="#ch4">stop 4</a></td></tr>
+<tr><td>Quick Sort, reverse sorted</td><td>in time</td><td><a href="#ch3">stop 3</a></td></tr>
+<tr><td>Balanced BST from a binary tree</td><td>in time</td><td><a href="#ch4">stop 4</a></td></tr>
+<tr><td rowspan="7">Mid-sem · 14 Oct</td><td>Inorder traversal of a BST</td><td>in time</td><td><a href="#ch4">stop 4</a></td></tr>
+<tr><td>Adjacency matrix to edge list</td><td>in time</td><td><a href="#b6">stop 6.5</a></td></tr>
+<tr><td>Convert array to min-heap</td><td>in time</td><td><a href="#ch5">stop 5</a></td></tr>
+<tr><td>Generate Parentheses</td><td>40/80, late</td><td><a href="#ch6">stop 6</a></td></tr>
+<tr><td>Min Cost Climbing Stairs</td><td>40/80, late</td><td><a href="#ch9">stop 9</a></td></tr>
+<tr><td>Signal Propagation at Time K</td><td>in time</td><td><a href="#ch8">stop 8</a></td></tr>
+<tr><td>Palindrome Partitioning</td><td>0/120, open</td><td><a href="#ch6">stop 6</a></td></tr>
+<tr><td rowspan="5">Contest 2 · 30 Oct</td><td>Bag of Coins</td><td>in time</td><td><a href="#ch11">stop 11</a></td></tr>
+<tr><td>Apple Baskets</td><td>in time</td><td><a href="#ch11">stop 11</a></td></tr>
+<tr><td>Count Graph Components</td><td>in time</td><td><a href="#ch8">stop 8</a></td></tr>
+<tr><td>0/1/2 Knapsack</td><td>40/80, late</td><td><a href="#ch10">stop 10</a></td></tr>
+<tr><td>Chakravyuh</td><td>0/120, open</td><td><a href="#ch8">stop 8</a></td></tr>
+</table></div>
+<p>Two problems are still open on Newton, and both are solved in their stops. Re-solve them from a blank file before you tick them here.</p>
+
+<h3 id="vault">The Vault: problems that don’t look like anything you’ve seen</h3>
+<p>Chakravyuh was hard because the pattern was new, not because the code was long. These six problems are written the same way: a plain statement, two subtasks, and one observation between you and the full marks. Each follows the routine of stop 14: read the subtasks, write the brute force, then look for the trick. Every solution below was checked against its brute force on thousands of random inputs. The Ladder’s Vault tab adds real Codeforces problems chosen for the same quality, grouped by the trick.</p>
+
+<div class="prob" id="v-rev"><div class="lvl">≈ CF 1900 · graphs · subtasks 40 / 60</div><h4>Chakravyuh Reversed</h4>
+<p>Every node of a directed graph on nodes 0 … n−1 has at most one outgoing edge. You are told, for every node i, the number c[i] of distinct nodes reachable from i by following edges as long as possible, counting i itself. Print any array a (a[i] = −1 for no edge, otherwise the node i points to) that produces exactly this c, or print −1 if no graph does.</p>
+<p><b>Subtask 1:</b> n ≤ 6. <b>Subtask 2:</b> n ≤ 10⁵, 1 ≤ c[i] ≤ n.</p>
+<details><summary>Hints (one at a time)</summary><p>1. What value does a node on a cycle of length L have? What value does a node hanging off one of them have, compared with its successor?</p><p>2. Count how many nodes hold each value v.</p><p>3. A node with value v ≥ 2 either points to a node with value v − 1, or lies on a cycle of exactly v nodes.</p></details>
+<details><summary>Subtask 1: the brute force</summary>{{code:rev_brute}}</details>
+<details><summary>The trick and the full solution</summary><p>Group nodes by value. Value 1: dead ends. Value v ≥ 2: if any node has value v − 1, point every v-node at it; otherwise the v-nodes must form cycles of length v, so their count must be a multiple of v. The solution is <code>reverse_chak</code> in <a href="#ch8">stop 8</a>; it matched every possible graph for n ≤ 5.</p></details></div>
+
+<div class="prob" id="v-odd"><div class="lvl">≈ CF 1700 · graphs · subtasks 30 / 70</div><h4>Odd Walk</h4>
+<p>A country has n cities and m two-way roads. Find the fewest roads in a trip from city s to city t that uses an <b>odd</b> number of roads. A trip may use the same road, or visit the same city, any number of times. Print −1 if no such trip exists.</p>
+<p><b>Subtask 1:</b> n ≤ 8. <b>Subtask 2:</b> n, m ≤ 2·10⁵.</p>
+<details><summary>Hints</summary><p>1. A city can be reached by both an odd and an even trip. Do they need the same distance?</p><p>2. What if each city had two distances?</p></details>
+<details><summary>Subtask 1: the brute force</summary>{{code:odd_walk_brute}}</details>
+<details><summary>The trick and the full solution</summary><p>The node is (city, parity of roads so far). Every road flips the parity, so a plain BFS over these doubled nodes finds the shortest odd trip. See <code>shortest_odd_walk</code> in <a href="#ch8">stop 8</a>.</p></details></div>
+
+<div class="prob" id="v-free"><div class="lvl">≈ CF 1900 · graphs II · subtasks 30 / 70</div><h4>Free Passes</h4>
+<p>n cities, m one-way roads with non-negative tolls. You hold k passes; each pass makes one road on your route free. What is the cheapest trip from city 0 to city n−1? Print −1 if there is no route.</p>
+<p><b>Subtask 1:</b> n ≤ 6, k ≤ 3. <b>Subtask 2:</b> n ≤ 10⁵, m ≤ 2·10⁵, k ≤ 10.</p>
+<details><summary>Hints</summary><p>1. Where would you remember how many passes are left?</p><p>2. Draw k + 1 copies of the map. What does using a pass look like as an edge?</p></details>
+<details><summary>Subtask 1: the brute force</summary>{{code:free_brute}}</details>
+<details><summary>The trick and the full solution</summary><p>Dijkstra on states (city, passes used): a normal edge stays in the same layer at its toll, a pass edge goes one layer down at cost 0. The answer is the best over all layers of city n−1. See <code>min_cost_k_free</code> in <a href="#ch12">stop 12</a>.</p></details></div>
+
+<div class="prob" id="v-vis"><div class="lvl">≈ CF 1800 · monotonic stack · subtasks 40 / 60</div><h4>Visible Pairs</h4>
+<p>n people stand in a row with heights h[i]. Two people i &lt; j can see each other when nobody standing between them is taller than the shorter of the two. Count the pairs that can see each other.</p>
+<p><b>Subtask 1:</b> n ≤ 3,000. <b>Subtask 2:</b> n ≤ 2·10⁵, heights up to 10⁹, and equal heights do occur.</p>
+<details><summary>Hints</summary><p>1. For person j, which earlier people can still see them? Think of the people who haven’t been blocked yet.</p><p>2. Keep them in a stack in order of height. When j arrives, who gets popped, and why do they never matter again?</p><p>3. What do you store so equal heights are counted correctly?</p></details>
+<details><summary>Subtask 1: the brute force</summary>{{code:visible_brute}}</details>
+<details><summary>The trick and the full solution</summary><p>Monotonic stack of (height, count). Everyone shorter than the newcomer is popped and sees them once; then the newcomer sees the equal group, and the first taller person behind it. See <code>visible_pairs</code> in <a href="#ch13">stop 13</a>.</p></details></div>
+
+<div class="prob" id="v-tre"><div class="lvl">≈ CF 2000 · backtracking · subtasks 40 / 60</div><h4>Split the Treasure</h4>
+<p>You found n gems with integer values (some are cursed and negative). Count the subsets of gems whose values add up to exactly T. The empty subset counts if T = 0. Two subsets are different if they use different gems, even when the values are equal.</p>
+<p><b>Subtask 1:</b> n ≤ 20. <b>Subtask 2:</b> n ≤ 36.</p>
+<details><summary>Hints</summary><p>1. 2³⁶ is far too many; 2¹⁸ is not.</p><p>2. List all subset sums of each half separately.</p><p>3. A subset is a left part plus a right part. For a left sum s, how many right parts sum to T − s?</p></details>
+<details><summary>Subtask 1: the brute force</summary>{{code:subsets_brute}}</details>
+<details><summary>The trick and the full solution</summary><p>Meet in the middle: count the left half’s sums in a dictionary and look up T − s for every right-half sum. See <code>count_subsets</code> in <a href="#ch6">stop 6</a>.</p></details></div>
+
+<div class="prob" id="v-fro"><div class="lvl">≈ CF 1700 · observation · subtasks 30 / 70</div><h4>Frozen Middle</h4>
+<p>A row of n cards holds a permutation of 0 … n−1. You may swap the cards at positions i and j only when |i − j| ≥ k. Using any number of legal swaps, can you sort the row into 0, 1, …, n−1?</p>
+<p><b>Subtask 1:</b> n ≤ 7. <b>Subtask 2:</b> n ≤ 2·10⁵.</p>
+<details><summary>Hints</summary><p>1. Write the BFS for n ≤ 7 and print which rows are sortable for n = 5, k = 3. Look at what the unsortable ones have in common.</p><p>2. Which positions have no legal partner at all, whatever the other cards do?</p></details>
+<details><summary>Subtask 1: the brute force</summary>{{code:frozen}}</details>
+<details><summary>The trick</summary><p>Position i can swap with j ≤ i − k or j ≥ i + k. Positions n − k … k − 1 have neither, so they are frozen: those cards must already be correct. Everything else is movable enough to be sorted. The one-line check <code>sortable</code> above matches the brute force on every permutation with n ≤ 6 and every k. Why the rest is always fixable is worth proving yourself.</p></details></div>
+
+<h3>Timed mocks</h3>
+<p>Three-rung mocks use real Codeforces problems at the exam’s 1400, 1500 and 1600, the Summit mocks one tier above, the Ego mocks two. Open all three problems, press Start, and score honestly: nothing, a brute force that passed some tests, or fully accepted.</p>
+<div class="lab" data-w="mock3" data-title="Three-rung mock with subtask scoring"></div>
+<p>Your end-sem is LeetCode-style, so here are <b>three-problem LeetCode mocks</b>, one easy, one medium and one hard, built from the topics of stops 9–17. Mark a brute force that passes some tests as half; the clock decides how much of each you can finish.</p>
+<div class="lab" data-w="mocklc" data-title="Three-problem LeetCode mock (easy, medium, hard)"></div>
+<p>The original LeetCode-style mocks A–H, four problems each, are still here:</p>
+<div class="lab" data-w="mock" data-title="Mock contest A–H (LeetCode)"></div>
+<div class="box tip"><div class="lbl" data-ico="🔁">After every mock</div>
+<ul>
+<li>For each problem not fully accepted, write one line: the pattern, and the twist you missed.</li>
+<li>For each zero, write the brute force now, untimed. If it takes under ten minutes, the zero was a routine failure, not a knowledge gap.</li>
+<li>Read the idea, close it, and re-code the problem from a blank file the next day.</li>
+<li>Say three sentences out loud for every problem you solved: the pattern, the state or observation, the complexity. That is the Mock AI Interview (10%).</li>
+</ul></div>

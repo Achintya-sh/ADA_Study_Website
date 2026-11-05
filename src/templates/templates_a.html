@@ -1,0 +1,100 @@
+<!--@@ ch3 -->
+<h3 class="pat-head">Patterns for contests: sorting</h3>
+<div class="box tip"><div class="lbl" data-ico="🎯">Seen in your contests</div><p><b>Contest 1 Q5</b> asked for Quick Sort in descending order and scored by test. The usual trap: with the last element as pivot, a reverse-sorted or all-equal array makes every partition peel off a single element. That is n² work and n levels of recursion. The fix is a random pivot, a three-way split so equal values are finished at once, and an explicit stack.</p></div>
+<div class="tbl-wrap"><table>
+<tr><th>Pattern</th><th>Words in the statement</th><th>Tool</th></tr>
+<tr><td>Sort, then scan</td><td>“overlapping”, “closest”, “group equal”, “pair up”</td><td>sort, then one pass</td></tr>
+<tr><td>Custom order</td><td>“arrange to make the largest number”, “order by two rules”</td><td><code>key=</code> or <code>cmp_to_key</code></td></tr>
+<tr><td>k-th without sorting</td><td>“median”, “k-th largest”, n large</td><td>quickselect, expected O(n); or a heap</td></tr>
+<tr><td>Count out-of-order pairs</td><td>“number of swaps”, “pairs i &lt; j with a[i] &gt; a[j]”</td><td>merge sort that counts while merging</td></tr>
+<tr><td>Small value range</td><td>values up to 10⁶, “frequencies”</td><td>counting sort, <code>Counter</code></td></tr>
+<tr><td>Minimise the maximum</td><td>“smallest x such that …”</td><td>sort, then binary search the answer (stop 14)</td></tr>
+</table></div>
+<p>In a contest, use Python’s built-in <code>sort</code> (stable, O(n log n)). Write Quick Sort yourself only when the problem tells you to.</p>
+{{code:merge_intervals}}
+{{code:largest_number}}
+<p>Quickselect is Quick Sort that follows only one side: after the split, the answer lies in exactly one of the three zones.</p>
+{{code:quickselect}}
+{{code:count_inversions}}
+<p>The merge step is the only place that changes: when an element of the right half is placed before the remaining left elements, it jumps over every one of them, and each jump is one inversion.</p>
+{{code:quick_sort_safe}}
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p><code>a.sort()</code> returns <code>None</code> (use <code>sorted(a)</code> to keep the original). A comparison function needs <code>cmp_to_key</code>. Touching intervals <code>[1,4]</code> and <code>[4,5]</code> merge when the statement says “overlap or touch” and not when it says “share a point”. Lomuto partition with the last element as pivot is O(n²) on sorted input: say so in a written answer.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Sort first and the problem often becomes one pass. Out-of-order pairs: count while merging.</p>
+<p>A fixed pivot loses to sorted input; a random pivot and a three-way split don’t.</p>
+<p>Practice: the Ladder, tab Sorting.</p></div>
+
+<!--@@ ch4 -->
+<h3 class="pat-head">Patterns for contests: BST</h3>
+<div class="box tip"><div class="lbl" data-ico="🎯">Seen in your contests</div><p><b>Contest 1:</b> Q1 minimum in a BST (keep going left), Q6 balanced BST from a binary tree (inorder gives sorted values, then pick the middle), and <b>Q4 Validate BST</b> (40/80, solved after the deadline). The classic trap there: checking only “left child &lt; node &lt; right child” passes the samples and fails the tests, because a node deep in the right subtree must still be larger than the root. <b>Mid-sem Q1</b> was a plain inorder traversal.</p></div>
+<div class="tbl-wrap"><table>
+<tr><th>Pattern</th><th>Words in the statement</th><th>Tool</th></tr>
+<tr><td>Validate</td><td>“is this a valid BST”</td><td>pass (low, high) bounds down, or check that inorder is strictly increasing</td></tr>
+<tr><td>Inorder is sorted</td><td>“k-th smallest”, “minimum difference”, “mode”, “range sum”</td><td>walk inorder, stop early</td></tr>
+<tr><td>Build from a sequence</td><td>“from sorted array”, “from preorder”, “balance it”</td><td>middle element, or a running upper bound</td></tr>
+<tr><td>Repair</td><td>“two nodes were swapped”</td><td>one inorder walk, look for descents</td></tr>
+<tr><td>Floor, ceiling, successor</td><td>“largest value ≤ x”, “next larger”</td><td>walk down once; in a contest, <code>bisect</code> on a sorted list</td></tr>
+<tr><td>Ancestors</td><td>“lowest common ancestor”</td><td>the split point: the first node between the two keys</td></tr>
+</table></div>
+{{code:bst_validate}}
+<p>Try the tree 5 → (left 1, right 6 → (left 3, right 7)). <code>is_bst_wrong</code> says True; <code>is_bst</code> says False, because 3 sits in the right subtree of 5 and is smaller than 5.</p>
+{{code:bst_pre}}
+{{code:bst_recover}}
+<p>Why the swapped pair shows up as descents: a sorted sequence has none. Swapping two far-apart values creates two descents (take the bigger value of the first and the smaller value of the last); swapping neighbours creates one.</p>
+<p><b>The contest shortcut.</b> In Python there is no built-in balanced BST. When the keys arrive offline, a sorted list with <code>bisect</code> does the same job: <code>insort</code> keeps it sorted and the two functions below give floor and ceiling.</p>
+{{code:bisect_bst}}
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p>Duplicates: decide from the statement whether equal keys go left, right or are forbidden, and use the matching strict or non-strict bound. A BST built from sorted input is a linked list of height n: recursion that deep fails in Python, so walk iteratively. Seed the bounds with <code>float('-inf')</code> and <code>float('inf')</code>, not with a guess like 0 or 10⁹.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Validate with bounds from every ancestor, never with the parent alone.</p>
+<p>BST inorder = sorted order; most BST questions are sorted-array questions in disguise.</p>
+<p>Practice: the Ladder, tab BST.</p></div>
+
+<!--@@ ch5 -->
+<h3 class="pat-head">Patterns for contests: heaps</h3>
+<div class="box tip"><div class="lbl" data-ico="🎯">Seen in your contests</div><p><b>Contest 1:</b> Q2 second minimum of a min-heap (it is the smaller of the root’s two children, <code>min(heap[1], heap[2])</code>, never a scan of everything) and <b>Q3 insertion in O(log n) with <code>heapq</code> forbidden</b>: bubble up by hand (20/40). <b>Mid-sem Q3</b> was array to min-heap, which is the O(n) build from this stop.</p></div>
+<div class="tbl-wrap"><table>
+<tr><th>Pattern</th><th>Words in the statement</th><th>Tool</th></tr>
+<tr><td>Implement the heap</td><td>“without heapq”, “O(log n) per insertion”</td><td>array, parent (i − 1) // 2, bubble up and sift down</td></tr>
+<tr><td>k-way merge</td><td>“k sorted lists”, “k-th smallest pair sum”</td><td>heap of (value, list, position)</td></tr>
+<tr><td>Top k</td><td>“k largest”, “k most frequent”, a stream</td><td>size-k min-heap, or <code>heapq.nlargest</code></td></tr>
+<tr><td>Running median</td><td>“median after each insertion”</td><td>max-heap below, min-heap above (this stop)</td></tr>
+<tr><td>Rooms and machines</td><td>“fewest rooms”, “earliest free”</td><td>min-heap of end times</td></tr>
+<tr><td>Best available now</td><td>“at most k projects”, “always take the biggest”</td><td>sort by availability, heap of what is unlocked</td></tr>
+<tr><td>Delete a given value</td><td>“remove x” from a heap</td><td>lazy deletion: remember it is dead, skip it when it reaches the top</td></tr>
+</table></div>
+{{code:min_heap_manual}}
+{{code:kway}}
+{{code:min_rooms}}
+{{code:ipo}}
+{{code:lazy_heap}}
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p><code>heapq</code> is a min-heap only: store negatives for a max-heap. Tuples compare left to right, so put the priority first and add an index as a tie-breaker if the second item can’t be compared. “Touching” meetings (end = next start) share a room when the check is <code>&lt;=</code>. Sifting down: compare with <i>both</i> children and swap with the smaller one.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Heap = the best item now, in O(log n). Sort by when things become available, then pop the best.</p>
+<p>No heapq allowed: array + bubble up + sift down, both O(log n).</p>
+<p>Practice: the Ladder, tab Heaps.</p></div>
+
+<!--@@ ch6 -->
+<h3 class="pat-head">Patterns for contests: backtracking</h3>
+<div class="box tip"><div class="lbl" data-ico="🎯">Seen in your contests</div><p><b>Mid-sem Q4 Generate Parentheses</b> (40/80, late) and <b>Q7 Palindrome Partitioning</b> (0/120) were on a topic you hadn’t studied yet. Q7 is solved at the bottom of this page: one table for “is s[i..j] a palindrome?”, then backtracking that only ever cuts at palindromes.</p></div>
+<div class="tbl-wrap"><table>
+<tr><th>Pattern</th><th>Words in the statement</th><th>Tool</th></tr>
+<tr><td>Generate everything</td><td>“return all …”, n ≤ 10–20</td><td>choose, recurse, undo</td></tr>
+<tr><td>Avoid duplicates</td><td>input has repeated values, “distinct results”</td><td>sort, skip an equal sibling at the same depth</td></tr>
+<tr><td>Cut dead branches</td><td>“can you split into k …”, “does a solution exist”</td><td>bound check, big items first, skip symmetric states</td></tr>
+<tr><td>Precompute a test</td><td>“every piece must be a palindrome”</td><td>fill a table first, branch only where it says yes</td></tr>
+<tr><td>Count, don’t list</td><td>“how many ways”, n ≤ 40</td><td>meet in the middle: two halves of 2^(n/2)</td></tr>
+<tr><td>Same state again and again</td><td>the arguments repeat across branches</td><td>add a cache: it just became DP</td></tr>
+</table></div>
+{{code:permute_unique}}
+{{code:subsets_dup}}
+{{code:pal_part}}
+<p>The same table answers “fewest cuts” without listing anything: <code>min_cuts</code> above is DP, and that switch is the rule: <b>if you only need a count or a best value, and states repeat, stop listing and tabulate</b>.</p>
+{{code:partition_k}}
+{{code:mitm}}
+<div class="box warnbox"><div class="lbl" data-ico="🎯">Choosing by n</div><p>n ≤ 10: all orderings (10! ≈ 3.6 million). n ≤ 20: all subsets (2²⁰ ≈ 10⁶), with pruning. n ≤ 40: meet in the middle (2²⁰ per half). Larger: this is not a backtracking problem; look for DP or a greedy.</p></div>
+<div class="box trap"><div class="lbl" data-ico="⚠️">Exam traps</div><p>Append <code>cur[:]</code>, not <code>cur</code>: otherwise every saved result is the same list that later gets emptied. Undo exactly what you did. Skip duplicates with <code>i &gt; start</code> (same depth), not <code>i &gt; 0</code>. Pruning before recursing is cheaper than pruning after.</p></div>
+<div class="box remember"><div class="lbl" data-ico="📌">Remember</div>
+<p>Choose, recurse, undo. Sort and skip equal siblings. Big items first, skip identical states.</p>
+<p>Precompute the yes/no test (palindrome table), then branch only on yes.</p>
+<p>Count or best value with repeating states → DP. n ≤ 40 counting → meet in the middle.</p>
+<p>Practice: the Ladder, tab Backtracking.</p></div>
