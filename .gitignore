@@ -4,3 +4,7 @@ __pycache__/
 *.pyc
 .DS_Store
 /tmp/
+
+# Legacy root archives (canonical single-file notebook is dist/v4-classic.html)
+ADA_Exam_Notebook_v4.html
+*.zip
